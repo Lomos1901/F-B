@@ -1,17 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Ingredient } from '../../../types/ingredient'; 
+// Import dịch vụ gọi API vừa tạo vào đây
+import { ingredientService } from '../../../services/ingredientService';
 
-export default function Home() {
-  const [ingredients, setIngredients] = useState([]);
+export default function DashboardPage() {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000')
-      .then((res) => res.json())
-      .then((result) => {
-        if (result.status === "Thành công") {
-          setIngredients(result.data);
-        }
-      });
+    // Sử dụng service giúp code tường minh và sạch sẽ hơn
+    ingredientService.getAll()
+      .then((data) => setIngredients(data))
+      .catch((err) => console.error('Lỗi lấy dữ liệu kho:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -19,9 +21,12 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-8 text-yellow-500">Sẫm Coffee - Kiểm soát nguyên liệu</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.length > 0 ? (
-          ingredients.map((item: any, index) => {
-            // Logic kiểm tra hàng sắp hết
+        {loading ? (
+          <div className="col-span-full text-center py-20 border-2 border-dashed border-gray-700 rounded-xl">
+            <p className="text-gray-500 text-lg animate-pulse">Đang kết nối dữ liệu từ quán Sẫm Coffee...</p>
+          </div>
+        ) : ingredients.length > 0 ? (
+          ingredients.map((item: Ingredient, index) => {
             const isLow = item.stock_quantity <= item.min_threshold;
             
             return (
@@ -40,7 +45,7 @@ export default function Home() {
           })
         ) : (
           <div className="col-span-full text-center py-20 border-2 border-dashed border-gray-700 rounded-xl">
-            <p className="text-gray-500 text-lg">Đang kết nối dữ liệu từ quán Sẫm Coffee...</p>
+            <p className="text-gray-500 text-lg">Kho hàng hiện tại đang trống.</p>
           </div>
         )}
       </div>
