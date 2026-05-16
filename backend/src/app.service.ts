@@ -7,7 +7,7 @@ export class AppService {
 
   async getHello() {
   try {
-    const client = this.supabaseService.getClient();
+    const client = this.supabaseService.getAdminClient(); 
     const { data, error } = await client.from('ingredients').select('*');
     
     if (error) throw error;

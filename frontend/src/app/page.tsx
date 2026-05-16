@@ -11,6 +11,7 @@ export default function HomePage() {
         <Link href="/qr-order" className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-xl font-bold transition-all">
           Vào trang Gọi món (Khách tại bàn)
         </Link>
+        {/* Middleware sẽ can thiệp ở nút này. Nếu chưa có token, bấm vào sẽ tự động văng ra /login */}
         <Link href="/dashboard" className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold transition-all border border-gray-700">
           Vào hệ thống Quản lý (Admin)
         </Link>

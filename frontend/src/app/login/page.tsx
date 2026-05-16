@@ -29,25 +29,25 @@ export default function LoginPage() {
         throw new Error(data.message || 'Đăng nhập thất bại');
       }
 
-      // 🌟 KHẮC PHỤC LỖI TRỐNG COOKIE: Linh hoạt bốc đúng Key xác thực từ Backend
+      // Linh hoạt bốc đúng Key xác thực từ Backend
       const activeToken = data.token || data.access_token || data.data?.token || data.data?.access_token;
       
       // Linh hoạt lấy thông tin user để tránh bị undefined
-      const activeUser = data.user || data.data?.user || data.data || { full_name: "Lê Đình Duy", role: "barista" };
+      const activeUser = data.user || data.data?.user || data.data || { full_name: "Nhân viên", role: "staff" };
 
       // Nếu không bốc được token nào, chặn lại báo lỗi ngay để dễ debug
       if (!activeToken) {
         throw new Error('Đăng nhập thành công nhưng hệ thống không tìm thấy mã Token xác thực!');
       }
 
-      // Lưu JWT Token và thông tin User vào Cookie trong 1 ngày
-      Cookies.set('token', activeToken, { expires: 1 });
+      // Đã sửa 'token' thành 'access_token' để khớp hoàn toàn với middleware.ts
+      Cookies.set('access_token', activeToken, { expires: 1 });
       Cookies.set('user', JSON.stringify(activeUser), { expires: 1 });
 
       alert(`Chào mừng ${activeUser.full_name || 'Nhân viên'} quay trở lại Sẫm Coffee!`);
       
-      // Đăng nhập xong phi thẳng vào trang quản lý dashboard và ép reload cứng
-      window.location.href = '/dashboard';
+      // Sử dụng router.push của Next.js để điều hướng mượt mà, không reload toàn trang
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -5,11 +5,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { IngredientsModule } from './ingredients/ingredients.module';
 import { AuthModule } from './auth/auth.module';
+import { OrdersModule } from './orders/orders.module';
+import { RecipesModule } from './recipes/recipes.module';
+import { CategoriesModule } from './categories/categories.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // Giúp ConfigService có sẵn cho toàn bộ app
-    SupabaseModule, IngredientsModule, AuthModule, // Đưa Module kết nối vào đây
+    SupabaseModule, IngredientsModule, AuthModule, OrdersModule, RecipesModule, CategoriesModule, ProductsModule, // Đưa Module kết nối vào đây
   ],
   controllers: [AppController],
   providers: [AppService],
