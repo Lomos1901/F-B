@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body } from '@nestjs/common'; // 🌟 CHÚ Ý: Đã thêm 'Get' vào mảng import này
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common'; // 🌟 Đã thêm các decorator xử lý file
+import { FileInterceptor } from '@nestjs/platform-express'; // 🌟 Thư viện chặn file của NestJS
 import { ProductsService } from './products.service';
 
 @Controller('products')
@@ -15,5 +23,12 @@ export class ProductsController {
   @Post('create-with-recipe')
   async createWithRecipe(@Body() createDto: any) {
     return this.productsService.createWithRecipe(createDto);
+  }
+
+  // 🌟 API POST MỚI: Nhận file ảnh từ Frontend gửi lên đám mây Supabase
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file')) // Bắt file có tên là 'file' từ form-data
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return this.productsService.uploadImage(file);
   }
 }

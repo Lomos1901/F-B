@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Category {
   id: string;
@@ -27,15 +29,18 @@ const UNIT_CONVERSIONS: Record<string, { displayUnit: string; factor: number }> 
 };
 
 export default function AddProductWithRecipePage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [categoryId, setCategoryId] = useState('');
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState<number | ''>('');
+  const [imageUrl, setImageUrl] = useState(''); 
   const [recipeRows, setRecipeRows] = useState<RecipeInput[]>([
     { ingredient_id: '', ui_quantity: 0 }
   ]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -77,6 +82,36 @@ export default function AddProductWithRecipePage() {
     return UNIT_CONVERSIONS[ing.unit.toLowerCase()] || { displayUnit: ing.unit, factor: 1 };
   };
 
+  // Hàm xử lý khi người dùng chọn file ảnh từ máy tính
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('http://localhost:3001/products/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setImageUrl(data.imageUrl); // Lưu link public trả về từ Backend
+      } else {
+        setMessage({ type: 'error', text: 'Tải ảnh thất bại. Vui lòng thử lại.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Lỗi kết nối API upload ảnh.' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId || !productName.trim() || !productPrice) {
@@ -108,16 +143,14 @@ export default function AddProductWithRecipePage() {
           category_id: categoryId,
           name: productName,
           price: Number(productPrice),
+          image_url: imageUrl, 
           ingredients: processedIngredients
         }),
       });
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Thêm món mới và gán công thức thành công!' });
-        setCategoryId('');
-        setProductName('');
-        setProductPrice('');
-        setRecipeRows([{ ingredient_id: '', ui_quantity: 0 }]);
+        alert('Thêm món mới và gán công thức thành công!');
+        router.push('/products'); // Điều hướng về trang danh sách
       } else {
         const result = await response.json();
         setMessage({ type: 'error', text: result.message || 'Lỗi xử lý hệ thống.' });
@@ -130,42 +163,45 @@ export default function AddProductWithRecipePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f17] text-white p-8 font-sans antialiased">
+    <div className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans antialiased">
       <div className="max-w-4xl mx-auto">
         
-        {/* TIÊU ĐỀ TRANG CHUẨN HIỆN ĐẠI */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#ff9f1c] tracking-wide">Thêm món nước mới</h1>
-          <p className="text-gray-400 text-sm mt-1">Khởi tạo thực đơn thương mại & định mức khấu hao kho thô cho Sẫm Coffee.</p>
+        {/* TIÊU ĐỀ TRANG CHUẨN SÁNG */}
+        <div className="mb-6 flex justify-between items-end border-b border-gray-200 pb-5">
+          <div>
+            <h1 className="text-2xl font-bold tracking-wide text-amber-700 uppercase">Thêm món nước mới</h1>
+            <p className="text-sm text-gray-500 mt-1">Khởi tạo thực đơn thương mại & định mức khấu hao kho thô cho Sẫm Coffee.</p>
+          </div>
+          <Link href="/products" className="text-amber-600 font-bold text-xs uppercase hover:underline">
+            ← Quay về danh sách
+          </Link>
         </div>
 
         {message && (
-          <div className={`p-4 rounded-lg mb-6 text-xs font-medium border ${
+          <div className={`p-4 rounded-lg mb-6 text-sm font-medium border shadow-sm ${
             message.type === 'success' 
-              ? 'bg-green-950/40 text-green-400 border-green-900/60' 
-              : 'bg-red-950/40 text-red-400 border-red-900/60'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+              : 'bg-red-50 text-red-700 border-red-200'
           }`}>
             {message.text}
           </div>
         )}
 
-        {/* CONTAINER FORM CHÍNH - MÀU KHUNG CHUẨN TRANH DANH MỤC */}
-        <form onSubmit={handleSubmit} className="bg-[#141923] rounded-xl border border-gray-800 shadow-xl overflow-hidden">
+        {/* CONTAINER FORM CHÍNH */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           
-          <div className="p-6 space-y-6">
+          <div className="p-8 space-y-8">
             {/* BƯỚC 1: THÔNG TIN THƯƠNG MẠI */}
-            <div className="space-y-4">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#ff9f1c]/90">
-                1. Thông tin thương mại thực đơn
-              </div>
+            <div className="space-y-5">
+              <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">1. Thông tin thương mại thực đơn</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs text-gray-400 font-semibold mb-2">Nhóm món nước (*):</label>
+                  <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Nhóm món nước (*):</label>
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full bg-[#1c2431] border border-gray-700 rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-[#ff9f1c] transition"
+                    className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500 shadow-sm transition"
                     required
                   >
                     <option value="" className="text-gray-500">-- Chọn phân hệ nhóm --</option>
@@ -176,51 +212,80 @@ export default function AddProductWithRecipePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-400 font-semibold mb-2">Tên món uống (*):</label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Cà Phê Muối Sẫm..."
-                    value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
-                    className="w-full bg-[#1c2431] border border-gray-700 rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-[#ff9f1c] placeholder:text-gray-500 transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-400 font-semibold mb-2">Giá bán niêm yết (*):</label>
+                  <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Giá bán niêm yết (*):</label>
                   <div className="relative">
                     <input
                       type="number"
                       placeholder="Ví dụ: 35000"
                       value={productPrice}
                       onChange={(e) => setProductPrice(e.target.value !== '' ? Number(e.target.value) : '')}
-                      className="w-full bg-[#1c2431] border border-gray-700 rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-[#ff9f1c] placeholder:text-gray-500 font-mono transition pr-10"
+                      className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-amber-500 shadow-sm transition pr-10"
                       required
                     />
-                    <span className="absolute right-3 top-3 text-xs font-bold text-gray-500">Đ</span>
+                    <span className="absolute right-4 top-3 text-sm font-bold text-gray-400">đ</span>
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Tên món uống (*):</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Cà Phê Muối Sẫm..."
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500 shadow-sm transition"
+                    required
+                  />
+                </div>
+
+                {/* THÀNH PHẦN FILE UPLOAD ĐÃ ĐƯỢC TÍCH HỢP HOÀN HẢO */}
+                <div>
+                  <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Hình ảnh minh họa món:</label>
+                  <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-300 shadow-sm">
+                    
+                    {/* Khung xem trước hình ảnh */}
+                    <div className="w-12 h-12 rounded-md bg-white border border-gray-200 flex items-center justify-center overflow-hidden text-gray-400 shrink-0">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : uploading ? (
+                        <span className="text-[10px] animate-pulse font-bold text-amber-600">Up...</span>
+                      ) : (
+                        <span className="text-xl">📷</span>
+                      )}
+                    </div>
+
+                    {/* Nút chọn ảnh thật từ máy */}
+                    <div className="flex-1 overflow-hidden">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                        disabled={uploading}
+                      />
+                    </div>
+
+                  </div>
+                </div>
+
               </div>
             </div>
 
             {/* BƯỚC 2: ĐỊNH LƯỢNG PHA CHẾ */}
-            <div className="space-y-4">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#ff9f1c]/90">
-                2. Định lượng pha chế thực tế (Khấu hao kho thô)
-              </div>
+            <div className="space-y-5 pt-4">
+              <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">2. Định lượng pha chế thực tế (Khấu hao kho thô)</h3>
 
               <div className="space-y-3">
                 {recipeRows.map((row, index) => {
                   const { displayUnit } = getUnitInfo(row.ingredient_id);
                   return (
-                    <div key={index} className="flex items-center space-x-3 bg-[#1c2431]/40 p-3 rounded-lg border border-gray-800/80 hover:border-gray-700 transition">
+                    <div key={index} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200 transition">
                       
                       <div className="flex-1">
                         <select
                           value={row.ingredient_id}
                           onChange={(e) => handleRowChange(index, 'ingredient_id', e.target.value)}
-                          className="w-full bg-[#1c2431] border border-gray-700 rounded-md p-2 text-white focus:outline-none focus:border-[#ff9f1c] text-xs transition"
+                          className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-amber-500"
                         >
                           <option value="">-- Chọn nguyên liệu thô trong kho --</option>
                           {ingredients.map((ing) => (
@@ -229,17 +294,16 @@ export default function AddProductWithRecipePage() {
                         </select>
                       </div>
 
-                      <div className="w-44 relative">
+                      <div className="w-48 relative">
                         <input
                           type="number"
                           step="0.1"
-                          placeholder="Số lượng pha"
+                          placeholder="Số lượng"
                           value={row.ui_quantity || ''}
                           onChange={(e) => handleRowChange(index, 'ui_quantity', e.target.value)}
-                          className="w-full bg-[#1c2431] border border-gray-700 rounded-md p-2 text-white focus:outline-none focus:border-[#ff9f1c] text-xs font-mono pr-14 text-right"
+                          className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm font-mono pr-14 text-right focus:ring-2 focus:ring-amber-500"
                         />
-                        <span className="absolute left-2.5 top-2.5 text-[10px] font-bold text-gray-500 uppercase">NHẬP:</span>
-                        <span className="absolute right-2 top-1.5 text-xs font-bold text-[#ff9f1c] bg-[#141923] px-1.5 py-0.5 rounded border border-gray-700">
+                        <span className="absolute right-3 top-2.5 text-[11px] font-bold text-gray-500 uppercase">
                           {displayUnit}
                         </span>
                       </div>
@@ -248,7 +312,7 @@ export default function AddProductWithRecipePage() {
                         <button
                           type="button"
                           onClick={() => removeRow(index)}
-                          className="p-1.5 text-red-400 hover:bg-red-950/40 rounded-md text-xs border border-transparent hover:border-red-900/40 transition"
+                          className="px-3 py-2 text-red-500 bg-white border border-red-200 hover:bg-red-50 rounded-lg text-sm font-semibold transition"
                         >
                           Xóa
                         </button>
@@ -261,24 +325,24 @@ export default function AddProductWithRecipePage() {
               <button
                 type="button"
                 onClick={addRow}
-                className="px-3 py-1.5 bg-[#1c2431] text-[#ff9f1c] border border-gray-700 hover:border-[#ff9f1c]/40 hover:bg-[#ff9f1c]/5 rounded-md text-xs font-semibold transition"
+                className="px-4 py-2 bg-white text-amber-600 border border-amber-200 hover:bg-amber-50 rounded-lg text-xs font-bold transition shadow-sm"
               >
-                + Thêm nguyên liệu thành phần
+                ➕ THÊM NGUYÊN LIỆU
               </button>
             </div>
           </div>
 
-          {/* CHÂN FORM CHỨA NÚT SUBMIT CHUẨN TÔNG CAM TƯƠNG PHẢN CAO */}
-          <div className="bg-[#1c2431] border-t border-gray-800 px-6 py-4 flex justify-between items-center">
+          {/* CHÂN FORM CHỨA NÚT SUBMIT */}
+          <div className="bg-gray-50 border-t border-gray-200 px-8 py-5 flex justify-between items-center">
             <p className="text-[11px] text-gray-500 font-mono hidden sm:block">
               * Hệ thống tự động quy đổi ngược và lưu trữ an toàn.
             </p>
             <button
               type="submit"
-              disabled={loading}
-              className="w-full sm:w-auto px-6 py-2 bg-[#ff9f1c] hover:bg-[#e08a10] disabled:bg-gray-700 text-[#0c0f14] font-bold text-xs tracking-wider uppercase rounded-md transition shadow"
+              disabled={loading || uploading}
+              className="w-full sm:w-auto px-8 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white font-bold text-xs tracking-wider uppercase rounded-xl transition shadow-md"
             >
-              {loading ? 'ĐANG THIẾT LẬP...' : 'HOÀN TẤT THÊM MÓN & CÔNG THỨC'}
+              {loading ? 'ĐANG THIẾT LẬP...' : '🚀 HOÀN TẤT THÊM MÓN & CÔNG THỨC'}
             </button>
           </div>
 
