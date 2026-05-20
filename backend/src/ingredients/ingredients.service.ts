@@ -10,45 +10,62 @@ import { SupabaseService } from '../supabase/supabase.service';
 export class IngredientsService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  // 1. Lấy toàn bộ danh sách nguyên liệu (Đã lọc các món bị xóa mềm)
+  // 1. Lấy danh sách nguyên liệu đang hoạt động
   async findAll() {
     const client = this.supabaseService.getAdminClient();
     const { data, error } = await client
       .from('ingredients')
       .select('*')
-      .eq('is_active', true) // <-- Bộ lọc đang sử dụng
+      .eq('is_active', true)
       .order('name', { ascending: true });
+    // THÊM DÒNG NÀY ĐỂ DEBUG:
 
     if (error) throw new InternalServerErrorException(error.message);
-
-    // Format trả về đồng bộ với console.log của bạn
-    return {
-      status: 'Thành công',
-      message: 'Đã lấy được dữ liệu từ quán Sẫm Coffee',
-      record_count: data.length,
-      data: data,
-    };
+    return { status: 'Thành công', record_count: data.length, data: data };
   }
 
-  // 2. Lấy danh sách nguyên liệu đã bị ẩn (Trong kho lưu trữ)
+  // 2. Lấy danh sách kho lưu trữ
   async findArchived() {
     const client = this.supabaseService.getAdminClient();
     const { data, error } = await client
       .from('ingredients')
       .select('*')
-      .eq('is_active', false) // <-- Bộ lọc kho lưu trữ
+      .eq('is_active', false)
       .order('name', { ascending: true });
 
     if (error) throw new InternalServerErrorException(error.message);
-    return {
-      status: 'Thành công',
-      message: 'Đã lấy dữ liệu kho lưu trữ',
-      record_count: data.length,
-      data: data,
-    };
+    return { status: 'Thành công', record_count: data.length, data: data };
   }
 
-  // 3. Cập nhật thông tin cơ bản
+  // 3. TẠO MỚI NGUYÊN LIỆU (API BẠN ĐANG BỊ THIẾU)
+  async create(body: {
+    name: string;
+    unit: string;
+    min_threshold: number;
+    cost_per_unit: number;
+  }) {
+    const client = this.supabaseService.getAdminClient();
+    const { data, error } = await client
+      .from('ingredients')
+      .insert({
+        name: body.name,
+        unit: body.unit,
+        min_threshold: body.min_threshold,
+        cost_per_unit: body.cost_per_unit,
+        stock_quantity: 0, // Mặc định tạo mới thì kho bằng 0
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (error)
+      throw new InternalServerErrorException(
+        'Lỗi tạo nguyên liệu: ' + error.message,
+      );
+    return { message: 'Tạo nguyên liệu thành công', data };
+  }
+
+  // 4. Cập nhật thông tin
   async updateMetadata(
     id: string,
     body: {
@@ -78,20 +95,19 @@ export class IngredientsService {
     return data;
   }
 
-  // 4. Khôi phục nguyên liệu (Bật lại công tắc is_active)
+  // 5. Khôi phục nguyên liệu
   async restore(id: string) {
     const client = this.supabaseService.getAdminClient();
     const { error } = await client
       .from('ingredients')
       .update({ is_active: true })
       .eq('id', id);
-
     if (error)
       throw new InternalServerErrorException('Lỗi khôi phục: ' + error.message);
     return { message: 'Đã khôi phục nguyên liệu thành công!' };
   }
 
-  // 5. Nghiệp vụ: Nhập hàng (Cộng kho & Ghi Log)
+  // 6. Nhập hàng
   async importStock(
     id: string,
     body: { amount: number; note: string; performed_by?: string },
@@ -109,7 +125,6 @@ export class IngredientsService {
       throw new NotFoundException('Không tìm thấy nguyên liệu');
 
     const newStock = Number(current.stock_quantity || 0) + Number(body.amount);
-
     const [updateRes, logRes] = await Promise.all([
       client
         .from('ingredients')
@@ -128,11 +143,10 @@ export class IngredientsService {
       throw new InternalServerErrorException('Lỗi cập nhật tồn kho');
     if (logRes.error)
       throw new InternalServerErrorException('Lỗi ghi lịch sử nhập hàng');
-
     return { message: 'Nhập hàng thành công', new_stock: newStock };
   }
 
-  // 6. Nghiệp vụ: Kiểm kho thực tế / Hủy hỏng
+  // 7. Kiểm kho
   async stocktake(
     id: string,
     body: { actual_quantity: number; note: string; performed_by?: string },
@@ -179,7 +193,6 @@ export class IngredientsService {
       throw new InternalServerErrorException('Lỗi cập nhật tồn kho');
     if (logRes.error)
       throw new InternalServerErrorException('Lỗi ghi lịch sử kiểm kho');
-
     return {
       message: 'Điều chỉnh kiểm kho thành công',
       variance: changeAmount,
@@ -187,7 +200,7 @@ export class IngredientsService {
     };
   }
 
-  // 7. API Dò mìn: Kiểm tra xem nguyên liệu có nằm trong công thức nào không
+  // 8. Kiểm tra ràng buộc
   async checkDependencies(id: string) {
     const client = this.supabaseService.getAdminClient();
     const { data, error } = await client
@@ -205,7 +218,7 @@ export class IngredientsService {
     return { is_used: usedInProducts.length > 0, used_in: usedInProducts };
   }
 
-  // 8. Nghiệp vụ: Xóa mềm (Tắt công tắc is_active)
+  // 9. Xóa mềm
   async softDelete(id: string) {
     const client = this.supabaseService.getAdminClient();
     const { error } = await client
@@ -217,5 +230,28 @@ export class IngredientsService {
         'Lỗi ẩn nguyên liệu: ' + error.message,
       );
     return { message: 'Đã ngưng sử dụng nguyên liệu thành công!' };
+  }
+
+  // 10. Xóa vĩnh viễn khỏi Database
+  async hardDelete(id: string) {
+    const client = this.supabaseService.getAdminClient();
+
+    // Lệnh này sẽ xóa thực sự dòng dữ liệu ra khỏi bảng
+    const { error } = await client.from('ingredients').delete().eq('id', id);
+
+    if (error) {
+      // Bắt lỗi nếu nguyên liệu này đang bị dính khóa ngoại (đã từng nhập kho/có công thức)
+      if (error.code === '23503') {
+        // Mã lỗi 23503 của PostgreSQL là Foreign Key Violation
+        throw new BadRequestException(
+          'Không thể xóa vĩnh viễn! Nguyên liệu này đã có lịch sử nhập/xuất kho hoặc đang nằm trong công thức.',
+        );
+      }
+      throw new InternalServerErrorException(
+        'Lỗi xóa nguyên liệu: ' + error.message,
+      );
+    }
+
+    return { message: 'Đã xóa vĩnh viễn nguyên liệu khỏi cơ sở dữ liệu!' };
   }
 }

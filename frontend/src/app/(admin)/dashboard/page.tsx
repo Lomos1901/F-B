@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Ingredient } from '../../../types/ingredient';
 import { ingredientService } from '../../../services/ingredientService';
 
-type ModalType = 'IMPORT' | 'STOCKTAKE' | 'EDIT' | 'DELETE' | null;
+type ModalType = 'IMPORT' | 'STOCKTAKE' | 'EDIT' | 'DELETE' | 'CREATE' | null;
 type ViewMode = 'ACTIVE' | 'ARCHIVED';
 
 export default function DashboardPage() {
@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const [amount, setAmount] = useState<number | ''>('');
   const [note, setNote] = useState('');
 
-  // State cho Form Sửa thông tin
+  // State cho Form Sửa thông tin & Tạo mới
   const [editForm, setEditForm] = useState({ name: '', unit: '', min_threshold: 0, cost_per_unit: 0 });
 
   // State quản lý cảnh báo khi xóa
@@ -38,7 +38,6 @@ export default function DashboardPage() {
         const data = await ingredientService.getAll();
         setIngredients(Array.isArray(data) ? data : (data.data || []));
       } else {
-        // Tạm thời gọi fetch trực tiếp cho API archived (Nếu bạn chưa viết hàm getArchived trong service)
         const res = await fetch('http://localhost:3001/ingredients/archived');
         const data = await res.json();
         setIngredients(Array.isArray(data) ? data : (data.data || []));
@@ -50,12 +49,17 @@ export default function DashboardPage() {
     }
   };
 
-  // Tự động tải lại dữ liệu mỗi khi người dùng chuyển Tab
   useEffect(() => {
     fetchIngredients();
   }, [viewMode]);
 
   // --- CÁC HÀM XỬ LÝ MỞ MODAL ---
+  const openCreateModal = () => {
+    setSelectedItem(null); 
+    setEditForm({ name: '', unit: '', min_threshold: 0, cost_per_unit: 0 }); 
+    setActiveModal('CREATE');
+  };
+
   const openImportModal = (item: Ingredient) => {
     setSelectedItem(item);
     setAmount('');
@@ -110,24 +114,33 @@ export default function DashboardPage() {
   // --- CÁC HÀM SUBMIT GỌI API BACKEND ---
   const handleActionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedItem) return;
+    
+    if (!selectedItem && activeModal !== 'CREATE') return; 
+    
     setIsSubmitting(true);
 
     try {
       let res;
-      if (activeModal === 'IMPORT') {
+      
+      if (activeModal === 'CREATE') {
+        res = await fetch(`http://localhost:3001/ingredients`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editForm),
+        });
+      } else if (activeModal === 'IMPORT' && selectedItem) {
         res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}/import`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: Number(amount), note }),
         });
-      } else if (activeModal === 'STOCKTAKE') {
+      } else if (activeModal === 'STOCKTAKE' && selectedItem) {
         res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}/stocktake`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ actual_quantity: Number(amount), note }),
         });
-      } else if (activeModal === 'EDIT') {
+      } else if (activeModal === 'EDIT' && selectedItem) {
         res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -158,20 +171,18 @@ export default function DashboardPage() {
         method: 'DELETE',
       });
       if (res.ok) {
-        alert('Đã ngưng sử dụng nguyên liệu thành công!');
+        alert('Đã ngưng sử dụng nguyên liệu!');
         closeModal();
-        fetchIngredients();
-      } else {
-        alert('Có lỗi xảy ra khi xóa!');
+        setIngredients(prev => prev.filter(item => item.id !== selectedItem.id));
+        await fetchIngredients();
       }
     } catch (error) {
-      alert('Lỗi kết nối máy chủ!');
+      alert('Lỗi kết nối!');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Hàm Khôi phục nguyên liệu từ Kho lưu trữ
   const handleRestore = async (id: string) => {
     if (!confirm('Bạn có chắc chắn muốn khôi phục nguyên liệu này không?')) return;
     
@@ -185,6 +196,33 @@ export default function DashboardPage() {
         fetchIngredients();
       } else {
         alert('Có lỗi xảy ra khi khôi phục!');
+      }
+    } catch (error) {
+      alert('Lỗi kết nối máy chủ!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // TÍNH NĂNG MỚI: XÓA VĨNH VIỄN
+  const handleHardDelete = async (id: string) => {
+    if (!confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn nguyên liệu này? Hành động này không thể hoàn tác!')) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:3001/ingredients/${id}/hard`, {
+        method: 'DELETE',
+      });
+      
+      const result = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        alert('Đã xóa vĩnh viễn thành công!');
+        // Cập nhật giao diện ngay lập tức để ẩn món bị xóa
+        setIngredients(prev => prev.filter(item => item.id !== id));
+      } else {
+        // Hiển thị thông báo lỗi từ Backend (ví dụ: bị dính khóa ngoại)
+        alert('Lỗi: ' + (result.message || 'Không thể xóa vĩnh viễn do dữ liệu đang bị ràng buộc.'));
       }
     } catch (error) {
       alert('Lỗi kết nối máy chủ!');
@@ -208,7 +246,10 @@ export default function DashboardPage() {
             </p>
           </div>
           {viewMode === 'ACTIVE' && (
-            <button className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs tracking-wider uppercase rounded-lg transition shadow-sm flex items-center gap-2">
+            <button 
+              onClick={openCreateModal}
+              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs tracking-wider uppercase rounded-lg transition shadow-sm flex items-center gap-2"
+            >
               <span>➕</span> THÊM NGUYÊN LIỆU MỚI
             </button>
           )}
@@ -252,7 +293,7 @@ export default function DashboardPage() {
                     isLow ? 'bg-white border-red-300' : 'bg-white border-gray-200'
                   }`}
                 >
-                  {/* Cảnh báo (Chỉ hiện khi đang ở tab Active) */}
+                  {/* Cảnh báo */}
                   {viewMode === 'ACTIVE' && isLow && (
                     <span className="absolute -top-3 -right-2 bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md animate-bounce uppercase">
                       Sắp hết!
@@ -302,9 +343,13 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-auto border-t border-gray-200 pt-4">
+                    /* CẬP NHẬT: 2 NÚT CHO KHO LƯU TRỮ */
+                    <div className="grid grid-cols-2 gap-2 mt-auto border-t border-gray-200 pt-4">
                       <button onClick={() => handleRestore(item.id)} className="w-full py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-xs font-bold uppercase transition flex justify-center items-center gap-2 shadow-sm">
-                        <span className="text-sm">🔄</span> KHÔI PHỤC HOẠT ĐỘNG
+                        <span className="text-sm">🔄</span> KHÔI PHỤC
+                      </button>
+                      <button onClick={() => handleHardDelete(item.id)} className="w-full py-2.5 bg-red-50 text-red-700 hover:bg-red-600 hover:text-white border border-red-200 hover:border-red-600 rounded-lg text-xs font-bold uppercase transition flex justify-center items-center gap-2 shadow-sm">
+                        <span className="text-sm">🗑️</span> XÓA VĨNH VIỄN
                       </button>
                     </div>
                   )}
@@ -321,20 +366,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ================= MODAL CHO NHẬP/KIỂM/SỬA ================= */}
-      {activeModal && activeModal !== 'DELETE' && selectedItem && (
+      {/* ================= MODAL CHO TẠO/NHẬP/KIỂM/SỬA ================= */}
+      {activeModal && activeModal !== 'DELETE' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
             <div className={`px-6 py-4 border-b text-white ${
-              activeModal === 'IMPORT' ? 'bg-emerald-600' : activeModal === 'STOCKTAKE' ? 'bg-amber-600' : 'bg-gray-800'
+              activeModal === 'CREATE' ? 'bg-blue-600' :
+              activeModal === 'IMPORT' ? 'bg-emerald-600' : 
+              activeModal === 'STOCKTAKE' ? 'bg-amber-600' : 'bg-gray-800'
             }`}>
               <h3 className="font-bold uppercase tracking-wider text-sm">
+                {activeModal === 'CREATE' && '➕ Thêm nguyên liệu mới'}
                 {activeModal === 'IMPORT' && '📥 Nhập lô hàng mới'}
                 {activeModal === 'STOCKTAKE' && '⚖️ Kiểm kê / Điều chỉnh kho'}
                 {activeModal === 'EDIT' && '✏️ Sửa thông tin nguyên liệu'}
               </h3>
-              <p className="text-white/80 text-xs mt-1 font-medium">{selectedItem.name} (Đơn vị: {selectedItem.unit})</p>
+              <p className="text-white/80 text-xs mt-1 font-medium">
+                {activeModal === 'CREATE' ? 'Vui lòng điền thông tin nguyên liệu' : selectedItem && `${selectedItem.name} (Đơn vị: ${selectedItem.unit})`}
+              </p>
             </div>
 
             <form onSubmit={handleActionSubmit} className="p-6 space-y-5">
@@ -355,7 +405,7 @@ export default function DashboardPage() {
                         onChange={(e) => setAmount(e.target.value)}
                         className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-amber-500 transition pr-12"
                       />
-                      <span className="absolute right-4 top-3 text-sm font-bold text-gray-400">{selectedItem.unit}</span>
+                      <span className="absolute right-4 top-3 text-sm font-bold text-gray-400">{selectedItem?.unit}</span>
                     </div>
                   </div>
                   <div>
@@ -374,17 +424,17 @@ export default function DashboardPage() {
                 </>
               )}
 
-              {/* FORM CHO SỬA THÔNG TIN */}
-              {activeModal === 'EDIT' && (
+              {/* FORM CHO TẠO MỚI & SỬA THÔNG TIN */}
+              {(activeModal === 'EDIT' || activeModal === 'CREATE') && (
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Tên nguyên liệu:</label>
-                    <input type="text" required value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full border rounded-lg p-2.5 text-sm" />
+                    <input type="text" required value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} placeholder="VD: Cà phê hạt Robusta" className="w-full border rounded-lg p-2.5 text-sm" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Đơn vị đo:</label>
-                      <input type="text" required value={editForm.unit} onChange={(e) => setEditForm({...editForm, unit: e.target.value})} className="w-full border rounded-lg p-2.5 text-sm" />
+                      <input type="text" required value={editForm.unit} onChange={(e) => setEditForm({...editForm, unit: e.target.value})} placeholder="VD: kg, g, lít" className="w-full border rounded-lg p-2.5 text-sm" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Mức cảnh báo:</label>
@@ -403,7 +453,9 @@ export default function DashboardPage() {
                   HỦY BỎ
                 </button>
                 <button type="submit" disabled={isSubmitting} className={`px-6 py-2 text-sm font-bold text-white rounded-lg transition shadow-md disabled:bg-gray-400 ${
-                  activeModal === 'IMPORT' ? 'bg-emerald-600 hover:bg-emerald-700' : activeModal === 'STOCKTAKE' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-gray-800 hover:bg-gray-900'
+                  activeModal === 'CREATE' ? 'bg-blue-600 hover:bg-blue-700' :
+                  activeModal === 'IMPORT' ? 'bg-emerald-600 hover:bg-emerald-700' : 
+                  activeModal === 'STOCKTAKE' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-gray-800 hover:bg-gray-900'
                 }`}>
                   {isSubmitting ? 'ĐANG XỬ LÝ...' : 'LƯU THAY ĐỔI'}
                 </button>
@@ -449,7 +501,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 font-medium mb-4 flex items-start gap-2">
                   <span className="text-sm">✅</span>
-                  <span>Nguyên liệu này hiện chưa được gắn vào công thức món nước nào. Có thể xóa an toàn!</span>
+                  <span>Nguyên liệu này hiện chưa được gắn vào công thức món nước nào. Có thể ngưng sử dụng an toàn!</span>
                 </div>
               )}
 
@@ -463,7 +515,7 @@ export default function DashboardPage() {
                   disabled={isCheckingUsage || isSubmitting} 
                   className="px-6 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-md disabled:bg-gray-400"
                 >
-                  {isSubmitting ? 'ĐANG XÓA...' : 'VẪN XÓA'}
+                  {isSubmitting ? 'ĐANG XỬ LÝ...' : 'VẪN NGƯNG SỬ DỤNG'}
                 </button>
               </div>
             </div>

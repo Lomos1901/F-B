@@ -1,14 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 
-// 🌟 Thêm 'ingredients' vào đây để bắt trúng URL từ Frontend
-@Controller('ingredients')
+@Controller() // Để trống, không ghi chữ 'ingredients' vào đây nhé
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  async getHello(): Promise<any> {
-    // Gọi sang service để lấy cục dữ liệu bọc sẵn cấu trúc thành công
+  getHello(): string {
     return this.appService.getHello();
   }
 }

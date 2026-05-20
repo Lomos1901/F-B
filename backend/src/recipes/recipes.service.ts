@@ -1,16 +1,20 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { PostgrestResponse } from '@supabase/supabase-js';
 
 @Injectable()
 export class RecipesService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   // 1. Lưu công thức (Recipe) cho một món uống
-  async createRecipe(productId: string, ingredients: { ingredient_id: string; quantity_required: number }[]) {
+  async createRecipe(
+    productId: string,
+    ingredients: { ingredient_id: string; quantity_required: number }[],
+  ) {
     const client = this.supabaseService.getAdminClient();
 
     // Chuẩn bị mảng dữ liệu để insert hàng loạt (Bulk Insert) vào Supabase
-    const recipeData = ingredients.map(item => ({
+    const recipeData = ingredients.map((item) => ({
       product_id: productId,
       ingredient_id: item.ingredient_id,
       quantity_required: item.quantity_required,
@@ -23,7 +27,9 @@ export class RecipesService {
       .eq('product_id', productId);
 
     if (deleteError) {
-      throw new InternalServerErrorException('Lỗi làm sạch công thức cũ: ' + deleteError.message);
+      throw new InternalServerErrorException(
+        'Lỗi làm sạch công thức cũ: ' + deleteError.message,
+      );
     }
 
     // Tiến hành chèn công thức mới vào bảng public.recipes
@@ -33,7 +39,9 @@ export class RecipesService {
       .select();
 
     if (insertError) {
-      throw new InternalServerErrorException('Không thể lưu công thức món ăn: ' + insertError.message);
+      throw new InternalServerErrorException(
+        'Không thể lưu công thức món ăn: ' + insertError.message,
+      );
     }
 
     return {
@@ -47,13 +55,15 @@ export class RecipesService {
   async getRecipeByProduct(productId: string) {
     const client = this.supabaseService.getAdminClient();
 
-    const { data, error } = await client
+    const { data, error }: PostgrestResponse<any> = await client
       .from('recipes')
       .select('id, ingredient_id, quantity_required, ingredients(name, unit)')
       .eq('product_id', productId);
 
     if (error) {
-      throw new InternalServerErrorException('Lỗi lấy công thức món: ' + error.message);
+      throw new InternalServerErrorException(
+        'Lỗi lấy công thức món: ' + (error as Error).message,
+      );
     }
 
     return data;

@@ -10,15 +10,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isActive = (path: string) => pathname === path;
 
   // Hàm xử lý đăng xuất
-  const handleLogout = () => {
-    // Nếu có xài localStorage lưu token thì sau này mở comment ra để xóa
-    // localStorage.removeItem('token'); 
-    // localStorage.removeItem('user');
+  // Hàm xử lý đăng xuất chuẩn enterprise
+  const handleLogout = async () => {
+    // 1. Nếu bạn có dùng Supabase Auth, hãy gọi logout từ Supabase
+    // await supabase.auth.signOut();
 
-    // Đẩy văng ra trang Landing Page
-    router.push('/'); 
+    // 2. Xóa sạch mọi thứ lưu trong trình duyệt (LocalStorage & SessionStorage)
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 3. Xóa tất cả các Cookie liên quan đến domain hiện tại
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    // 4. CHỐT HẠ: Dùng window.location.href để ép trình duyệt tải lại hoàn toàn
+    // Việc tải lại này sẽ quét sạch mọi cache cũ của ứng dụng
+    window.location.href = '/login'; // Chuyển hướng về trang đăng nhập sau khi logout
   };
-
   return (
     <div className="flex h-screen bg-gray-50 font-sans antialiased">
       

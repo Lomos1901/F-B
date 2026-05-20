@@ -21,7 +21,7 @@ export const ingredientService = {
       if (!res.ok) throw new Error("Không thể kết nối đến server");
 
       const result = await res.json();
-      console.log("👉 Dữ liệu kho nhận được từ Backend:", result); // Thêm dòng này để xem ở F12 Console
+      console.log("👉 Dữ liệu kho nhận được từ Backend:", result);
 
       // Khắc phục lỗi cấu trúc: Nếu Backend trả về dạng mảng thẳng
       if (Array.isArray(result)) {

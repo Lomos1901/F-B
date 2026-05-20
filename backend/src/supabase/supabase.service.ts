@@ -1,10 +1,10 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseService {
-  private readonly supabaseAdmin: SupabaseClient;
+  private readonly supabaseAdmin: any;
 
   constructor(private configService: ConfigService) {
     const url = this.configService.get<string>('SUPABASE_URL');
@@ -20,12 +20,12 @@ export class SupabaseService {
     });
   }
 
-  getAdminClient(): SupabaseClient {
+  getAdminClient(): any {
     return this.supabaseAdmin;
   }
 
   // 2. Auth Client: BẮT BUỘC dùng cho các API thông thường để tuân thủ RLS
-  getClient(jwtToken: string): SupabaseClient {
+  getClient(jwtToken: string): any {
     const url = this.configService.get<string>('SUPABASE_URL')!;
     const key = this.configService.get<string>('SUPABASE_KEY')!; // Ở môi trường production nên dùng ANON_KEY
 
@@ -38,4 +38,4 @@ export class SupabaseService {
       },
     });
   }
-} 
+}
