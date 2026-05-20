@@ -14,7 +14,8 @@ export class InventoryLogService {
         `
         id,
         change_amount,
-        reason,
+        note,             
+        action_type,      
         created_at,
         performed_by,
         ingredients (
@@ -31,6 +32,7 @@ export class InventoryLogService {
       );
     }
 
+    // Trả thẳng mảng data về, Frontend của bạn đã có sẵn logic Array.isArray(data) để hứng chuẩn xác
     return data;
   }
 }

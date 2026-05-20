@@ -111,7 +111,7 @@ export class ProductsService {
         recipes (
           id,
           quantity,
-          ingredients (id, name, unit)
+          ingredients (id, name, unit)  
         )
       `,
       )

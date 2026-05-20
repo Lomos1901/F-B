@@ -8,7 +8,7 @@ interface InventoryLogEntry {
   id: string;
   created_at: string;
   change_amount: number; // Đã đồng bộ theo đúng tên cột trong Supabase
-  reason: string;
+  note: string;
   performed_by: string; 
   ingredients: {
     name: string;
@@ -158,7 +158,7 @@ export default function HistoryPage() {
                     
                     {/* Lý do */}
                     <td className="p-4 text-gray-700 font-medium">
-                      {log.reason || <span className="text-gray-400 italic">Không rõ lý do</span>}
+                      {log.note || <span className="text-gray-400 italic">Không rõ lý do</span>}
                     </td>
                     
                     {/* Người thực hiện */}

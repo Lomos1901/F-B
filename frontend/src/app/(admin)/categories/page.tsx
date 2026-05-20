@@ -83,7 +83,7 @@ export default function CategoriesPage() {
     }
   };
 
-  return (
+  return (  
     // 2. CHUYỂN TOÀN BỘ GIAO DIỆN SANG MÀU SÁNG
     <div className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans antialiased">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">

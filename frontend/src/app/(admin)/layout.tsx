@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span>⊕</span> Thêm món nước mới
           </Link> */}
           <Link href="/inventory-log" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/inventory-log') ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-amber-600'}`}>
-            <span>🕒</span> Lịch sử xuất nhập
+            <span>🕒</span> Lịch sử xuất nhập kho
           </Link>
         </div>
 

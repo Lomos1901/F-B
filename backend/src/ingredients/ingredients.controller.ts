@@ -1,26 +1,93 @@
-import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { IngredientsService } from './ingredients.service';
 // Import Guard bảo mật nếu bạn đã dựng sẵn (Ví dụ JwtAuthGuard)
 // Nếu chưa viết Guard bảo mật, tạm thời comment dòng dưới lại để chạy thử nghiệm
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; 
+// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('ingredients')
 // @UseGuards(JwtAuthGuard) // Kích hoạt dòng này nếu muốn bắt buộc đăng nhập mới gọi được API
 export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
 
-  // API: GET http://localhost:3001/ingredients
+  // 1. API: Lấy toàn bộ danh sách kho nguyên liệu (Đang hoạt động)
+  // GET http://localhost:3001/ingredients
   @Get()
   async getAll() {
-    return this.ingredientsService.getAllIngredients();
+    return this.ingredientsService.findAll();
   }
 
-  // API: PATCH http://localhost:3001/ingredients/:id/stock
-  @Patch(':id/stock')
-  async updateStock(
+  // 2. API: Lấy danh sách nguyên liệu đã ẩn (Kho lưu trữ)
+  // LƯU Ý: Phải đặt trên các Route có param :id để tránh lỗi điều hướng của NestJS
+  // GET http://localhost:3001/ingredients/archived
+  @Get('archived')
+  async getArchived() {
+    return this.ingredientsService.findArchived();
+  }
+
+  // 3. API: Cập nhật thông tin (Tên, Đơn vị, Định mức, Giá vốn) - Tuyệt đối không có sửa số lượng
+  // PATCH http://localhost:3001/ingredients/:id
+  @Patch(':id')
+  async updateMetadata(
     @Param('id') id: string,
-    @Body('quantity') quantity: number,
+    @Body()
+    body: {
+      name?: string;
+      unit?: string;
+      min_threshold?: number;
+      cost_per_unit?: number;
+    },
   ) {
-    return this.ingredientsService.updateStock(id, quantity);
+    return this.ingredientsService.updateMetadata(id, body);
+  }
+
+  // 4. API: Khôi phục nguyên liệu từ Kho lưu trữ
+  // PATCH http://localhost:3001/ingredients/:id/restore
+  @Patch(':id/restore')
+  async restore(@Param('id') id: string) {
+    return this.ingredientsService.restore(id);
+  }
+
+  // 5. API: Nhập hàng (Cộng thêm số lượng vào kho và sinh Log)
+  // POST http://localhost:3001/ingredients/:id/import
+  @Post(':id/import')
+  async importStock(
+    @Param('id') id: string,
+    @Body() body: { amount: number; note: string; performed_by?: string },
+  ) {
+    return this.ingredientsService.importStock(id, body);
+  }
+
+  // 6. API: Kiểm kho / Hủy hỏng (Cập nhật tồn kho theo số đếm thực tế và sinh Log độ lệch)
+  // POST http://localhost:3001/ingredients/:id/stocktake
+  @Post(':id/stocktake')
+  async stocktake(
+    @Param('id') id: string,
+    @Body()
+    body: { actual_quantity: number; note: string; performed_by?: string },
+  ) {
+    return this.ingredientsService.stocktake(id, body);
+  }
+
+  // 7. API Check sự phụ thuộc trước khi xóa
+  // GET http://localhost:3001/ingredients/:id/check-usage
+  @Get(':id/check-usage')
+  async checkUsage(@Param('id') id: string) {
+    return this.ingredientsService.checkDependencies(id);
+  }
+
+  // 8. API Xóa mềm nguyên liệu
+  // DELETE http://localhost:3001/ingredients/:id
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.ingredientsService.softDelete(id);
   }
 }
