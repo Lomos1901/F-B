@@ -47,7 +47,8 @@ export default function LoginPage() {
       alert(`Chào mừng ${activeUser.full_name || 'Nhân viên'} quay trở lại Sẫm Coffee!`);
       
       // Sử dụng router.push của Next.js để điều hướng mượt mà, không reload toàn trang
-      router.push('/dashboard');
+      // router.push('/dashboard');
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message);
     } finally {

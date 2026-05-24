@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Category {
@@ -9,7 +9,6 @@ interface Category {
   name: string;
 }
 
-// 1. Cập nhật Interface Ingredient theo đúng 3 cột quy đổi mới từ Database
 interface Ingredient {
   id: string;
   name: string;
@@ -23,40 +22,84 @@ interface RecipeInput {
   ui_quantity: number;
 }
 
-export default function AddProductWithRecipePage() {
+export default function EditProductPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+
+  // States quản lý dữ liệu gốc
   const [categories, setCategories] = useState<Category[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  
+  // States quản lý Form
   const [categoryId, setCategoryId] = useState('');
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState<number | ''>('');
   const [imageUrl, setImageUrl] = useState(''); 
-  const [recipeRows, setRecipeRows] = useState<RecipeInput[]>([
-    { ingredient_id: '', ui_quantity: 0 }
-  ]);
-  const [loading, setLoading] = useState(false);
+  const [recipeRows, setRecipeRows] = useState<RecipeInput[]>([]);
+  
+  // States trạng thái
+  const [fetchingData, setFetchingData] = useState(true); // Đang tải dữ liệu cũ
+  const [loading, setLoading] = useState(false); // Đang lưu dữ liệu
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // 1. Tự động tải dữ liệu khi vào trang
+  // 1. Tự động tải dữ liệu khi vào trang (Đã Tối Ưu Tốc Độ)
   useEffect(() => {
     const initData = async () => {
       try {
-        const resCat = await fetch('http://localhost:3001/categories');
+        // 🚀 BÍ QUYẾT Ở ĐÂY: Dùng Promise.all để gọi 3 API CÙNG LÚC
+        const [resCat, resIng, resProd] = await Promise.all([
+          fetch('http://localhost:3001/categories'),
+          fetch('http://localhost:3001/ingredients'),
+          fetch(`http://localhost:3001/products/${id}`)
+        ]);
+
+        // Xử lý dữ liệu Danh mục
         if (resCat.ok) {
           const dataCat = await resCat.json();
           setCategories(Array.isArray(dataCat) ? dataCat : (dataCat.data || []));
         }
-        const resIng = await fetch('http://localhost:3001/ingredients');
+        
+        // Xử lý dữ liệu Nguyên liệu
         if (resIng.ok) {
           const dataIng = await resIng.json();
           setIngredients(Array.isArray(dataIng) ? dataIng : (dataIng.data || []));
         }
+
+        // Xử lý dữ liệu Món nước
+        if (resProd.ok) {
+          const prodData = await resProd.json();
+          const product = prodData.data || prodData; 
+
+          setCategoryId(product.category_id || '');
+          setProductName(product.name || '');
+          setProductPrice(product.price || '');
+          setImageUrl(product.image_url || '');
+
+          if (product.recipes && product.recipes.length > 0) {
+            const loadedRecipes = product.recipes.map((rec: any) => ({
+              ingredient_id: rec.ingredient_id,
+              ui_quantity: rec.quantity
+            }));
+            setRecipeRows(loadedRecipes);
+          } else {
+            setRecipeRows([{ ingredient_id: '', ui_quantity: 0 }]); 
+          }
+        } else {
+          setMessage({ type: 'error', text: 'Không tìm thấy dữ liệu món nước này!' });
+        }
       } catch (e) {
         console.error('Lỗi tải dữ liệu:', e);
+        setMessage({ type: 'error', text: 'Lỗi kết nối máy chủ.' });
+      } finally {
+        setFetchingData(false);
       }
     };
-    initData();
-  }, []);
+    
+    if (id) initData();
+  }, [id]);
 
   const addRow = () => setRecipeRows([...recipeRows, { ingredient_id: '', ui_quantity: 0 }]);
   const removeRow = (index: number) => setRecipeRows(recipeRows.filter((_, i) => i !== index));
@@ -71,9 +114,8 @@ export default function AddProductWithRecipePage() {
     setRecipeRows(updated);
   };
 
-  // 2. Viết lại hàm lấy tên Đơn vị pha chế (không cần tính toán factor phức tạp nữa)
-  const getDisplayUnit = (id: string) => {
-    const ing = ingredients.find(i => i.id === id);
+  const getDisplayUnit = (ingId: string) => {
+    const ing = ingredients.find(i => i.id === ingId);
     return ing ? ing.recipe_unit : 'đơn vị';
   };
 
@@ -97,10 +139,10 @@ export default function AddProductWithRecipePage() {
         const data = await res.json();
         setImageUrl(data.imageUrl);
       } else {
-        setMessage({ type: 'error', text: 'Tải ảnh thất bại. Vui lòng thử lại.' });
+        setMessage({ type: 'error', text: 'Tải ảnh thất bại.' });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Lỗi kết nối API upload ảnh.' });
+      setMessage({ type: 'error', text: 'Lỗi API upload ảnh.' });
     } finally {
       setUploading(false);
     }
@@ -109,27 +151,23 @@ export default function AddProductWithRecipePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId || !productName.trim() || !productPrice) {
-      setMessage({ type: 'error', text: 'Vui lòng điền đầy đủ thông tin nhóm, tên món và giá bán!' });
+      setMessage({ type: 'error', text: 'Vui lòng điền đầy đủ thông tin!' });
       return;
     }
     const validRows = recipeRows.filter(row => row.ingredient_id !== '');
-    if (validRows.length === 0) {
-      setMessage({ type: 'error', text: 'Vui lòng cấu hình ít nhất một nguyên liệu pha chế!' });
-      return;
-    }
 
     setLoading(true);
     setMessage(null);
 
-    // 3. Gửi thẳng ui_quantity xuống Backend (không cần chia factor ở Frontend nữa)
     const processedIngredients = validRows.map(row => ({
       ingredient_id: row.ingredient_id,
       quantity_required: row.ui_quantity, 
     }));
 
     try {
-      const response = await fetch('http://localhost:3001/products/create-with-recipe', {
-        method: 'POST',
+      // 2. GỌI API ĐỂ CẬP NHẬT (Lưu ý: method PUT)
+      const response = await fetch(`http://localhost:3001/products/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category_id: categoryId,
@@ -141,18 +179,26 @@ export default function AddProductWithRecipePage() {
       });
 
       if (response.ok) {
-        alert('Thêm món mới và gán công thức thành công!');
+        alert('Cập nhật món nước thành công!');
         router.push('/products'); 
       } else {
         const result = await response.json();
         setMessage({ type: 'error', text: result.message || 'Lỗi xử lý hệ thống.' });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ Backend.' });
+      setMessage({ type: 'error', text: 'Không thể kết nối đến Backend.' });
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetchingData) {
+    return (
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
+        <div className="animate-pulse text-gray-500 font-mono text-sm">☕ Đang kéo dữ liệu từ kho...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans antialiased">
@@ -160,8 +206,7 @@ export default function AddProductWithRecipePage() {
         
         <div className="mb-6 flex justify-between items-end border-b border-gray-200 pb-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-wide text-amber-700 uppercase">Thêm món nước mới</h1>
-            <p className="text-sm text-gray-500 mt-1">Khởi tạo thực đơn thương mại & định mức khấu hao kho thô cho Sẫm Coffee.</p>
+            <h1 className="text-2xl font-bold tracking-wide text-amber-700 uppercase">Chỉnh sửa món nước</h1>
           </div>
           <Link href="/products" className="text-amber-600 font-bold text-xs uppercase hover:underline">
             ← Quay về danh sách
@@ -170,9 +215,7 @@ export default function AddProductWithRecipePage() {
 
         {message && (
           <div className={`p-4 rounded-lg mb-6 text-sm font-medium border shadow-sm ${
-            message.type === 'success' 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-              : 'bg-red-50 text-red-700 border-red-200'
+            message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
           }`}>
             {message.text}
           </div>
@@ -181,9 +224,8 @@ export default function AddProductWithRecipePage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           
           <div className="p-8 space-y-8">
-            {/* BƯỚC 1: THÔNG TIN THƯƠNG MẠI */}
             <div className="space-y-5">
-              <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">1. Thông tin thương mại thực đơn</h3>
+              <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">1. Thông tin thương mại</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -206,7 +248,6 @@ export default function AddProductWithRecipePage() {
                   <div className="relative">
                     <input
                       type="number"
-                      placeholder="Ví dụ: 35000"
                       value={productPrice}
                       onChange={(e) => setProductPrice(e.target.value !== '' ? Number(e.target.value) : '')}
                       className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-amber-500 shadow-sm transition pr-10"
@@ -220,7 +261,6 @@ export default function AddProductWithRecipePage() {
                   <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Tên món uống (*):</label>
                   <input
                     type="text"
-                    placeholder="Ví dụ: Cà Phê Muối Sẫm..."
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
                     className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500 shadow-sm transition"
@@ -229,7 +269,7 @@ export default function AddProductWithRecipePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Hình ảnh minh họa món:</label>
+                  <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Hình ảnh minh họa:</label>
                   <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-300 shadow-sm">
                     <div className="w-12 h-12 rounded-md bg-white border border-gray-200 flex items-center justify-center overflow-hidden text-gray-400 shrink-0">
                       {imageUrl ? (
@@ -254,17 +294,14 @@ export default function AddProductWithRecipePage() {
               </div>
             </div>
 
-            {/* BƯỚC 2: ĐỊNH LƯỢNG PHA CHẾ */}
             <div className="space-y-5 pt-4">
-              <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">2. Định lượng pha chế thực tế</h3>
+              <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">2. Định lượng pha chế</h3>
 
               <div className="space-y-3">
                 {recipeRows.map((row, index) => {
-                  // 4. Gọi hàm hiển thị đúng đơn vị pha chế (recipe_unit) lên form nhập
                   const displayUnit = getDisplayUnit(row.ingredient_id);
                   return (
                     <div key={index} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200 transition">
-                      
                       <div className="flex-1">
                         <select
                           value={row.ingredient_id}
@@ -274,8 +311,7 @@ export default function AddProductWithRecipePage() {
                           <option value="">-- Chọn nguyên liệu thô --</option>
                           {ingredients.map((ing) => (
                             <option key={ing.id} value={ing.id}>
-                              {/* Cập nhật UI Dropdown để hiển thị cả 2 đơn vị cho quản lý dễ nhìn */}
-                              {ing.name} 
+                              {ing.name} (Nhập: {ing.base_unit} ➜ Pha: {ing.recipe_unit})
                             </option>
                           ))}
                         </select>
@@ -285,7 +321,6 @@ export default function AddProductWithRecipePage() {
                         <input
                           type="number"
                           step="0.1"
-                          placeholder="Số lượng"
                           value={row.ui_quantity || ''}
                           onChange={(e) => handleRowChange(index, 'ui_quantity', e.target.value)}
                           className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm font-mono pr-14 text-right focus:ring-2 focus:ring-amber-500"
@@ -295,15 +330,13 @@ export default function AddProductWithRecipePage() {
                         </span>
                       </div>
 
-                      {recipeRows.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeRow(index)}
-                          className="px-3 py-2 text-red-500 bg-white border border-red-200 hover:bg-red-50 rounded-lg text-sm font-semibold transition"
-                        >
-                          Xóa
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeRow(index)}
+                        className="px-3 py-2 text-red-500 bg-white border border-red-200 hover:bg-red-50 rounded-lg text-sm font-semibold transition"
+                      >
+                        Xóa
+                      </button>
                     </div>
                   );
                 })}
@@ -312,23 +345,20 @@ export default function AddProductWithRecipePage() {
               <button
                 type="button"
                 onClick={addRow}
-                className="px-4 py-2 bg-white text-amber-600 border border-amber-200 hover:bg-amber-50 rounded-lg text-xs font-bold transition shadow-sm"
+                className="px-4 py-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg text-xs font-bold transition shadow-sm"
               >
                 ➕ THÊM NGUYÊN LIỆU
               </button>
             </div>
           </div>
 
-          <div className="bg-gray-50 border-t border-gray-200 px-8 py-5 flex justify-between items-center">
-            <p className="text-[11px] text-gray-500 font-mono hidden sm:block">
-              * Khấu hao được tính tự động dựa trên cấu hình kho.
-            </p>
+          <div className="bg-gray-50 border-t border-gray-200 px-8 py-5 flex justify-end">
             <button
               type="submit"
               disabled={loading || uploading}
-              className="w-full sm:w-auto px-8 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white font-bold text-xs tracking-wider uppercase rounded-xl transition shadow-md"
+              className="px-8 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white font-bold text-xs tracking-wider uppercase rounded-xl transition shadow-md"
             >
-              {loading ? 'ĐANG THIẾT LẬP...' : '🚀 HOÀN TẤT THÊM MÓN & CÔNG THỨC'}
+              {loading ? 'ĐANG LƯU...' : '💾 LƯU THAY ĐỔI'}
             </button>
           </div>
 

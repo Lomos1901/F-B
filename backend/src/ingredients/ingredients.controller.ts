@@ -35,7 +35,9 @@ export class IngredientsController {
     @Body()
     body: {
       name: string;
-      unit: string;
+      base_unit: string; // Thay thế unit cũ
+      recipe_unit: string; // Thêm mới
+      conversion_factor: number; // Thêm mới
       min_threshold: number;
       cost_per_unit: number;
     },
@@ -79,7 +81,9 @@ export class IngredientsController {
     @Body()
     body: {
       name?: string;
-      unit?: string;
+      base_unit?: string; // Thay thế unit cũ
+      recipe_unit?: string; // Thêm mới
+      conversion_factor?: number; // Thêm mới
       min_threshold?: number;
       cost_per_unit?: number;
     },
@@ -100,7 +104,8 @@ export class IngredientsController {
   async remove(@Param('id') id: string) {
     return this.ingredientsService.softDelete(id);
   }
-  // API: Xóa vĩnh viễn nguyên liệu
+
+  // 10. API: Xóa vĩnh viễn nguyên liệu
   // DELETE http://localhost:3001/ingredients/:id/hard
   @Delete(':id/hard')
   async hardRemove(@Param('id') id: string) {

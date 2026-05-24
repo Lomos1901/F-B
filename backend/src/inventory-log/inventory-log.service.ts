@@ -20,7 +20,9 @@ export class InventoryLogService {
         performed_by,
         ingredients (
           name,
-          unit
+          base_unit,
+          recipe_unit,
+          conversion_factor
         )
       `,
       )
@@ -31,7 +33,6 @@ export class InventoryLogService {
         'Lỗi khi lấy lịch sử kho: ' + error.message,
       );
     }
-
     // Trả thẳng mảng data về, Frontend của bạn đã có sẵn logic Array.isArray(data) để hứng chuẩn xác
     return data;
   }

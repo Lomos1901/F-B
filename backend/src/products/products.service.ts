@@ -1,7 +1,7 @@
 import {
   Injectable,
   InternalServerErrorException,
-  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -111,7 +111,7 @@ export class ProductsService {
         recipes (
           id,
           quantity,
-          ingredients (id, name, unit)  
+          ingredients (id, name, base_unit, recipe_unit, conversion_factor)  
         )
       `,
       )
@@ -124,5 +124,117 @@ export class ProductsService {
     }
 
     return data;
+  }
+  // 1. Hàm lấy chi tiết 1 món nước kèm công thức
+  async findOneWithRecipes(id: string) {
+    const client = this.supabaseService.getAdminClient();
+
+    const { data, error } = await client
+      .from('products')
+      .select(
+        `
+        *,
+        recipes (
+          id,
+          quantity,
+          ingredient_id,
+          ingredients (id, name, base_unit, recipe_unit, conversion_factor)
+        )
+      `,
+      )
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      // Đã dùng chuẩn class được import từ đầu file
+      throw new NotFoundException('Không tìm thấy dữ liệu món nước');
+    }
+
+    return data;
+  }
+
+  // 2. Hàm Cập nhật món nước (Xóa công thức cũ, chèn công thức mới)
+  async updateWithRecipe(id: string, body: any) {
+    const client = this.supabaseService.getAdminClient();
+
+    // A. Cập nhật thông tin cơ bản của món nước
+    const { error: productError } = await client
+      .from('products')
+      .update({
+        name: body.name,
+        price: body.price,
+        category_id: body.category_id,
+        image_url: body.image_url,
+      })
+      .eq('id', id);
+
+    if (productError) {
+      throw new InternalServerErrorException(
+        'Lỗi cập nhật món: ' + productError.message,
+      );
+    }
+
+    // B. XÓA toàn bộ công thức cũ của món này
+    const { error: deleteError } = await client
+      .from('recipes')
+      .delete()
+      .eq('product_id', id);
+
+    if (deleteError) {
+      throw new InternalServerErrorException(
+        'Lỗi xóa công thức cũ: ' + deleteError.message,
+      );
+    }
+
+    // C. CHÈN công thức mới vào (nếu có)
+    if (body.ingredients && body.ingredients.length > 0) {
+      const recipeInserts = body.ingredients.map((ing: any) => ({
+        product_id: id,
+        ingredient_id: ing.ingredient_id,
+        quantity: ing.quantity_required,
+      }));
+
+      const { error: recipeError } = await client
+        .from('recipes')
+        .insert(recipeInserts);
+
+      if (recipeError) {
+        throw new InternalServerErrorException(
+          'Lỗi thêm công thức mới: ' + recipeError.message,
+        );
+      }
+    }
+
+    return { status: 'success', message: 'Cập nhật thành công!' };
+  }
+  // Hàm xóa món nước và các công thức đi kèm
+  async removeProduct(id: string) {
+    const client = this.supabaseService.getAdminClient();
+
+    // 1. Xóa tất cả công thức (recipes) liên quan đến món này trước
+    const { error: deleteRecipeError } = await client
+      .from('recipes')
+      .delete()
+      .eq('product_id', id);
+
+    if (deleteRecipeError) {
+      throw new InternalServerErrorException(
+        'Lỗi khi dọn dẹp công thức cũ: ' + deleteRecipeError.message,
+      );
+    }
+
+    // 2. Sau đó mới xóa món nước (product)
+    const { error: deleteProductError } = await client
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (deleteProductError) {
+      throw new InternalServerErrorException(
+        'Lỗi khi xóa món nước: ' + deleteProductError.message,
+      );
+    }
+
+    return { status: 'success', message: 'Đã xóa món nước vĩnh viễn' };
   }
 }

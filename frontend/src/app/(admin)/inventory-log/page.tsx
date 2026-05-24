@@ -7,22 +7,16 @@ import { vi } from 'date-fns/locale';
 interface InventoryLogEntry {
   id: string;
   created_at: string;
-  change_amount: number; // Đã đồng bộ theo đúng tên cột trong Supabase
+  change_amount: number; 
   note: string;
   performed_by: string; 
   ingredients: {
     name: string;
-    unit: string;
+    base_unit: string;
+    recipe_unit: string;
+    conversion_factor: number;
   } | null;
 }
-
-const UNIT_DISPLAY_CONVERSIONS: Record<string, { displayUnit: string; factor: number }> = {
-  'kg': { displayUnit: 'g', factor: 1000 },
-  'lít': { displayUnit: 'ml', factor: 1000 },
-  'lon': { displayUnit: 'ml', factor: 380 },
-  'chai': { displayUnit: 'ml', factor: 750 },
-  'hộp': { displayUnit: 'g', factor: 500 },
-};
 
 export default function HistoryPage() {
   const [logs, setLogs] = useState<InventoryLogEntry[]>([]);
@@ -51,20 +45,21 @@ export default function HistoryPage() {
     fetchLogs();
   }, []);
 
-  const formatAction = (change: number, unit: string | undefined) => {
+  // Hàm định dạng hiển thị Nhập/Xuất dựa trên bộ 3 quy đổi mới
+  const formatAction = (change: number, ingredient: InventoryLogEntry['ingredients']) => {
     const isImport = change > 0;
     const absChange = Math.abs(change);
     let displayText = '';
 
-    if (!unit) {
-      displayText = `${change}`;
+    if (!ingredient) {
+      displayText = `${absChange}`; // Nếu nguyên liệu đã bị xóa, chỉ hiện số
+    } else if (isImport) {
+      // Nếu Nhập kho -> Hiển thị theo đơn vị thương mại (base_unit)
+      displayText = `${absChange} ${ingredient.base_unit}`;
     } else {
-      const conv = UNIT_DISPLAY_CONVERSIONS[unit.toLowerCase()];
-      if (conv) {
-        displayText = `${absChange * conv.factor} ${conv.displayUnit}`;
-      } else {
-        displayText = `${absChange} ${unit}`;
-      }
+      // Nếu Xuất kho -> Hiển thị theo đơn vị pha chế (recipe_unit) bằng cách nhân với factor
+      const usageAmount = absChange * ingredient.conversion_factor;
+      displayText = `${usageAmount} ${ingredient.recipe_unit}`;
     }
 
     if (isImport) {
@@ -95,7 +90,7 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans antialiased">
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER TRANG SÁNG */}
+        {/* HEADER */}
         <div className="mb-8 border-b border-gray-200 pb-5">
           <h1 className="text-2xl font-bold text-amber-700 tracking-wide uppercase">
             🕒 Nhật ký vận hành kho thô
@@ -147,13 +142,14 @@ export default function HistoryPage() {
                         {log.ingredients?.name || <span className="text-gray-400 italic">(Đã xóa)</span>}
                       </div>
                       <div className="text-[10px] text-gray-500 uppercase mt-0.5">
-                        Đơn vị gốc: {log.ingredients?.unit || 'N/A'}
+                        Kho: {log.ingredients ? `${log.ingredients.base_unit} ➜ ${log.ingredients.recipe_unit}` : 'N/A'}
                       </div>
                     </td>
                     
                     {/* Hành động & Số lượng */}
                     <td className="p-4">
-                      {formatAction(log.change_amount, log.ingredients?.unit)}
+                      {/* Truyền toàn bộ object ingredient vào hàm xử lý */}
+                      {formatAction(log.change_amount, log.ingredients)}
                     </td>
                     
                     {/* Lý do */}

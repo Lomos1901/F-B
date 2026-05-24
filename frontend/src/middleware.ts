@@ -12,14 +12,15 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/login") || pathname.startsWith("/register");
   const isPublicPage = pathname === "/" || pathname.startsWith("/qr-order");
 
-  // 1. Nếu chưa đăng nhập mà cố vào các trang quản lý (ví dụ: /admin, /dashboard, /history) -> Đẩy về /login
+  // 1. Nếu chưa đăng nhập mà cố vào các trang quản lý (ví dụ: /dashboard, /history) -> Đẩy về /login
   if (!token && !isAuthPage && !isPublicPage) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 2. Nếu đã đăng nhập mà lại vào trang /login hoặc /register -> Đẩy vào trang chủ của Admin (hoặc dashboard)
+  // 2. Nếu đã đăng nhập mà lại vào trang /login hoặc /register -> Đẩy thẳng vào /dashboard
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL("/(admin)/dashboard", request.url)); // Sửa lại đường dẫn theo cấu trúc route của bạn
+    // Đã xóa chữ /(admin) đi, Next.js sẽ tự động hiểu và tìm đúng file bên trong thư mục (admin)
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

@@ -1,8 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Ingredient } from '../../../types/ingredient';
 import { ingredientService } from '../../../services/ingredientService';
+
+// Định nghĩa Interface nếu chưa có (Để TypeScript không báo lỗi đỏ)
+interface Ingredient {
+  id: string;
+  name: string;
+  stock_quantity: number;
+  min_threshold: number;
+  cost_per_unit: number;
+  base_unit: string;
+  recipe_unit: string;
+  conversion_factor: number;
+  unit?: string; // Giữ lại dự phòng nếu code cũ đang gọi item.unit
+}
 
 type ModalType = 'IMPORT' | 'STOCKTAKE' | 'EDIT' | 'DELETE' | 'CREATE' | null;
 type ViewMode = 'ACTIVE' | 'ARCHIVED';
@@ -11,37 +23,36 @@ export default function DashboardPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
-  // State quản lý chế độ xem (Tab)
   const [viewMode, setViewMode] = useState<ViewMode>('ACTIVE');
 
-  // State quản lý Modal và dữ liệu đang thao tác
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedItem, setSelectedItem] = useState<Ingredient | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State cho Form Nhập/Kiểm kho
   const [amount, setAmount] = useState<number | ''>('');
   const [note, setNote] = useState('');
 
-  // State cho Form Sửa thông tin & Tạo mới
-  const [editForm, setEditForm] = useState({ name: '', unit: '', min_threshold: 0, cost_per_unit: 0 });
+  const [editForm, setEditForm] = useState({ 
+    name: '', 
+    base_unit: '', 
+    recipe_unit: '', 
+    conversion_factor: 1, 
+    min_threshold: 0, 
+    cost_per_unit: 0 
+  });
 
-  // State quản lý cảnh báo khi xóa
   const [deleteWarnings, setDeleteWarnings] = useState<string[]>([]);
   const [isCheckingUsage, setIsCheckingUsage] = useState(false);
   
-  // Hàm lấy dữ liệu phụ thuộc vào Tab hiện tại
+  // 🌟 ĐÃ REFACTOR: Dùng Service lấy dữ liệu
   const fetchIngredients = async () => {
     setLoading(true);
     try {
-      if (viewMode === 'ACTIVE') {
-        const data = await ingredientService.getAll();
-        setIngredients(Array.isArray(data) ? data : (data.data || []));
-      } else {
-        const res = await fetch('http://localhost:3001/ingredients/archived');
-        const data = await res.json();
-        setIngredients(Array.isArray(data) ? data : (data.data || []));
-      }
+      const data = viewMode === 'ACTIVE' 
+        ? await ingredientService.getAll() 
+        : await ingredientService.getArchived();
+        
+      setIngredients(Array.isArray(data) ? data : (data.data || []));
     } catch (err) {
       console.error('Lỗi lấy dữ liệu kho:', err);
     } finally {
@@ -55,8 +66,8 @@ export default function DashboardPage() {
 
   // --- CÁC HÀM XỬ LÝ MỞ MODAL ---
   const openCreateModal = () => {
-    setSelectedItem(null); 
-    setEditForm({ name: '', unit: '', min_threshold: 0, cost_per_unit: 0 }); 
+    setSelectedItem(null);
+    setEditForm({ name: '', base_unit: '', recipe_unit: '', conversion_factor: 1, min_threshold: 0, cost_per_unit: 0 }); 
     setActiveModal('CREATE');
   };
 
@@ -74,17 +85,20 @@ export default function DashboardPage() {
     setActiveModal('STOCKTAKE');
   };
 
-  const openEditModal = (item: Ingredient) => {
+  const openEditModal = (item: any) => { 
     setSelectedItem(item);
     setEditForm({
-      name: item.name,
-      unit: item.unit,
+      name: item.name || '',
+      base_unit: item.base_unit || '',
+      recipe_unit: item.recipe_unit || '',
+      conversion_factor: item.conversion_factor || 1,
       min_threshold: item.min_threshold || 0,
       cost_per_unit: item.cost_per_unit || 0,
     });
     setActiveModal('EDIT');
   };
 
+  // 🌟 ĐÃ REFACTOR: Dùng Service kiểm tra ràng buộc xóa
   const openDeleteModal = async (item: Ingredient) => {
     setSelectedItem(item);
     setActiveModal('DELETE');
@@ -92,15 +106,12 @@ export default function DashboardPage() {
     setDeleteWarnings([]);
 
     try {
-      const res = await fetch(`http://localhost:3001/ingredients/${item.id}/check-usage`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.is_used) {
-          setDeleteWarnings(data.used_in);
-        }
+      const data = await ingredientService.checkUsage(item.id);
+      if (data.is_used) {
+        setDeleteWarnings(data.used_in);
       }
     } catch (error) {
-      console.error('Lỗi khi check dependencies');
+      console.error('Lỗi khi check dependencies', error);
     } finally {
       setIsCheckingUsage(false);
     }
@@ -111,126 +122,81 @@ export default function DashboardPage() {
     setSelectedItem(null);
   };
 
-  // --- CÁC HÀM SUBMIT GỌI API BACKEND ---
+  // 🌟 ĐÃ REFACTOR: Dùng Service xử lý submit form
   const handleActionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!selectedItem && activeModal !== 'CREATE') return; 
     
     setIsSubmitting(true);
 
     try {
-      let res;
-      
       if (activeModal === 'CREATE') {
-        res = await fetch(`http://localhost:3001/ingredients`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editForm),
-        });
+        await ingredientService.create(editForm);
       } else if (activeModal === 'IMPORT' && selectedItem) {
-        res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}/import`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: Number(amount), note }),
-        });
+        await ingredientService.importStock(selectedItem.id, Number(amount), note);
       } else if (activeModal === 'STOCKTAKE' && selectedItem) {
-        res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}/stocktake`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ actual_quantity: Number(amount), note }),
-        });
+        await ingredientService.stocktake(selectedItem.id, Number(amount), note);
       } else if (activeModal === 'EDIT' && selectedItem) {
-        res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editForm),
-        });
+        await ingredientService.update(selectedItem.id, editForm);
       }
 
-      if (res?.ok) {
-        alert('Thao tác thành công!');
-        closeModal();
-        fetchIngredients(); 
-      } else {
-        const errData = await res?.json();
-        alert('Lỗi: ' + (errData?.message || 'Không thể xử lý yêu cầu'));
-      }
-    } catch (error) {
-      alert('Lỗi kết nối máy chủ!');
+      alert('Thao tác thành công!');
+      closeModal();
+      fetchIngredients(); 
+    } catch (error: any) {
+      alert(`Lỗi: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 🌟 ĐÃ REFACTOR: Dùng Service xử lý xóa
   const confirmDelete = async () => {
     if (!selectedItem) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:3001/ingredients/${selectedItem.id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        alert('Đã ngưng sử dụng nguyên liệu!');
-        closeModal();
-        setIngredients(prev => prev.filter(item => item.id !== selectedItem.id));
-        await fetchIngredients();
-      }
-    } catch (error) {
-      alert('Lỗi kết nối!');
+      await ingredientService.delete(selectedItem.id);
+      alert('Đã ngưng sử dụng nguyên liệu!');
+      closeModal();
+      fetchIngredients();
+    } catch (error: any) {
+      alert(`Lỗi: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 🌟 ĐÃ REFACTOR: Dùng Service xử lý khôi phục
   const handleRestore = async (id: string) => {
     if (!confirm('Bạn có chắc chắn muốn khôi phục nguyên liệu này không?')) return;
-    
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/ingredients/${id}/restore`, {
-        method: 'PATCH',
-      });
-      if (res.ok) {
-        alert('Khôi phục thành công! Nguyên liệu đã trở lại kho hoạt động.');
-        fetchIngredients();
-      } else {
-        alert('Có lỗi xảy ra khi khôi phục!');
-      }
-    } catch (error) {
-      alert('Lỗi kết nối máy chủ!');
+      await ingredientService.restore(id);
+      alert('Khôi phục thành công! Nguyên liệu đã trở lại kho hoạt động.');
+      fetchIngredients();
+    } catch (error: any) {
+      alert(`Lỗi: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // TÍNH NĂNG MỚI: XÓA VĨNH VIỄN
+  // 🌟 ĐÃ REFACTOR: Dùng Service xử lý xóa cứng
   const handleHardDelete = async (id: string) => {
     if (!confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn nguyên liệu này? Hành động này không thể hoàn tác!')) return;
-    
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/ingredients/${id}/hard`, {
-        method: 'DELETE',
-      });
-      
-      const result = await res.json().catch(() => ({}));
-
-      if (res.ok) {
-        alert('Đã xóa vĩnh viễn thành công!');
-        // Cập nhật giao diện ngay lập tức để ẩn món bị xóa
-        setIngredients(prev => prev.filter(item => item.id !== id));
-      } else {
-        // Hiển thị thông báo lỗi từ Backend (ví dụ: bị dính khóa ngoại)
-        alert('Lỗi: ' + (result.message || 'Không thể xóa vĩnh viễn do dữ liệu đang bị ràng buộc.'));
-      }
-    } catch (error) {
-      alert('Lỗi kết nối máy chủ!');
+      await ingredientService.hardDelete(id);
+      alert('Đã xóa vĩnh viễn thành công!');
+      fetchIngredients();
+    } catch (error: any) {
+      alert(`Lỗi: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+  // GIAO DIỆN HIỂN THỊ (Giữ nguyên không thay đổi)
   return (
     <main className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans relative">
       <div className="max-w-6xl mx-auto">
@@ -310,17 +276,17 @@ export default function DashboardPage() {
                       <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100">
                         <span className="text-gray-600 font-medium text-xs uppercase">Tồn kho hiện tại:</span>
                         <span className={`font-mono font-black text-base ${viewMode === 'ARCHIVED' ? 'text-gray-600' : isLow ? 'text-red-600' : 'text-emerald-600'}`}>
-                          {item.stock_quantity} {item.unit}
+                          {item.stock_quantity} {item.unit || item.base_unit}
                         </span>
                       </div>
                       <div className="flex justify-between items-center px-1">
                         <span className="text-gray-500 text-xs">Định mức tối thiểu:</span>
-                        <span className="text-gray-700 font-semibold text-xs">{item.min_threshold} {item.unit}</span>
+                        <span className="text-gray-700 font-semibold text-xs">{item.min_threshold} {item.unit || item.base_unit}</span>
                       </div>
                       <div className="flex justify-between items-center px-1">
                         <span className="text-gray-500 text-xs">Giá vốn tham chiếu:</span>
                         <span className="text-amber-700 font-mono font-bold text-xs">
-                          {Number(item.cost_per_unit || 0).toLocaleString('vi-VN')} đ/{item.unit}
+                          {Number(item.cost_per_unit || 0).toLocaleString('vi-VN')} đ/{item.unit || item.base_unit}
                         </span>
                       </div>
                     </div>
@@ -343,7 +309,6 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   ) : (
-                    /* CẬP NHẬT: 2 NÚT CHO KHO LƯU TRỮ */
                     <div className="grid grid-cols-2 gap-2 mt-auto border-t border-gray-200 pt-4">
                       <button onClick={() => handleRestore(item.id)} className="w-full py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-xs font-bold uppercase transition flex justify-center items-center gap-2 shadow-sm">
                         <span className="text-sm">🔄</span> KHÔI PHỤC
@@ -383,7 +348,7 @@ export default function DashboardPage() {
                 {activeModal === 'EDIT' && '✏️ Sửa thông tin nguyên liệu'}
               </h3>
               <p className="text-white/80 text-xs mt-1 font-medium">
-                {activeModal === 'CREATE' ? 'Vui lòng điền thông tin nguyên liệu' : selectedItem && `${selectedItem.name} (Đơn vị: ${selectedItem.unit})`}
+                {activeModal === 'CREATE' ? 'Vui lòng điền thông tin nguyên liệu' : selectedItem && `${selectedItem.name} (Đơn vị: ${selectedItem.base_unit || selectedItem.unit})`}
               </p>
             </div>
 
@@ -402,10 +367,10 @@ export default function DashboardPage() {
                         step="0.01"
                         required
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-amber-500 transition pr-12"
                       />
-                      <span className="absolute right-4 top-3 text-sm font-bold text-gray-400">{selectedItem?.unit}</span>
+                      <span className="absolute right-4 top-3 text-sm font-bold text-gray-400">{selectedItem?.base_unit || selectedItem?.unit}</span>
                     </div>
                   </div>
                   <div>
@@ -431,19 +396,40 @@ export default function DashboardPage() {
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Tên nguyên liệu:</label>
                     <input type="text" required value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} placeholder="VD: Cà phê hạt Robusta" className="w-full border rounded-lg p-2.5 text-sm" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Đơn vị đo:</label>
-                      <input type="text" required value={editForm.unit} onChange={(e) => setEditForm({...editForm, unit: e.target.value})} placeholder="VD: kg, g, lít" className="w-full border rounded-lg p-2.5 text-sm" />
+                  
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-3">
+                      ⚙️ Cấu hình quy đổi pha chế
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-[10px] text-gray-500 font-semibold mb-1">ĐƠN VỊ TỒN KHO</label>
+                        <input type="text" required value={editForm.base_unit} onChange={(e) => setEditForm({...editForm, base_unit: e.target.value})} placeholder="VD: chai, kg..." className="w-full border border-gray-300 rounded-lg p-2 text-sm text-center font-bold" />
+                      </div>
+                      <div className="pt-5 font-black text-gray-400">=</div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] text-gray-500 font-semibold mb-1">TỶ LỆ QUY ĐỔI</label>
+                        <input type="number" required min="0.01" step="0.01" value={editForm.conversion_factor} onChange={(e) => setEditForm({...editForm, conversion_factor: Number(e.target.value)})} placeholder="VD: 750" className="w-full border border-gray-300 rounded-lg p-2 text-sm font-mono text-center text-amber-600 font-bold" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] text-gray-500 font-semibold mb-1">ĐƠN VỊ PHA CHẾ</label>
+                        <input type="text" required value={editForm.recipe_unit} onChange={(e) => setEditForm({...editForm, recipe_unit: e.target.value})} placeholder="VD: ml, g..." className="w-full border border-gray-300 rounded-lg p-2 text-sm text-center font-bold" />
+                      </div>
                     </div>
+                    <p className="text-[11px] text-gray-500 mt-3 italic text-center">
+                      💡 Đọc là: 1 <strong className="text-gray-700">{editForm.base_unit || '[Đơn vị nhập]'}</strong> = <strong className="text-amber-600">{editForm.conversion_factor || 0}</strong> <strong className="text-gray-700">{editForm.recipe_unit || '[Đơn vị pha]'}</strong>.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Mức cảnh báo:</label>
                       <input type="number" required value={editForm.min_threshold} onChange={(e) => setEditForm({...editForm, min_threshold: Number(e.target.value)})} className="w-full border rounded-lg p-2.5 text-sm font-mono" />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Giá vốn (VNĐ/Đơn vị):</label>
-                    <input type="number" required value={editForm.cost_per_unit} onChange={(e) => setEditForm({...editForm, cost_per_unit: Number(e.target.value)})} className="w-full border rounded-lg p-2.5 text-sm font-mono" />
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Giá vốn (VNĐ/{editForm.base_unit || 'ĐV'}):</label>
+                      <input type="number" required value={editForm.cost_per_unit} onChange={(e) => setEditForm({...editForm, cost_per_unit: Number(e.target.value)})} className="w-full border rounded-lg p-2.5 text-sm font-mono" />
+                    </div>
                   </div>
                 </>
               )}

@@ -18,7 +18,6 @@ export class IngredientsService {
       .select('*')
       .eq('is_active', true)
       .order('name', { ascending: true });
-    // THÊM DÒNG NÀY ĐỂ DEBUG:
 
     if (error) throw new InternalServerErrorException(error.message);
     return { status: 'Thành công', record_count: data.length, data: data };
@@ -37,10 +36,12 @@ export class IngredientsService {
     return { status: 'Thành công', record_count: data.length, data: data };
   }
 
-  // 3. TẠO MỚI NGUYÊN LIỆU (API BẠN ĐANG BỊ THIẾU)
+  // 3. TẠO MỚI NGUYÊN LIỆU (Đã cập nhật theo logic ERP mới)
   async create(body: {
     name: string;
-    unit: string;
+    base_unit: string; // Cập nhật từ unit
+    recipe_unit: string; // Thêm mới
+    conversion_factor: number; // Thêm mới
     min_threshold: number;
     cost_per_unit: number;
   }) {
@@ -49,10 +50,12 @@ export class IngredientsService {
       .from('ingredients')
       .insert({
         name: body.name,
-        unit: body.unit,
+        base_unit: body.base_unit,
+        recipe_unit: body.recipe_unit,
+        conversion_factor: body.conversion_factor,
         min_threshold: body.min_threshold,
         cost_per_unit: body.cost_per_unit,
-        stock_quantity: 0, // Mặc định tạo mới thì kho bằng 0
+        stock_quantity: 0,
         is_active: true,
       })
       .select()
@@ -65,12 +68,14 @@ export class IngredientsService {
     return { message: 'Tạo nguyên liệu thành công', data };
   }
 
-  // 4. Cập nhật thông tin
+  // 4. Cập nhật thông tin (Đã cập nhật theo logic ERP mới)
   async updateMetadata(
     id: string,
     body: {
       name?: string;
-      unit?: string;
+      base_unit?: string; // Cập nhật từ unit
+      recipe_unit?: string; // Thêm mới
+      conversion_factor?: number; // Thêm mới
       min_threshold?: number;
       cost_per_unit?: number;
     },
@@ -80,7 +85,9 @@ export class IngredientsService {
       .from('ingredients')
       .update({
         name: body.name,
-        unit: body.unit,
+        base_unit: body.base_unit,
+        recipe_unit: body.recipe_unit,
+        conversion_factor: body.conversion_factor,
         min_threshold: body.min_threshold,
         cost_per_unit: body.cost_per_unit,
       })
@@ -236,13 +243,10 @@ export class IngredientsService {
   async hardDelete(id: string) {
     const client = this.supabaseService.getAdminClient();
 
-    // Lệnh này sẽ xóa thực sự dòng dữ liệu ra khỏi bảng
     const { error } = await client.from('ingredients').delete().eq('id', id);
 
     if (error) {
-      // Bắt lỗi nếu nguyên liệu này đang bị dính khóa ngoại (đã từng nhập kho/có công thức)
       if (error.code === '23503') {
-        // Mã lỗi 23503 của PostgreSQL là Foreign Key Violation
         throw new BadRequestException(
           'Không thể xóa vĩnh viễn! Nguyên liệu này đã có lịch sử nhập/xuất kho hoặc đang nằm trong công thức.',
         );
