@@ -1,14 +1,19 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  private readonly client: SupabaseClient;
 
-  // 1. Lấy toàn bộ danh sách danh mục (để đổ vào Sidebar hoặc Dropdown chọn nhóm nước)
+  constructor(private readonly supabaseService: SupabaseService) {
+    this.client = this.supabaseService.getAdminClient();
+  }
+
   async getAll() {
-    const client = this.supabaseService.getAdminClient();
-    const { data, error } = await client
+    const { data, error } = await this.client
       .from('categories')
       .select('*')
       .order('name', { ascending: true });
@@ -17,33 +22,46 @@ export class CategoriesService {
     return data;
   }
 
-  // 2. Thêm một danh mục mới (Ví dụ: Coffee, Trà Sữa)
-  async create(name: string, description?: string) {
-    const client = this.supabaseService.getAdminClient();
-    const { data, error } = await client
+  async create(createCategoryDto: CreateCategoryDto) {
+    const { data, error } = await this.client
       .from('categories')
-      .insert({ name, description })
+      .insert(createCategoryDto)
       .select()
       .single();
 
     if (error) {
-      if (error.code === '23505') { // Mã lỗi trùng Unique tên danh mục trên Postgres
+      if (error.code === '23505') {
         throw new BadRequestException('Tên danh mục này đã tồn tại trên hệ thống!');
       }
       throw new InternalServerErrorException('Lỗi tạo danh mục: ' + error.message);
     }
-    return { status: 'success', message: 'Tạo danh mục thành công!', data };
+    return data;
   }
 
-  // 3. Xóa một danh mục (Hệ thống tự động set NULL các món thuộc danh mục này nhờ ON DELETE SET NULL)
+  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+    const { data, error } = await this.client
+      .from('categories')
+      .update(updateCategoryDto)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST204') { // No rows found
+        throw new NotFoundException(`Không tìm thấy danh mục với ID: ${id}`);
+      }
+      throw new InternalServerErrorException('Lỗi cập nhật danh mục: ' + error.message);
+    }
+    return data;
+  }
+
   async delete(id: string) {
-    const client = this.supabaseService.getAdminClient();
-    const { error } = await client
+    const { error } = await this.client
       .from('categories')
       .delete()
       .eq('id', id);
 
     if (error) throw new InternalServerErrorException('Lỗi xóa danh mục: ' + error.message);
-    return { status: 'success', message: 'Xóa danh mục thành công!' };
+    return { message: 'Xóa danh mục thành công!' };
   }
 }

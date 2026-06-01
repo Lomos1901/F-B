@@ -1,18 +1,18 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { RegisterDto, LoginDto } from './dto/auth.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() body: Record<string, any>) {
-    // Thực tế nên dùng class DTO + class-validator
-    return this.authService.register(body.email, body.password, body.fullName);
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto.email, registerDto.password, registerDto.fullName);
   }
 
   @Post('login')
-  async login(@Body() body: Record<string, any>) {
-    return this.authService.login(body.email, body.password);
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto.email, loginDto.password);
   }
 }

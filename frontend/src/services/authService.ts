@@ -11,20 +11,25 @@ export const login = async (email, password) => {
   const data = await res.json();
 
   if (!res.ok) {
+    // Xử lý lỗi chi tiết từ NestJS
+    if (data.message && Array.isArray(data.message)) {
+      throw new Error(data.message.join(', '));
+    }
     throw new Error(data.message || 'Đăng nhập thất bại');
   }
 
-  const activeToken = data.token || data.access_token || data.data?.token || data.data?.access_token;
-  const activeUser = data.user || data.data?.user || data.data || { full_name: "Nhân viên", role: "staff" };
+  // Chỗ này cần sửa lại để lấy đúng token tùy chỉnh
+  const accessToken = data.access_token;
+  const user = data.user;
 
-  if (!activeToken) {
-    throw new Error('Đăng nhập thành công nhưng hệ thống không tìm thấy mã Token xác thực!');
+  if (!accessToken || !user) {
+    throw new Error('Đăng nhập thành công nhưng không nhận được thông tin xác thực.');
   }
 
-  Cookies.set('access_token', activeToken, { expires: 1 });
-  Cookies.set('user', JSON.stringify(activeUser), { expires: 1 });
+  Cookies.set('access_token', accessToken, { expires: 1 });
+  Cookies.set('user', JSON.stringify(user), { expires: 1 });
 
-  return activeUser;
+  return user;
 };
 
 export const register = async (email, password, fullName) => {
@@ -37,6 +42,11 @@ export const register = async (email, password, fullName) => {
   const data = await res.json();
 
   if (!res.ok) {
+    // Xử lý lỗi chi tiết từ NestJS ValidationPipe
+    // data.message lúc này sẽ là một mảng các chuỗi lỗi
+    if (data.message && Array.isArray(data.message)) {
+      throw new Error(data.message.join(', '));
+    }
     throw new Error(data.message || 'Đăng ký thất bại');
   }
 

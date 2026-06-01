@@ -1,42 +1,36 @@
-// src/services/ingredientService.ts
+import Cookies from 'js-cookie';
 
 const API_URL = 'http://localhost:3001/ingredients';
 
-const getToken = () => {
-  if (typeof window !== 'undefined') {
-    const Cookies = require('js-cookie');
-    return Cookies.get('access_token');
+const getAuthHeaders = () => {
+  const token = Cookies.get('access_token');
+  if (!token) {
+    // Có thể xử lý chuyển hướng về trang login ở đây nếu cần
+    console.error("Access token not found.");
   }
-  return null;
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
 };
 
 export const ingredientService = {
   async getAll() {
-    const token = getToken();
-    const res = await fetch(API_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(API_URL, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch ingredients');
     return res.json();
   },
 
   async getArchived() {
-    const token = getToken();
-    const res = await fetch(`${API_URL}/archived`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(`${API_URL}/archived`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch archived ingredients');
     return res.json();
   },
 
   async create(data) {
-    const token = getToken();
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) {
@@ -47,13 +41,9 @@ export const ingredientService = {
   },
 
   async update(id, data) {
-    const token = getToken();
     const res = await fetch(`${API_URL}/${id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) {
@@ -64,10 +54,9 @@ export const ingredientService = {
   },
 
   async delete(id) {
-    const token = getToken();
     const res = await fetch(`${API_URL}/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -77,10 +66,9 @@ export const ingredientService = {
   },
 
   async restore(id) {
-    const token = getToken();
-    const res = await fetch(`${API_URL}/restore/${id}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await fetch(`${API_URL}/${id}/restore`, {
+      method: 'PATCH', // Sửa từ POST thành PATCH cho đúng với controller
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -90,10 +78,9 @@ export const ingredientService = {
   },
 
   async hardDelete(id) {
-    const token = getToken();
-    const res = await fetch(`${API_URL}/hard-delete/${id}`, {
+    const res = await fetch(`${API_URL}/${id}/hard`, { // Sửa đường dẫn
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: getAuthHeaders()
     });
     if (!res.ok) {
         const error = await res.json();
@@ -103,14 +90,10 @@ export const ingredientService = {
   },
 
   async importStock(id, amount, note) {
-    const token = getToken();
-    const res = await fetch(`${API_URL}/import-stock`, {
+    const res = await fetch(`${API_URL}/${id}/import`, { // Sửa đường dẫn
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ ingredient_id: id, quantity_change: amount, reason: note }),
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ amount, note }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -120,14 +103,10 @@ export const ingredientService = {
   },
 
   async stocktake(id, amount, note) {
-    const token = getToken();
-    const res = await fetch(`${API_URL}/stock-take`, {
+    const res = await fetch(`${API_URL}/${id}/stocktake`, { // Sửa đường dẫn
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ ingredient_id: id, new_quantity: amount, reason: note }),
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ actual_quantity: amount, note }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -136,13 +115,11 @@ export const ingredientService = {
     return res.json();
   },
 
-  async checkUsage(id) {
-    const token = getToken();
-    const res = await fetch(`${API_URL}/check-usage/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
+  async checkUsage(id: string) {
+    // SỬA LẠI ĐƯỜNG DẪN CHO ĐÚNG
+    const res = await fetch(`${API_URL}/${id}/check-usage`, { headers: getAuthHeaders() });
     if (!res.ok) {
-        throw new Error('Failed to check ingredient usage');
+      throw new Error('Failed to check ingredient usage');
     }
     return res.json();
   },

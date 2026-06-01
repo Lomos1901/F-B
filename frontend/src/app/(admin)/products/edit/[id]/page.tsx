@@ -54,7 +54,8 @@ export default function EditProductPage() {
         ]);
 
         setCategories(categoriesData);
-        setIngredients(ingredientsData.data);
+        // Giả sử ingredientService.getAll() trả về { data: [...] }
+        setIngredients(ingredientsData.data || ingredientsData);
 
         setCategoryId(productData.category_id || '');
         setProductName(productData.name || '');
@@ -198,7 +199,7 @@ export default function EditProductPage() {
                   >
                     <option value="" className="text-gray-500">-- Chọn phân hệ nhóm --</option>
                     {categories.map((cat) => (
-                      <option key={cat.id} value={cat.name}</option>
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
                 </div>

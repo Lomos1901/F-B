@@ -1,114 +1,75 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { IngredientsService } from './ingredients.service';
+import { CreateIngredientDto } from './dto/create-ingredient.dto';
+import { UpdateIngredientDto } from './dto/update-ingredient.dto';
+import { ImportStockDto, StocktakeDto } from './dto/transaction.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // Giả định đã có
 
 @Controller('ingredients')
+@UseGuards(JwtAuthGuard, RolesGuard) // Áp dụng cho toàn bộ controller
 export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
 
-  // 1. API: Lấy toàn bộ danh sách kho nguyên liệu (Đang hoạt động)
-  // GET http://localhost:3001/ingredients
   @Get()
-  async getAll() {
+  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.BARISTA, UserRole.CASHIER)
+  getAll() {
     return this.ingredientsService.findAll();
   }
 
-  // 2. API: Lấy danh sách nguyên liệu đã ẩn (Kho lưu trữ)
-  // LƯU Ý: Phải đặt trên các Route có param :id để tránh lỗi điều hướng của NestJS
-  // GET http://localhost:3001/ingredients/archived
   @Get('archived')
-  async getArchived() {
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  getArchived() {
     return this.ingredientsService.findArchived();
   }
 
-  // 3. API: Tạo mới nguyên liệu
-  // POST http://localhost:3001/ingredients
   @Post()
-  async create(
-    @Body()
-    body: {
-      name: string;
-      base_unit: string; // Thay thế unit cũ
-      recipe_unit: string; // Thêm mới
-      conversion_factor: number; // Thêm mới
-      min_threshold: number;
-      cost_per_unit: number;
-    },
-  ) {
-    return this.ingredientsService.create(body);
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  create(@Body() createIngredientDto: CreateIngredientDto) {
+    return this.ingredientsService.create(createIngredientDto);
   }
 
-  // 4. API Check sự phụ thuộc trước khi xóa
-  // GET http://localhost:3001/ingredients/:id/check-usage
   @Get(':id/check-usage')
-  async checkUsage(@Param('id') id: string) {
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  checkUsage(@Param('id') id: string) {
     return this.ingredientsService.checkDependencies(id);
   }
 
-  // 5. API: Nhập hàng (Cộng thêm số lượng vào kho và sinh Log)
-  // POST http://localhost:3001/ingredients/:id/import
   @Post(':id/import')
-  async importStock(
-    @Param('id') id: string,
-    @Body() body: { amount: number; note: string; performed_by?: string },
-  ) {
-    return this.ingredientsService.importStock(id, body);
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  importStock(@Param('id') id: string, @Body() importStockDto: ImportStockDto) {
+    return this.ingredientsService.importStock(id, importStockDto);
   }
 
-  // 6. API: Kiểm kho / Hủy hỏng (Cập nhật tồn kho theo số đếm thực tế và sinh Log độ lệch)
-  // POST http://localhost:3001/ingredients/:id/stocktake
   @Post(':id/stocktake')
-  async stocktake(
-    @Param('id') id: string,
-    @Body()
-    body: { actual_quantity: number; note: string; performed_by?: string },
-  ) {
-    return this.ingredientsService.stocktake(id, body);
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  stocktake(@Param('id') id: string, @Body() stocktakeDto: StocktakeDto) {
+    return this.ingredientsService.stocktake(id, stocktakeDto);
   }
 
-  // 7. API: Cập nhật thông tin (Tên, Đơn vị, Định mức, Giá vốn) - Tuyệt đối không có sửa số lượng
-  // PATCH http://localhost:3001/ingredients/:id
   @Patch(':id')
-  async updateMetadata(
-    @Param('id') id: string,
-    @Body()
-    body: {
-      name?: string;
-      base_unit?: string; // Thay thế unit cũ
-      recipe_unit?: string; // Thêm mới
-      conversion_factor?: number; // Thêm mới
-      min_threshold?: number;
-      cost_per_unit?: number;
-    },
-  ) {
-    return this.ingredientsService.updateMetadata(id, body);
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  updateMetadata(@Param('id') id: string, @Body() updateIngredientDto: UpdateIngredientDto) {
+    return this.ingredientsService.updateMetadata(id, updateIngredientDto);
   }
 
-  // 8. API: Khôi phục nguyên liệu từ Kho lưu trữ
-  // PATCH http://localhost:3001/ingredients/:id/restore
   @Patch(':id/restore')
-  async restore(@Param('id') id: string) {
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  restore(@Param('id') id: string) {
     return this.ingredientsService.restore(id);
   }
 
-  // 9. API Xóa mềm nguyên liệu
-  // DELETE http://localhost:3001/ingredients/:id
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  remove(@Param('id') id: string) {
     return this.ingredientsService.softDelete(id);
   }
 
-  // 10. API: Xóa vĩnh viễn nguyên liệu
-  // DELETE http://localhost:3001/ingredients/:id/hard
   @Delete(':id/hard')
-  async hardRemove(@Param('id') id: string) {
+  @Roles(UserRole.OWNER) // Chỉ chủ sở hữu mới có quyền xóa vĩnh viễn
+  hardRemove(@Param('id') id: string) {
     return this.ingredientsService.hardDelete(id);
   }
 }
