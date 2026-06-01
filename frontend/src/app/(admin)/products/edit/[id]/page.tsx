@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { categoryService } from '@/src/services/categoryService';
+import { ingredientService } from '@/src/services/ingredientService';
+import { productService } from '@/src/services/productService';
 
 interface Category {
   id: string;
@@ -27,77 +30,54 @@ export default function EditProductPage() {
   const params = useParams();
   const id = params.id as string;
 
-  // States quản lý dữ liệu gốc
   const [categories, setCategories] = useState<Category[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  
-  // States quản lý Form
+
   const [categoryId, setCategoryId] = useState('');
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState<number | ''>('');
-  const [imageUrl, setImageUrl] = useState(''); 
+  const [imageUrl, setImageUrl] = useState('');
   const [recipeRows, setRecipeRows] = useState<RecipeInput[]>([]);
-  
-  // States trạng thái
-  const [fetchingData, setFetchingData] = useState(true); // Đang tải dữ liệu cũ
-  const [loading, setLoading] = useState(false); // Đang lưu dữ liệu
+
+  const [fetchingData, setFetchingData] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // 1. Tự động tải dữ liệu khi vào trang
-  // 1. Tự động tải dữ liệu khi vào trang (Đã Tối Ưu Tốc Độ)
   useEffect(() => {
     const initData = async () => {
       try {
-        // 🚀 BÍ QUYẾT Ở ĐÂY: Dùng Promise.all để gọi 3 API CÙNG LÚC
-        const [resCat, resIng, resProd] = await Promise.all([
-          fetch('http://localhost:3001/categories'),
-          fetch('http://localhost:3001/ingredients'),
-          fetch(`http://localhost:3001/products/${id}`)
+        const [categoriesData, ingredientsData, productData] = await Promise.all([
+          categoryService.getAll(),
+          ingredientService.getAll(),
+          productService.getById(id),
         ]);
 
-        // Xử lý dữ liệu Danh mục
-        if (resCat.ok) {
-          const dataCat = await resCat.json();
-          setCategories(Array.isArray(dataCat) ? dataCat : (dataCat.data || []));
-        }
-        
-        // Xử lý dữ liệu Nguyên liệu
-        if (resIng.ok) {
-          const dataIng = await resIng.json();
-          setIngredients(Array.isArray(dataIng) ? dataIng : (dataIng.data || []));
-        }
+        setCategories(categoriesData);
+        setIngredients(ingredientsData.data);
 
-        // Xử lý dữ liệu Món nước
-        if (resProd.ok) {
-          const prodData = await resProd.json();
-          const product = prodData.data || prodData; 
+        setCategoryId(productData.category_id || '');
+        setProductName(productData.name || '');
+        setProductPrice(productData.price || '');
+        setImageUrl(productData.image_url || '');
 
-          setCategoryId(product.category_id || '');
-          setProductName(product.name || '');
-          setProductPrice(product.price || '');
-          setImageUrl(product.image_url || '');
-
-          if (product.recipes && product.recipes.length > 0) {
-            const loadedRecipes = product.recipes.map((rec: any) => ({
-              ingredient_id: rec.ingredient_id,
-              ui_quantity: rec.quantity
-            }));
-            setRecipeRows(loadedRecipes);
-          } else {
-            setRecipeRows([{ ingredient_id: '', ui_quantity: 0 }]); 
-          }
+        if (productData.recipes && productData.recipes.length > 0) {
+          const loadedRecipes = productData.recipes.map((rec: any) => ({
+            ingredient_id: rec.ingredient_id,
+            ui_quantity: rec.quantity
+          }));
+          setRecipeRows(loadedRecipes);
         } else {
-          setMessage({ type: 'error', text: 'Không tìm thấy dữ liệu món nước này!' });
+          setRecipeRows([{ ingredient_id: '', ui_quantity: 0 }]);
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('Lỗi tải dữ liệu:', e);
-        setMessage({ type: 'error', text: 'Lỗi kết nối máy chủ.' });
+        setMessage({ type: 'error', text: e.message });
       } finally {
         setFetchingData(false);
       }
     };
-    
+
     if (id) initData();
   }, [id]);
 
@@ -130,19 +110,10 @@ export default function EditProductPage() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:3001/products/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setImageUrl(data.imageUrl);
-      } else {
-        setMessage({ type: 'error', text: 'Tải ảnh thất bại.' });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Lỗi API upload ảnh.' });
+      const data = await productService.uploadImage(formData);
+      setImageUrl(data.imageUrl);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setUploading(false);
     }
@@ -161,32 +132,21 @@ export default function EditProductPage() {
 
     const processedIngredients = validRows.map(row => ({
       ingredient_id: row.ingredient_id,
-      quantity_required: row.ui_quantity, 
+      quantity_required: row.ui_quantity,
     }));
 
     try {
-      // 2. GỌI API ĐỂ CẬP NHẬT (Lưu ý: method PUT)
-      const response = await fetch(`http://localhost:3001/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category_id: categoryId,
-          name: productName,
-          price: Number(productPrice),
-          image_url: imageUrl, 
-          ingredients: processedIngredients
-        }),
+      await productService.update(id, {
+        category_id: categoryId,
+        name: productName,
+        price: Number(productPrice),
+        image_url: imageUrl,
+        ingredients: processedIngredients
       });
-
-      if (response.ok) {
-        alert('Cập nhật món nước thành công!');
-        router.push('/products'); 
-      } else {
-        const result = await response.json();
-        setMessage({ type: 'error', text: result.message || 'Lỗi xử lý hệ thống.' });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Không thể kết nối đến Backend.' });
+      alert('Cập nhật món nước thành công!');
+      router.push('/products');
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setLoading(false);
     }
@@ -203,7 +163,7 @@ export default function EditProductPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans antialiased">
       <div className="max-w-4xl mx-auto">
-        
+
         <div className="mb-6 flex justify-between items-end border-b border-gray-200 pb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-wide text-amber-700 uppercase">Chỉnh sửa món nước</h1>
@@ -222,11 +182,11 @@ export default function EditProductPage() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          
+
           <div className="p-8 space-y-8">
             <div className="space-y-5">
               <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 uppercase">1. Thông tin thương mại</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs text-gray-600 font-bold uppercase mb-2">Nhóm món nước (*):</label>
@@ -238,7 +198,7 @@ export default function EditProductPage() {
                   >
                     <option value="" className="text-gray-500">-- Chọn phân hệ nhóm --</option>
                     {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      <option key={cat.id} value={cat.name}</option>
                     ))}
                   </select>
                 </div>

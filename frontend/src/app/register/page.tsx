@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { register } from '@/services/authService';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -19,18 +20,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3001/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullName }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Đăng ký thất bại');
-      }
-
+      await register(email, password, fullName);
       setSuccess('Tạo tài khoản thành công! Đang chuyển hướng sang đăng nhập...');
       setTimeout(() => {
         router.push('/login');

@@ -7,7 +7,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
 
-  // Hàm xử lý đăng xuất được chuyển gọn gàng sang đây
   const handleLogout = async () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -18,7 +17,7 @@ export default function Sidebar() {
         .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
 
-    window.location.href = '/login'; 
+    window.location.href = '/login';
   };
 
   return (
@@ -35,9 +34,12 @@ export default function Sidebar() {
 
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 custom-scrollbar">
         <div className="text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-3 pl-2">Quản trị cốt lõi</div>
-        
+
         <Link href="/dashboard" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-amber-600'}`}>
-          <span>📦</span> Kho nguyên liệu thô
+          <span>📊</span> Tổng quan
+        </Link>
+        <Link href="/ingredients" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/ingredients') ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-amber-600'}`}>
+          <span>📦</span> Kho nguyên liệu
         </Link>
         <Link href="/categories" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/categories') ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-amber-600'}`}>
           <span>📚</span> Quản lý danh mục
@@ -51,8 +53,8 @@ export default function Sidebar() {
       </div>
 
       <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-        <button 
-          onClick={handleLogout} 
+        <button
+          onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 mb-4"
         >
           <span>🚪</span> Đăng xuất

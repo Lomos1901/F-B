@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { inventoryLogService } from '@/src/services/inventoryLogService';
 
 interface InventoryLogEntry {
   id: string;
   created_at: string;
-  change_amount: number; 
+  change_amount: number;
   note: string;
-  performed_by: string; 
+  performed_by: string;
   ingredients: {
     name: string;
     base_unit: string;
@@ -26,14 +27,8 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const res = await fetch('http://localhost:3001/inventory-log/all-with-ingredients');
-        
-        if (!res.ok) {
-          throw new Error('Không thể kết nối API lấy lịch sử kho.');
-        }
-        
-        const data = await res.json();
-        setLogs(Array.isArray(data) ? data : (data.data || []));
+        const data = await inventoryLogService.getAllWithIngredients();
+        setLogs(data);
       } catch (err: any) {
         console.error(err);
         setError(err.message);
@@ -45,19 +40,16 @@ export default function HistoryPage() {
     fetchLogs();
   }, []);
 
-  // Hàm định dạng hiển thị Nhập/Xuất dựa trên bộ 3 quy đổi mới
   const formatAction = (change: number, ingredient: InventoryLogEntry['ingredients']) => {
     const isImport = change > 0;
     const absChange = Math.abs(change);
     let displayText = '';
 
     if (!ingredient) {
-      displayText = `${absChange}`; // Nếu nguyên liệu đã bị xóa, chỉ hiện số
+      displayText = `${absChange}`;
     } else if (isImport) {
-      // Nếu Nhập kho -> Hiển thị theo đơn vị thương mại (base_unit)
       displayText = `${absChange} ${ingredient.base_unit}`;
     } else {
-      // Nếu Xuất kho -> Hiển thị theo đơn vị pha chế (recipe_unit) bằng cách nhân với factor
       const usageAmount = absChange * ingredient.conversion_factor;
       displayText = `${usageAmount} ${ingredient.recipe_unit}`;
     }
@@ -89,8 +81,7 @@ export default function HistoryPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-gray-900 p-8 font-sans antialiased">
       <div className="max-w-7xl mx-auto">
-        
-        {/* HEADER */}
+
         <div className="mb-8 border-b border-gray-200 pb-5">
           <h1 className="text-2xl font-bold text-amber-700 tracking-wide uppercase">
             🕒 Nhật ký vận hành kho thô
@@ -100,7 +91,6 @@ export default function HistoryPage() {
           </p>
         </div>
 
-        {/* TRẠNG THÁI TẢI/LỖI */}
         {loading ? (
           <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
             <p className="text-gray-500 text-sm animate-pulse font-mono">☕ Đang trích xuất nhật ký Sẫm Coffee...</p>
@@ -115,8 +105,7 @@ export default function HistoryPage() {
             <p className="text-gray-500 text-sm italic">Hệ thống chưa ghi nhận hoạt động xuất nhập kho nào.</p>
           </div>
         ) : (
-          
-          /* BẢNG DỮ LIỆU CHÍNH */
+
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -131,12 +120,10 @@ export default function HistoryPage() {
               <tbody className="divide-y divide-gray-100 text-sm">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Thời gian */}
                     <td className="p-4 font-mono text-gray-600 text-xs">
                       {formatDate(log.created_at)}
                     </td>
-                    
-                    {/* Nguyên liệu */}
+
                     <td className="p-4">
                       <div className="font-bold text-gray-900">
                         {log.ingredients?.name || <span className="text-gray-400 italic">(Đã xóa)</span>}
@@ -145,19 +132,15 @@ export default function HistoryPage() {
                         Kho: {log.ingredients ? `${log.ingredients.base_unit} ➜ ${log.ingredients.recipe_unit}` : 'N/A'}
                       </div>
                     </td>
-                    
-                    {/* Hành động & Số lượng */}
+
                     <td className="p-4">
-                      {/* Truyền toàn bộ object ingredient vào hàm xử lý */}
                       {formatAction(log.change_amount, log.ingredients)}
                     </td>
-                    
-                    {/* Lý do */}
+
                     <td className="p-4 text-gray-700 font-medium">
                       {log.note || <span className="text-gray-400 italic">Không rõ lý do</span>}
                     </td>
-                    
-                    {/* Người thực hiện */}
+
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 font-bold text-xs shadow-inner">
@@ -172,14 +155,13 @@ export default function HistoryPage() {
                 ))}
               </tbody>
             </table>
-            
-            {/* FOOTER BẢNG */}
+
             <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 flex justify-between items-center text-xs text-gray-500 font-medium">
               <span>Hiển thị nhật ký gần nhất</span>
               <span>Tổng số bản ghi: <span className="font-bold text-amber-700">{logs.length}</span></span>
             </div>
           </div>
-        )}  
+        )}
 
       </div>
     </div>

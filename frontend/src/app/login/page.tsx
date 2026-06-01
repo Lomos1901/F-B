@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { login } from '@/src/services/authService';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,37 +17,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3001/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Đăng nhập thất bại');
-      }
-
-      // Linh hoạt bốc đúng Key xác thực từ Backend
-      const activeToken = data.token || data.access_token || data.data?.token || data.data?.access_token;
-      
-      // Linh hoạt lấy thông tin user để tránh bị undefined
-      const activeUser = data.user || data.data?.user || data.data || { full_name: "Nhân viên", role: "staff" };
-
-      // Nếu không bốc được token nào, chặn lại báo lỗi ngay để dễ debug
-      if (!activeToken) {
-        throw new Error('Đăng nhập thành công nhưng hệ thống không tìm thấy mã Token xác thực!');
-      }
-
-      // Đã sửa 'token' thành 'access_token' để khớp hoàn toàn với middleware.ts
-      Cookies.set('access_token', activeToken, { expires: 1 });
-      Cookies.set('user', JSON.stringify(activeUser), { expires: 1 });
-
-      alert(`Chào mừng ${activeUser.full_name || 'Nhân viên'} quay trở lại Sẫm Coffee!`);
-      
-      // Sử dụng router.push của Next.js để điều hướng mượt mà, không reload toàn trang
-      // router.push('/dashboard');
+      const user = await login(email, password);
+      alert(`Chào mừng ${user.full_name || 'Nhân viên'} quay trở lại Sẫm Coffee!`);
       window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message);

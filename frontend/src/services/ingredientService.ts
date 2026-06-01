@@ -1,131 +1,148 @@
-import Cookies from "js-cookie";
+// src/services/ingredientService.ts
 
-const BASE_URL = "http://localhost:3001/ingredients";
+const API_URL = 'http://localhost:3001/ingredients';
 
-// Hàm hỗ trợ lấy headers kèm Token cho lẹ, đỡ phải viết đi viết lại
-const getHeaders = () => {
-  const token = Cookies.get("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+const getToken = () => {
+  if (typeof window !== 'undefined') {
+    const Cookies = require('js-cookie');
+    return Cookies.get('access_token');
+  }
+  return null;
 };
 
 export const ingredientService = {
-  // 1. Lấy danh sách nguyên liệu đang dùng
-  getAll: async () => {
-    const res = await fetch(BASE_URL, { headers: getHeaders() });
-    if (!res.ok) throw new Error("Không thể kết nối đến server");
-    return res.json();
-  },
-
-  // 2. Lấy danh sách nguyên liệu lưu trữ (Archived)
-  getArchived: async () => {
-    const res = await fetch(`${BASE_URL}/archived`, { headers: getHeaders() });
-    if (!res.ok) throw new Error("Lỗi tải kho lưu trữ");
-    return res.json();
-  },
-
-  // 3. Kiểm tra ràng buộc trước khi xóa
-  checkUsage: async (id: string) => {
-    const res = await fetch(`${BASE_URL}/${id}/check-usage`, {
-      headers: getHeaders(),
+  async getAll() {
+    const token = getToken();
+    const res = await fetch(API_URL, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error("Lỗi kiểm tra ràng buộc");
+    if (!res.ok) throw new Error('Failed to fetch ingredients');
     return res.json();
   },
 
-  // 4. Thêm nguyên liệu mới
-  create: async (data: unknown) => {
-    const res = await fetch(BASE_URL, {
-      method: "POST",
-      headers: getHeaders(),
+  async getArchived() {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/archived`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to fetch archived ingredients');
+    return res.json();
+  },
+
+  async create(data) {
+    const token = getToken();
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi tạo nguyên liệu");
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to create ingredient');
     }
     return res.json();
   },
 
-  // 5. Cập nhật thông tin nguyên liệu
-  update: async (id: string, data: unknown) => {
-    const res = await fetch(`${BASE_URL}/${id}`, {
-      method: "PATCH",
-      headers: getHeaders(),
+  async update(id, data) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi cập nhật");
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to update ingredient');
     }
     return res.json();
   },
 
-  // 6. Nhập kho
-  importStock: async (id: string, amount: number, note: string) => {
-    const res = await fetch(`${BASE_URL}/${id}/import`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({ amount, note }),
+  async delete(id) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi nhập kho");
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to delete ingredient');
     }
     return res.json();
   },
 
-  // 7. Kiểm kê kho
-  stocktake: async (id: string, actual_quantity: number, note: string) => {
-    const res = await fetch(`${BASE_URL}/${id}/stocktake`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({ actual_quantity, note }),
+  async restore(id) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/restore/${id}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi kiểm kho");
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to restore ingredient');
     }
     return res.json();
   },
 
-  // 8. Ngưng sử dụng (Xóa mềm)
-  delete: async (id: string) => {
-    const res = await fetch(`${BASE_URL}/${id}`, {
-      method: "DELETE",
-      headers: getHeaders(),
+  async hardDelete(id) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/hard-delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi khi xóa nguyên liệu");
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to permanently delete ingredient');
     }
     return res.json();
   },
 
-  // 9. Khôi phục nguyên liệu
-  restore: async (id: string) => {
-    const res = await fetch(`${BASE_URL}/${id}/restore`, {
-      method: "PATCH",
-      headers: getHeaders(),
+  async importStock(id, amount, note) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/import-stock`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ingredient_id: id, quantity_change: amount, reason: note }),
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi khôi phục");
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to import stock');
     }
     return res.json();
   },
 
-  // 10. Xóa vĩnh viễn (Hard Delete)
-  hardDelete: async (id: string) => {
-    const res = await fetch(`${BASE_URL}/${id}/hard`, {
-      method: "DELETE",
-      headers: getHeaders(),
+  async stocktake(id, amount, note) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/stock-take`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ingredient_id: id, new_quantity: amount, reason: note }),
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Lỗi xóa vĩnh viễn");
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to update stock');
+    }
+    return res.json();
+  },
+
+  async checkUsage(id) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/check-usage/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+        throw new Error('Failed to check ingredient usage');
     }
     return res.json();
   },

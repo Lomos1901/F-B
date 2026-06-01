@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { categoryService } from '@/src/services/categoryService';
+import { categoryService } from '../../../../services/categoryService';
 
 interface Category {
   id: string;
