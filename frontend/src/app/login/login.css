@@ -1,0 +1,37 @@
+/* Các style này được trích xuất từ thiết kế của Stitch */
+body {
+    background-color: #09090b; /* Zinc 950 deep dark */
+    color: #f0e0d1;
+    font-family: 'Inter', sans-serif;
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+}
+
+.login-card {
+    background-color: #18181b; /* Zinc 900 / Level 1 Surface */
+    border: 1px solid #27272a; /* Zinc 800 hairline */
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.input-field {
+    background-color: #09090b;
+    border: 1px solid #27272a;
+    transition: all 0.2s ease-in-out;
+}
+
+.input-field:focus {
+    border-color: #f59e0b; /* amber-500 */
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    outline: none;
+}
+
+.gradient-mesh {
+    background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05) 0%, rgba(0,0,0,0) 70%);
+}
+
+.amber-text-glow {
+    text-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}

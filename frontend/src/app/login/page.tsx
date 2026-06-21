@@ -1,85 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/src/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { login } from '@/src/services/authService';
+import { Coffee, Lock, Mail, LogIn } from 'lucide-react';
+
+// Bỏ Head và các link font thủ công vì đã được quản lý bởi layout.tsx
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { login, loading, error, user } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const user = await login(email, password);
-      alert(`Chào mừng ${user.full_name || 'Nhân viên'} quay trở lại Sẫm Coffee!`);
-      window.location.href = '/dashboard';
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
     }
+  }, [user, router]);
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await login(email, password);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-900 px-4 text-white">
-      <div className="w-full max-w-md space-y-6 rounded-2xl bg-zinc-800 p-8 shadow-xl border border-zinc-700">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-amber-500">Sẫm Coffee</h2>
-          <p className="mt-2 text-sm text-zinc-400">Hệ thống quản lý vận hành nội bộ</p>
+    <main className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <div className="p-3 bg-dark-surface rounded-full border border-dark-border mb-4">
+            <Coffee className="text-brand-amber" size={32} />
+          </div>
+          <h1 className="text-3xl font-bold text-dark-text-primary">Sẫm Coffee</h1>
+          <p className="text-dark-text-secondary">Đăng nhập hệ thống quản trị</p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleLogin}>
-          {error && (
-            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20">
-              {error}
+        <div className="bg-dark-surface p-8 rounded-lg border border-dark-border shadow-2xl shadow-black/20">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="text-sm font-medium text-dark-text-secondary">Email</label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="admin@samcoffee.vn"
+                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber focus:border-brand-amber"
+                />
+              </div>
             </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-300">Email nhân viên</label>
-            <input
-              type="email"
-              required
-              className="mt-1 w-full rounded-lg bg-zinc-900 border border-zinc-700 p-2.5 text-white focus:border-amber-500 focus:outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-300">Mật khẩu</label>
-            <input
-              type="password"
-              required
-              className="mt-1 w-full rounded-lg bg-zinc-900 border border-zinc-700 p-2.5 text-white focus:border-amber-500 focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-amber-600 p-2.5 font-semibold text-white hover:bg-amber-500 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Đang xác thực...' : 'Đăng nhập'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-zinc-400">
-          Chưa có tài khoản?{' '}
-          <button onClick={() => router.push('/register')} className="text-amber-500 hover:underline">
-            Đăng ký tại đây
-          </button>
-        </p>
+            <div>
+              <label htmlFor="password"  className="text-sm font-medium text-dark-text-secondary">Mật khẩu</label>
+              <div className="relative mt-1">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber focus:border-brand-amber"
+                />
+              </div>
+            </div>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-brand-amber text-black font-bold rounded-md hover:bg-brand-amber-dark disabled:opacity-50 transition-colors">
+              {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+              {!loading && <LogIn size={18} />}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,67 +1,52 @@
-// backend/src/categories/categories.service.ts
+// backend/src/ingredient-categories/ingredient-categories.service.ts
 
 import { Injectable, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
-export class CategoriesService {
+export class IngredientCategoriesService {
   private readonly client: SupabaseClient;
-  private readonly logger = new Logger(CategoriesService.name);
+  private readonly logger = new Logger(IngredientCategoriesService.name);
 
   constructor(private readonly supabaseService: SupabaseService) {
     this.client = this.supabaseService.getAdminClient();
   }
 
-  /**
-   * Lấy tất cả các danh mục.
-   * Không có thay đổi lớn, chỉ chuẩn hóa response.
-   */
   async findAll() {
     const { data, error } = await this.client
-      .from('categories')
+      .from('ingredient_categories')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('name', { ascending: true });
 
     if (error) {
-      this.logger.error('Lỗi khi lấy danh sách danh mục:', error);
+      this.logger.error('Lỗi khi lấy danh sách danh mục nguyên liệu:', error);
       throw new InternalServerErrorException(error.message);
     }
     return data;
   }
 
-  /**
-   * Tạo một danh mục mới.
-   * Không có thay đổi lớn.
-   */
-  async create(createCategoryDto: CreateCategoryDto) {
+  async create(name: string) {
     const { data, error } = await this.client
-      .from('categories')
-      .insert(createCategoryDto)
+      .from('ingredient_categories')
+      .insert({ name })
       .select()
       .single();
 
     if (error) {
-      // Mã '23505' là lỗi unique violation (trùng tên)
-      if (error.code === '23505') {
+      if (error.code === '23505') { // Lỗi trùng tên
         throw new BadRequestException('Tên danh mục này đã tồn tại.');
       }
-      this.logger.error('Lỗi khi tạo danh mục:', error);
+      this.logger.error('Lỗi khi tạo danh mục nguyên liệu:', error);
       throw new InternalServerErrorException(error.message);
     }
     return data;
   }
 
-  /**
-   * Cập nhật một danh mục.
-   * Không có thay đổi lớn.
-   */
-  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+  async update(id: string, name: string) {
     const { data, error } = await this.client
-      .from('categories')
-      .update(updateCategoryDto)
+      .from('ingredient_categories')
+      .update({ name })
       .eq('id', id)
       .select()
       .single();
@@ -76,17 +61,12 @@ export class CategoriesService {
     return data;
   }
 
-  /**
-   * Xóa một danh mục.
-   * Cải tiến: Thêm xử lý lỗi khóa ngoại.
-   */
   async remove(id: string) {
-    const { error } = await this.client.from('categories').delete().eq('id', id);
+    const { error } = await this.client.from('ingredient_categories').delete().eq('id', id);
 
     if (error) {
-      // Mã '23503' là lỗi foreign key violation
-      if (error.code === '23503') {
-        throw new BadRequestException('Không thể xóa danh mục này vì vẫn còn sản phẩm thuộc về nó.');
+      if (error.code === '23503') { // Lỗi khóa ngoại
+        throw new BadRequestException('Không thể xóa danh mục này vì vẫn còn nguyên liệu thuộc về nó.');
       }
       this.logger.error(`Lỗi khi xóa danh mục ID ${id}:`, error);
       throw new InternalServerErrorException(error.message);

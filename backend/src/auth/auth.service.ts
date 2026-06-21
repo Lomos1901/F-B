@@ -1,48 +1,59 @@
+// backend/src/auth/auth.service.ts
+
 import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from './enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly jwtService: JwtService,
   ) {}
 
+  /**
+   * Tái cấu trúc: Thêm việc đồng bộ email vào bảng public.users.
+   */
   async register(email: string, password: string, fullName: string) {
-    // Sử dụng Public Client cho hành động đăng ký
-    const client = this.supabaseService.getPublicClient();
+    const publicClient = this.supabaseService.getPublicClient();
 
-    const { data: authData, error: authError } = await client.auth.signUp({
+    // 1. Tạo user trong schema `auth` của Supabase
+    const { data: authData, error: authError } = await publicClient.auth.signUp({
       email,
       password,
     });
 
     if (authError) {
-      console.error('Lỗi từ Supabase Auth (signUp):', authError);
+      this.logger.error('Lỗi khi signUp trên Supabase Auth:', authError);
       throw new BadRequestException(authError.message);
     }
     if (!authData.user) {
-      throw new InternalServerErrorException('Không thể tạo user trong Supabase Auth');
+      throw new InternalServerErrorException('Không thể tạo user trong Supabase Auth.');
     }
 
-    // Dùng Admin Client để ghi vào public.users, bỏ qua RLS
+    // 2. Tạo hồ sơ tương ứng trong bảng `public.users`
     const adminClient = this.supabaseService.getAdminClient();
     const { error: dbError } = await adminClient.from('users').insert({
       id: authData.user.id,
       full_name: fullName,
-      role: 'BARISTA',
+      email: authData.user.email, // ĐỒNG BỘ EMAIL
+      role: UserRole.BARISTA, // Vai trò mặc định, kiểu TEXT tương thích với DB mới
     });
 
     if (dbError) {
-      console.error('Lỗi khi INSERT vào public.users:', dbError);
+      this.logger.error('Lỗi khi tạo hồ sơ trong public.users:', dbError);
+      // Rollback: Xóa user đã tạo bên Auth để tránh user "mồ côi"
       await adminClient.auth.admin.deleteUser(authData.user.id);
-      throw new InternalServerErrorException('Lỗi khởi tạo hồ sơ nhân viên.');
+      throw new InternalServerErrorException('Lỗi hệ thống khi khởi tạo hồ sơ nhân viên.');
     }
 
     return {
@@ -51,22 +62,24 @@ export class AuthService {
     };
   }
 
+  /**
+   * Logic đăng nhập không thay đổi nhiều, nhưng cần đảm bảo các trường trả về khớp với frontend.
+   */
   async login(email: string, password: string) {
-    // Sử dụng Public Client cho hành động đăng nhập
-    const client = this.supabaseService.getPublicClient();
+    const publicClient = this.supabaseService.getPublicClient();
 
-    const { data: authData, error: authError } = await client.auth.signInWithPassword({
+    const { data: authData, error: authError } = await publicClient.auth.signInWithPassword({
       email,
       password,
     });
 
     if (authError || !authData.session) {
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
+      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác.');
     }
 
     const userUuid = authData.user.id;
 
-    // Dùng Admin Client để đọc thông tin user, bỏ qua RLS
+    // Dùng admin client để đọc thông tin, bỏ qua RLS
     const adminClient = this.supabaseService.getAdminClient();
     const { data: userData, error: userError } = await adminClient
       .from('users')
@@ -75,9 +88,10 @@ export class AuthService {
       .single();
 
     if (userError || !userData) {
-      throw new UnauthorizedException('Không tìm thấy thông tin cấu hình quyền cho tài khoản này');
+      throw new UnauthorizedException('Không tìm thấy thông tin cấu hình quyền cho tài khoản này.');
     }
 
+    // Tạo payload cho JWT token tùy chỉnh
     const payload = {
       sub: userUuid,
       email: authData.user.email,

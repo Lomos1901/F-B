@@ -1,54 +1,90 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { orderService } from '@/src/services/orderService';
+import { X, Printer, CheckCircle } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/orders';
+// --- Định nghĩa Interface ---
+interface OrderItem {
+  quantity: number;
+  products?: { name: string; price: number };
+}
 
-// ... (Các hàm fetch không đổi)
-const getAuthHeaders = () => {
-  const token = Cookies.get('access_token');
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+interface Order {
+  id: string;
+  table_number: string;
+  total_price: number;
+  created_at: string;
+  order_status?: { status_name: string };
+  order_detail: OrderItem[];
+}
+
+const OrderStatusBadge = ({ status }: { status: string }) => {
+  const statusMap = {
+    PENDING: { text: 'Chờ xác nhận', color: 'bg-yellow-500/20 text-yellow-400' },
+    PREPARING: { text: 'Đang làm', color: 'bg-blue-500/20 text-blue-400' },
+    COMPLETED: { text: 'Hoàn thành', color: 'bg-green-500/20 text-green-400' },
+    PAID: { text: 'Đã thanh toán', color: 'bg-gray-500/20 text-gray-400' },
   };
+  const { text, color } = statusMap[status] || { text: status, color: 'bg-gray-600' };
+  return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>{text}</span>;
 };
 
-async function fetchCompletedOrders() {
-  const res = await fetch(`${API_URL}/completed`, { headers: getAuthHeaders() });
-  if (!res.ok) {
-    throw new Error('Lỗi khi tải danh sách hóa đơn.');
-  }
-  return res.json();
-}
-
-async function updateOrderStatus(id, status) {
-  const res = await fetch(`${API_URL}/${id}/status`, {
-    method: 'PATCH',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) throw new Error('Lỗi khi cập nhật trạng thái.');
-  return res.json();
-}
-
+const BillModal = ({ order, onClose, onConfirmPayment }: { order: Order, onClose: () => void, onConfirmPayment: () => void }) => {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
+      <div className="bg-dark-surface border border-dark-border rounded-lg w-full max-w-sm flex flex-col">
+        <header className="p-4 border-b border-dark-border flex justify-between items-center">
+          <h2 className="font-bold text-lg">Hóa đơn Bàn {order.table_number}</h2>
+          <button onClick={onClose} className="text-dark-text-secondary hover:text-white"><X size={20} /></button>
+        </header>
+        <div className="p-6 flex-grow overflow-y-auto">
+          <div className="text-center mb-6">
+            <h3 className="font-bold text-xl">SẪM COFFEE</h3>
+            <p className="text-sm text-dark-text-secondary">Ngày: {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+          </div>
+          <ul className="divide-y divide-dark-border">
+            {order.order_detail.map((item, index) => (
+              <li key={index} className="py-2 flex justify-between text-sm">
+                <span className="text-dark-text-primary">{item.products?.name} (x{item.quantity})</span>
+                <span className="text-dark-text-secondary">{(item.products?.price! * item.quantity).toLocaleString('vi-VN')}đ</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6 pt-4 border-t-2 border-dashed border-dark-border">
+            <div className="flex justify-between font-bold text-lg">
+              <span>TỔNG CỘNG</span>
+              <span>{order.total_price.toLocaleString('vi-VN')}đ</span>
+            </div>
+          </div>
+        </div>
+        <footer className="p-4 bg-dark-bg grid grid-cols-2 gap-3">
+          <button className="flex items-center justify-center gap-2 py-3 px-4 bg-dark-border text-dark-text-secondary rounded-md hover:bg-gray-600 font-semibold"><Printer size={16}/> In Bill</button>
+          <button onClick={onConfirmPayment} className="flex items-center justify-center gap-2 py-3 px-4 bg-green-600 text-white rounded-md hover:bg-green-500 font-bold"><CheckCircle size={16}/> Xác nhận Thanh toán</button>
+        </footer>
+      </div>
+    </div>
+  );
+};
 
 export default function POSPage() {
-  const [allOrders, setAllOrders] = useState([]); // State để giữ danh sách gốc
-  const [searchTerm, setSearchTerm] = useState(''); // State cho ô tìm kiếm
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>('');
 
   const loadOrders = async () => {
-    if (!loading) setLoading(true); // Chỉ set loading nếu không phải lần đầu
-    setError('');
     try {
-      const fetchedOrders = await fetchCompletedOrders();
-      setAllOrders(fetchedOrders);
-    } catch (err) {
+      const [pending, preparing, completed] = await Promise.all([
+        orderService.getOrdersByStatus('PENDING'),
+        orderService.getOrdersByStatus('PREPARING'),
+        orderService.getOrdersByStatus('COMPLETED'),
+      ]);
+      setAllOrders([...pending, ...preparing, ...completed]);
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
@@ -61,110 +97,52 @@ export default function POSPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handlePayment = async () => {
+  const handleConfirmPayment = async () => {
     if (!selectedOrder) return;
-    setLoading(true);
     try {
-      await updateOrderStatus(selectedOrder.id, 'PAID');
-      alert(`Đã xác nhận thanh toán thành công cho bàn ${selectedOrder.table_number}!`);
+      await orderService.updateStatus(selectedOrder.id, 'PAID');
       setSelectedOrder(null);
       loadOrders();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      alert(`Lỗi khi xác nhận thanh toán: ${err.message}`);
     }
   };
 
-  // Lọc danh sách đơn hàng dựa trên searchTerm
-  const filteredOrders = allOrders.filter(order =>
-    order.table_number.toString().includes(searchTerm)
-  );
+  const filteredOrders = allOrders.filter(order => order.table_number.includes(searchTerm));
+
+  if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải dữ liệu bàn...</div>;
+  if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
 
   return (
-    <main className="min-h-screen bg-zinc-900 p-4 sm:p-6 md:p-8 font-sans text-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-amber-500">Màn hình Thu ngân (POS)</h1>
-          {/* Thêm lại ô tìm kiếm */}
-          <div className="relative w-full sm:w-64">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm số bàn..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 pl-10 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </div>
+    <div className="p-4 sm:p-6 md:p-8 h-full flex flex-col">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-dark-text-primary">Thu ngân (POS)</h1>
+        <div className="mt-4">
+          <input
+            type="text"
+            placeholder="Tìm số bàn..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full max-w-xs p-2 bg-dark-surface border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber"
+          />
         </div>
-
-        {loading && allOrders.length === 0 && <p className="text-center text-gray-400">Đang tải danh sách hóa đơn...</p>}
-        {error && <p className="text-red-500 bg-red-900/50 p-3 rounded-lg text-center mb-6">{error}</p>}
-
-        {!loading && filteredOrders.length === 0 && !error && (
-          <div className="text-center text-gray-500 bg-zinc-800 p-10 rounded-lg">
-            <p className="text-2xl mb-2">🤷</p>
-            <p>{searchTerm ? `Không tìm thấy hóa đơn cho bàn "${searchTerm}".` : "Không có hóa đơn nào đang chờ thanh toán."}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredOrders.map((order) => (
-            <div
-              key={order.id}
-              onClick={() => setSelectedOrder(order)}
-              className="bg-zinc-800 rounded-lg p-4 border border-zinc-700 cursor-pointer hover:border-amber-500 hover:bg-zinc-700 transition-all"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-xl font-bold text-amber-400">Bàn {order.table_number}</span>
-                <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full">Đã xong</span>
-              </div>
-              <p className="text-2xl font-semibold mt-2">{order.total_price.toLocaleString('vi-VN')} đ</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {format(new Date(order.created_at), 'HH:mm', { locale: vi })}
-              </p>
+      </header>
+      <div className="flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {filteredOrders.map(order => (
+          <button
+            key={order.id}
+            onClick={() => setSelectedOrder(order)}
+            className="bg-dark-surface border border-dark-border rounded-lg p-4 flex flex-col items-center justify-center text-center hover:border-brand-amber transition-all"
+          >
+            <span className="text-2xl font-bold text-dark-text-primary">Bàn {order.table_number}</span>
+            <span className="text-sm text-dark-text-secondary mt-1">{order.total_price.toLocaleString('vi-VN')}đ</span>
+            <div className="mt-2">
+              <OrderStatusBadge status={order.order_status?.status_name || 'UNKNOWN'} />
             </div>
-          ))}
-        </div>
-
-        {/* Modal Chi tiết Hóa đơn */}
-        {selectedOrder && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setSelectedOrder(null)}>
-            <div className="bg-zinc-800 rounded-lg shadow-lg p-6 border border-zinc-700 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <h2 className="text-2xl font-bold text-amber-400 mb-4">Chi tiết Hóa đơn - Bàn {selectedOrder.table_number}</h2>
-              <div className="space-y-3 mb-6 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-                {selectedOrder.order_items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center border-b border-zinc-700 pb-2">
-                    <div>
-                      <p className="text-lg">{item.products.name}</p>
-                      <p className="text-sm text-gray-400">
-                        {item.quantity} x {(item.unit_price || 0).toLocaleString('vi-VN')} đ
-                      </p>
-                    </div>
-                    <p className="font-semibold text-lg">
-                      {(item.quantity * (item.unit_price || 0)).toLocaleString('vi-VN')} đ
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between items-center border-t-2 border-amber-500 pt-4">
-                <span className="text-xl font-bold">TỔNG CỘNG</span>
-                <span className="text-3xl font-extrabold text-amber-400">
-                  {selectedOrder.total_price.toLocaleString('vi-VN')} đ
-                </span>
-              </div>
-              <button
-                onClick={handlePayment}
-                disabled={loading}
-                className="mt-8 w-full bg-green-600 py-4 rounded-lg text-xl font-bold hover:bg-green-500 disabled:opacity-50"
-              >
-                {loading ? 'Đang xử lý...' : 'XÁC NHẬN THANH TOÁN'}
-              </button>
-            </div>
-          </div>
-        )}
+          </button>
+        ))}
       </div>
-    </main>
+      {selectedOrder && <BillModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onConfirmPayment={handleConfirmPayment} />}
+    </div>
   );
 }

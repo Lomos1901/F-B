@@ -1,54 +1,59 @@
 // src/services/authService.ts
-import Cookies from 'js-cookie';
 
-export const login = async (email, password) => {
-  const res = await fetch('http://localhost:3001/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+const API_URL = 'http://localhost:3001/auth';
 
-  const data = await res.json();
+/**
+ * Service để tương tác với các API của module Auth.
+ */
+export const authService = {
+  /**
+   * Gọi API đăng nhập.
+   * @returns {Promise<{access_token: string, user: object}>} Dữ liệu trả về từ backend.
+   */
+  // SỬA LẠI: Thêm kiểu dữ liệu cho các tham số
+  async login(email: string, password: string) {
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-  if (!res.ok) {
-    // Xử lý lỗi chi tiết từ NestJS
-    if (data.message && Array.isArray(data.message)) {
-      throw new Error(data.message.join(', '));
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (data.message && Array.isArray(data.message)) {
+        throw new Error(data.message.join(', '));
+      }
+      throw new Error(data.message || 'Đăng nhập thất bại');
     }
-    throw new Error(data.message || 'Đăng nhập thất bại');
-  }
 
-  // Chỗ này cần sửa lại để lấy đúng token tùy chỉnh
-  const accessToken = data.access_token;
-  const user = data.user;
-
-  if (!accessToken || !user) {
-    throw new Error('Đăng nhập thành công nhưng không nhận được thông tin xác thực.');
-  }
-
-  Cookies.set('access_token', accessToken, { expires: 1 });
-  Cookies.set('user', JSON.stringify(user), { expires: 1 });
-
-  return user;
-};
-
-export const register = async (email, password, fullName) => {
-  const res = await fetch('http://localhost:3001/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, fullName }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    // Xử lý lỗi chi tiết từ NestJS ValidationPipe
-    // data.message lúc này sẽ là một mảng các chuỗi lỗi
-    if (data.message && Array.isArray(data.message)) {
-      throw new Error(data.message.join(', '));
+    if (!data.access_token || !data.user) {
+      throw new Error('Phản hồi từ server không hợp lệ.');
     }
-    throw new Error(data.message || 'Đăng ký thất bại');
-  }
 
-  return data;
+    return data;
+  },
+
+  /**
+   * Gọi API đăng ký.
+   */
+  // SỬA LẠI: Thêm kiểu dữ liệu cho các tham số
+  async register(email: string, password: string, fullName: string) {
+    const res = await fetch(`${API_URL}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, fullName }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (data.message && Array.isArray(data.message)) {
+        throw new Error(data.message.join(', '));
+      }
+      throw new Error(data.message || 'Đăng ký thất bại');
+    }
+
+    return data;
+  },
 };

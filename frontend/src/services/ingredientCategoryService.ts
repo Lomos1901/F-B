@@ -1,7 +1,8 @@
-// src/services/categoryService.ts
+// frontend/src/services/ingredientCategoryService.ts
+
 import Cookies from 'js-cookie';
 
-const API_URL = 'http://localhost:3001/categories';
+const API_URL = 'http://localhost:3001/ingredient-categories';
 
 const getAuthHeaders = () => {
   const token = Cookies.get('access_token');
@@ -11,22 +12,18 @@ const getAuthHeaders = () => {
   };
 };
 
-/**
- * Service để tương tác với các API của module Category (Danh mục Thực đơn).
- * Đã được sửa lại để có đầy đủ các hàm CRUD.
- */
-export const categoryService = {
+export const ingredientCategoryService = {
   async getAll() {
     const res = await fetch(API_URL, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Lỗi khi tải danh mục thực đơn');
+    if (!res.ok) throw new Error('Lỗi khi tải danh mục nguyên liệu');
     return res.json();
   },
 
-  async create(data: { name: string; description?: string }) {
+  async create(name: string) {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify({ name }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -35,11 +32,11 @@ export const categoryService = {
     return res.json();
   },
 
-  async update(id: string, data: { name: string; description?: string }) {
+  async update(id: string, name: string) {
     const res = await fetch(`${API_URL}/${id}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify({ name }),
     });
     if (!res.ok) {
       const error = await res.json();

@@ -4,119 +4,80 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { UserRole } from '@/src/enums/user-role.enum';
+import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History } from 'lucide-react';
+import { ReactNode } from 'react';
+
+interface NavLinkProps {
+  href: string;
+  icon: ReactNode;
+  children: ReactNode;
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user, logout } = useAuth();
   const isActive = (path: string) => pathname.startsWith(path);
 
-  const handleLogout = () => {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i];
-      const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-      document.cookie = name.trim() + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-    }
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = '/login';
-  };
-
-  if (loading) {
-    return (
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col items-center justify-center">
-        <p className="text-sm text-gray-500 animate-pulse">Đang tải...</p>
-      </aside>
-    );
-  }
-
-  if (!user) {
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-       window.location.href = '/login';
-    }
-    return null;
-  }
+  if (!user) return null; // Không hiển thị sidebar nếu chưa đăng nhập
 
   const isManagement = user.role === UserRole.OWNER || user.role === UserRole.MANAGER;
 
+  const NavLink = ({ href, icon, children }: NavLinkProps) => (
+    <Link href={href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(href) ? 'bg-brand-amber/10 text-brand-amber' : 'text-dark-text-secondary hover:bg-dark-surface hover:text-dark-text-primary'}`}>
+      {icon}
+      <span>{children}</span>
+    </Link>
+  );
+
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10">
-      <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center border border-amber-200 shadow-sm">
-          <span className="text-xl">☕</span>
+    <aside className="w-64 bg-dark-surface flex flex-col border-r border-dark-border">
+      <div className="p-6 border-b border-dark-border flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-brand-amber/20 flex items-center justify-center">
+          <Coffee className="text-brand-amber" />
         </div>
         <div>
-          <h2 className="text-lg font-black tracking-wider text-amber-700">SẪM COFFEE</h2>
-          <p className="text-[9px] font-bold text-gray-400 tracking-widest uppercase mt-0.5">Premium Inventory</p>
+          <h2 className="text-lg font-bold text-dark-text-primary">SẪM COFFEE</h2>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 custom-scrollbar">
-        <div className="text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-3 pl-2">Chức năng</div>
-
-        {/* Dành cho Quản lý & Chủ */}
+      <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
         {isManagement && (
           <>
-            <Link href="/dashboard" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <span>📊</span> Tổng quan
-            </Link>
-            <Link href="/pos" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/pos') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <span>💰</span> Thu ngân (POS)
-            </Link>
-            <Link href="/kds" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/kds') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <span>🍳</span> Pha chế (KDS)
-            </Link>
-            <div className="pt-2">
-              <div className="text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-2 pl-2 pt-2 border-t">Quản trị</div>
-              <Link href="/ingredients" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/ingredients') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <span>📦</span> Kho nguyên liệu
-              </Link>
-              <Link href="/products" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/products') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <span>📋</span> Thực đơn
-              </Link>
-              <Link href="/categories" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/categories') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <span>📚</span> Danh mục
-              </Link>
-              <Link href="/inventory-log" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/inventory-log') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <span>🕒</span> Lịch sử kho
-              </Link>
+            <NavLink href="/dashboard" icon={<LayoutDashboard size={18} />}>Tổng quan</NavLink>
+            <NavLink href="/pos" icon={<ShoppingCart size={18} />}>Thu ngân (POS)</NavLink>
+            <NavLink href="/kds" icon={<Coffee size={18} />}>Pha chế (KDS)</NavLink>
+
+            <div className="pt-4 mt-4 border-t border-dark-border">
+              <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Quản trị</h3>
+              <div className="space-y-2">
+                <NavLink href="/ingredients" icon={<Box size={18} />}>Kho nguyên liệu</NavLink>
+                <NavLink href="/ingredient-categories" icon={<Tag size={18} />}>Danh mục Nguyên liệu</NavLink>
+                <NavLink href="/products" icon={<ClipboardList size={18} />}>Thực đơn</NavLink>
+                <NavLink href="/categories" icon={<Book size={18} />}>Danh mục Thực đơn</NavLink>
+                <NavLink href="/inventory-receipts" icon={<History size={18} />}>Lịch sử Phiếu kho</NavLink>
+              </div>
             </div>
           </>
         )}
 
-        {/* Dành cho Barista */}
-        {user.role === UserRole.BARISTA && (
-           <Link href="/kds" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/kds') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-            <span>🍳</span> Màn hình pha chế
-          </Link>
-        )}
+        {user.role === UserRole.BARISTA && <NavLink href="/kds" icon={<Coffee size={18} />}>Màn hình pha chế</NavLink>}
+        {user.role === UserRole.CASHIER && <NavLink href="/pos" icon={<ShoppingCart size={18} />}>Màn hình thu ngân</NavLink>}
+      </nav>
 
-        {/* Dành cho Thu ngân */}
-        {user.role === UserRole.CASHIER && (
-           <Link href="/pos" className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive('/pos') ? 'bg-amber-50 text-amber-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-            <span>💰</span> Màn hình thu ngân
-          </Link>
-        )}
-
-      </div>
-
-      <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg"
-        >
-          <span>🚪</span> Đăng xuất
-        </button>
-        <div className="mt-4 flex items-center gap-3 bg-white p-3 rounded-xl border">
-          <div className="w-9 h-9 rounded-lg bg-amber-600 flex items-center justify-center text-white font-bold text-sm">
+      <div className="p-4 border-t border-dark-border">
+        <div className="flex items-center gap-3 bg-dark-bg p-3 rounded-lg">
+          <div className="w-9 h-9 rounded-full bg-brand-amber flex items-center justify-center text-dark-bg font-bold">
             {user.full_name?.substring(0, 1).toUpperCase()}
           </div>
           <div>
-            <div className="text-sm font-bold text-gray-800">{user.full_name}</div>
-            <div className="text-[10px] font-medium text-amber-600">{user.role}</div>
+            <div className="text-sm font-bold text-dark-text-primary">{user.full_name}</div>
+            <div className="text-xs text-brand-amber">{user.role}</div>
           </div>
         </div>
+        <button onClick={logout} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 text-sm font-medium text-dark-text-secondary hover:bg-dark-surface rounded-lg">
+          <LogOut size={16} />
+          Đăng xuất
+        </button>
       </div>
     </aside>
   );

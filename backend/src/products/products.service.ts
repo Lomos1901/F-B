@@ -1,4 +1,6 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+// backend/src/products/products.service.ts
+
+import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -12,125 +14,142 @@ export class ProductsService {
     this.client = this.supabaseService.getAdminClient();
   }
 
-  async createWithRecipe(createProductDto: CreateProductDto) {
-    const { ingredients, ...productDetails } = createProductDto;
-
-    const { data: productData, error: productError } = await this.client
-      .from('products')
-      .insert(productDetails)
-      .select()
-      .single();
-
-    if (productError) {
-      throw new InternalServerErrorException('Lỗi tạo món nước: ' + productError.message);
-    }
-
-    const newProductId = productData.id;
-
-    const recipeInserts = ingredients.map((ing) => ({
-      product_id: newProductId,
-      ingredient_id: ing.ingredient_id,
-      quantity: ing.quantity_required,
-    }));
-
-    const { error: recipeError } = await this.client.from('recipes').insert(recipeInserts);
-
-    if (recipeError) {
-      await this.client.from('products').delete().eq('id', newProductId);
-      throw new InternalServerErrorException('Lỗi thiết lập công thức: ' + recipeError.message);
-    }
-
-    return { message: 'Đã thêm thành công món nước mới!', product_id: newProductId };
-  }
-
-  async uploadImage(file: Express.Multer.File) {
-    const fileExt = file.originalname.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `menu/${fileName}`;
-
-    const { error } = await this.client.storage
-      .from('product-images')
-      .upload(filePath, file.buffer, { contentType: file.mimetype, upsert: true });
-
-    if (error) {
-      throw new InternalServerErrorException('Không thể tải ảnh lên: ' + error.message);
-    }
-
-    const { data: publicUrlData } = this.client.storage.from('product-images').getPublicUrl(filePath);
-    return { imageUrl: publicUrlData.publicUrl };
-  }
-
-  async findAllWithRecipes() {
+  /**
+   * Tái cấu trúc (LẦN CUỐI): Lấy tất cả sản phẩm KÈM THEO công thức và các chi tiết cần thiết.
+   * Câu lệnh này bây giờ sẽ hoạt động vì khóa ngoại đã được dọn dẹp.
+   */
+  async findAllWithDetails() {
     const { data, error } = await this.client
       .from('products')
-      .select(`id, name, price, image_url, categories (id, name), recipes (id, quantity, ingredients (id, name, base_unit, recipe_unit, conversion_factor))`)
+      .select(`
+        id, name, price, image_url,
+        categories ( name ),
+        recipes (
+          quantity,
+          ingredients ( name, recipe_unit )
+        )
+      `)
       .order('name', { ascending: true });
 
     if (error) {
-      throw new InternalServerErrorException('Lỗi tải thực đơn: ' + error.message);
+      console.error("Lỗi khi thực thi findAllWithDetails:", error);
+      throw new InternalServerErrorException(error.message);
     }
     return data;
   }
 
-  async findOneWithRecipes(id: string) {
+  /**
+   * Tái cấu trúc: Lấy một sản phẩm bằng ID kèm theo công thức.
+   */
+  async findOneWithDetails(id: string) {
     const { data, error } = await this.client
       .from('products')
-      .select(`*, recipes (id, quantity, ingredient_id, ingredients (id, name, base_unit, recipe_unit, conversion_factor))`)
+      .select(`
+        *,
+        recipes (
+          ingredient_id,
+          quantity
+        )
+      `)
       .eq('id', id)
       .single();
 
     if (error) {
-      throw new NotFoundException('Không tìm thấy món nước');
+      if (error.code === 'PGRST116') throw new NotFoundException(`Không tìm thấy sản phẩm với ID: ${id}`);
+      console.error(`Lỗi khi thực thi findOneWithDetails cho ID ${id}:`, error);
+      throw new InternalServerErrorException(error.message);
     }
     return data;
   }
 
-  async updateWithRecipe(id: string, updateProductDto: UpdateProductDto) {
-    const { ingredients, ...productDetails } = updateProductDto;
+  /**
+   * Tái cấu trúc: Tạo sản phẩm và công thức của nó trong một khối logic.
+   */
+  async createWithRecipe(createProductDto: CreateProductDto) {
+    const { ingredients, ...productData } = createProductDto;
 
-    const { error: productError } = await this.client
+    const { data: newProduct, error: productError } = await this.client
       .from('products')
-      .update(productDetails)
-      .eq('id', id);
+      .insert(productData)
+      .select('id')
+      .single();
 
     if (productError) {
-      throw new InternalServerErrorException('Lỗi cập nhật món: ' + productError.message);
-    }
-
-    const { error: deleteError } = await this.client.from('recipes').delete().eq('product_id', id);
-
-    if (deleteError) {
-      throw new InternalServerErrorException('Lỗi xóa công thức cũ: ' + deleteError.message);
+      throw new InternalServerErrorException(`Lỗi khi tạo sản phẩm: ${productError.message}`);
     }
 
     if (ingredients && ingredients.length > 0) {
-      const recipeInserts = ingredients.map((ing) => ({
+      const recipePayload = ingredients.map(ing => ({
+        product_id: newProduct.id,
+        ingredient_id: ing.ingredient_id,
+        quantity: ing.quantity_required,
+      }));
+
+      const { error: recipeError } = await this.client.from('recipes').insert(recipePayload);
+
+      if (recipeError) {
+        await this.client.from('products').delete().eq('id', newProduct.id);
+        throw new InternalServerErrorException(`Lỗi khi tạo công thức: ${recipeError.message}`);
+      }
+    }
+
+    return { ...newProduct, ...productData };
+  }
+
+  /**
+   * Tái cấu trúc: Cập nhật sản phẩm và công thức của nó.
+   */
+  async updateWithRecipe(id: string, updateProductDto: UpdateProductDto) {
+    const { ingredients, ...productData } = updateProductDto;
+
+    const { data: updatedProduct, error: productError } = await this.client
+      .from('products')
+      .update(productData)
+      .eq('id', id)
+      .select('id')
+      .single();
+
+    if (productError) {
+      throw new InternalServerErrorException(`Lỗi khi cập nhật sản phẩm: ${productError.message}`);
+    }
+
+    const { error: deleteError } = await this.client.from('recipes').delete().eq('product_id', id);
+    if (deleteError) {
+      throw new InternalServerErrorException(`Lỗi khi xóa công thức cũ: ${deleteError.message}`);
+    }
+
+    if (ingredients && ingredients.length > 0) {
+      const recipePayload = ingredients.map(ing => ({
         product_id: id,
         ingredient_id: ing.ingredient_id,
         quantity: ing.quantity_required,
       }));
 
-      const { error: recipeError } = await this.client.from('recipes').insert(recipeInserts);
-
+      const { error: recipeError } = await this.client.from('recipes').insert(recipePayload);
       if (recipeError) {
-        throw new InternalServerErrorException('Lỗi thêm công thức mới: ' + recipeError.message);
+        throw new InternalServerErrorException(`Lỗi khi cập nhật công thức mới: ${recipeError.message}`);
       }
     }
 
-    return { message: 'Cập nhật thành công!' };
+    return updatedProduct;
   }
 
-  async removeProduct(id: string) {
-    const { error: deleteRecipeError } = await this.client.from('recipes').delete().eq('product_id', id);
-    if (deleteRecipeError) {
-      throw new InternalServerErrorException('Lỗi dọn dẹp công thức: ' + deleteRecipeError.message);
+  async remove(id: string) {
+    const { error } = await this.client.from('products').delete().eq('id', id);
+    if (error) {
+      if (error.code === '23503') {
+        throw new BadRequestException('Không thể xóa sản phẩm này vì nó đã tồn tại trong các đơn hàng hoặc công thức.');
+      }
+      throw new InternalServerErrorException(error.message);
     }
+    return { message: 'Xóa sản phẩm thành công.' };
+  }
 
-    const { error: deleteProductError } = await this.client.from('products').delete().eq('id', id);
-    if (deleteProductError) {
-      throw new InternalServerErrorException('Lỗi xóa món nước: ' + deleteProductError.message);
-    }
-
-    return { message: 'Đã xóa món nước vĩnh viễn' };
+  async uploadImage(file: Express.Multer.File) {
+    const fileName = `${Date.now()}-${file.originalname.replace(/\s/g, '-')}`;
+    const { data, error } = await this.client.storage.from('product-images').upload(fileName, file.buffer, { contentType: file.mimetype });
+    if (error) throw new InternalServerErrorException('Lỗi khi tải ảnh lên: ' + error.message);
+    const { data: urlData } = this.client.storage.from('product-images').getPublicUrl(data.path);
+    return { imageUrl: urlData.publicUrl };
   }
 }

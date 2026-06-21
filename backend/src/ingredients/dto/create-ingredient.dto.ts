@@ -1,30 +1,31 @@
-// src/ingredients/dto/create-ingredient.dto.ts
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
+// backend/src/ingredients/dto/create-ingredient.dto.ts
+
+import { IsString, IsNumber, IsPositive, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateIngredientDto {
   @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsString()
-  @IsNotEmpty()
   base_unit: string;
 
   @IsString()
-  @IsNotEmpty()
   recipe_unit: string;
 
   @IsNumber()
-  @Min(0)
+  @IsPositive()
   conversion_factor: number;
 
   @IsNumber()
-  @Min(0)
-  @IsOptional()
-  min_threshold?: number;
+  @IsPositive()
+  cost_per_unit: number;
 
-  @IsNumber()
-  @Min(0)
+  /**
+   * Tái cấu trúc: Thêm category_id vào DTO.
+   * @IsUUID() - Phải là một chuỗi UUID hợp lệ.
+   * @IsOptional() - Trường này không bắt buộc phải có.
+   */
+  @IsUUID('4', { message: 'ID danh mục không hợp lệ.' })
   @IsOptional()
-  cost_per_unit?: number;
+  category_id?: string;
 }

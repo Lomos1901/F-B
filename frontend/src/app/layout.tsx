@@ -1,21 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-import { AuthProvider } from "@/src/context/AuthContext";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../context/AuthContext";
 
 const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin", "vietnamese"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin", "vietnamese"],
+  subsets: ["latin"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "Sẫm Coffee - Hệ Thống Quản Trị Kho",
-  description: "Hệ thống kiểm soát vận hành, định mức nguyên liệu thông minh tích hợp AI cho Sẫm Coffee.",
+  title: "Sẫm Coffee", // Tiêu đề chung
+  description: "Hệ thống quản lý và gọi món Sẫm Coffee",
 };
 
 export default function RootLayout({
@@ -24,12 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="vi"
-      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
-    >
-      <body className="min-h-full bg-[#0f0908] text-[#f4f1ea] selection:bg-amber-500/30 selection:text-amber-200">
+    <html lang="vi" className={`${inter.className} dark`}>
+      <body className="bg-dark-bg text-dark-text-primary">
         <AuthProvider>
+          {/* Bây giờ RootLayout chỉ cung cấp Auth và không chứa layout cụ thể */}
           {children}
         </AuthProvider>
       </body>

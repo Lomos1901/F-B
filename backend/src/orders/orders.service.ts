@@ -1,15 +1,10 @@
+// backend/src/orders/orders.service.ts
+
 import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-
-interface LogEntry {
-  ingredient_id: string;
-  change_amount: number;
-  action_type: string;
-  note: string;
-}
 
 @Injectable()
 export class OrdersService {
@@ -20,41 +15,42 @@ export class OrdersService {
     this.client = this.supabaseService.getAdminClient();
   }
 
-  // ... (các hàm khác không đổi)
-  async create(createOrderDto: CreateOrderDto) {
+  private async _getStatusId(statusName: string, statusTable: 'order_status' | 'task_status'): Promise<string> {
+    const { data, error } = await this.client.from(statusTable).select('id').eq('status_name', statusName.toUpperCase()).single();
+    if (error || !data) throw new InternalServerErrorException(`Trạng thái không hợp lệ: '${statusName}' trong bảng '${statusTable}'.`);
+    return data.id;
+  }
+
+  async create(createOrderDto: CreateOrderDto, createdByUserId?: string) {
     const { table_number, items } = createOrderDto;
     const totalPrice = items.reduce((sum, item) => sum + item.price_at_order * item.quantity, 0);
-    const { data: orderData, error: orderError } = await this.client.from('orders').insert({ table_number, total_price: totalPrice, status: 'PENDING' }).select('id').single();
-    if (orderError) throw new InternalServerErrorException(`Lỗi khi tạo đơn hàng: ${orderError.message}`);
-    const newOrderId = orderData.id;
-    const orderItemsData = items.map(item => ({ order_id: newOrderId, product_id: item.product_id, quantity: item.quantity, unit_price: item.price_at_order }));
-    const { error: itemsError } = await this.client.from('order_items').insert(orderItemsData);
-    if (itemsError) {
-      await this.client.from('orders').delete().eq('id', newOrderId);
-      throw new InternalServerErrorException(`Lỗi khi thêm các món vào đơn hàng: ${itemsError.message}`);
+    const pendingStatusId = await this._getStatusId('PENDING', 'order_status');
+    const todoTaskStatusId = await this._getStatusId('TODO', 'task_status');
+    const { data: orderData, error: orderError } = await this.client.from('orders').insert({ table_number, total_price: totalPrice, status_id: pendingStatusId, created_by: createdByUserId }).select('id').single();
+    if (orderError) {
+      this.logger.error('Lỗi khi tạo record order chính:', orderError);
+      throw new InternalServerErrorException('Lỗi hệ thống khi tạo đơn hàng.');
     }
-    return { message: `Đơn hàng cho bàn ${table_number} đã được ghi nhận thành công!`, orderId: newOrderId };
-  }
-
-  async getOrdersByStatus(status: string) {
-    const { data, error } = await this.client.from('orders').select(`*, order_items (quantity, unit_price, products ( name ))`).eq('status', status.toUpperCase()).order('created_at', { ascending: true });
-    if (error) throw new InternalServerErrorException(`Lỗi khi lấy danh sách đơn hàng: ${error.message}`);
-    return data;
-  }
-
-  async getOpenOrderByTable(tableNumber: string) {
-    const { data, error } = await this.client.from('orders').select(`*, order_items (quantity, unit_price, products ( name ))`).eq('table_number', tableNumber).in('status', ['PENDING', 'PREPARING', 'COMPLETED']).order('created_at', { ascending: false }).limit(1).single();
-    if (error && error.code !== 'PGRST116') return null;
-    if (error) throw new InternalServerErrorException(`Lỗi dữ liệu: Bàn ${tableNumber} có nhiều hơn 1 đơn hàng chưa thanh toán.`);
-    return data;
+    const newOrderId = orderData.id;
+    const orderDetailPayload = items.map(item => ({ order_id: newOrderId, product_id: item.product_id, quantity: item.quantity }));
+    const { data: orderDetailData, error: detailError } = await this.client.from('order_detail').insert(orderDetailPayload).select('id');
+    if (detailError) {
+      await this.client.from('orders').delete().eq('id', newOrderId);
+      this.logger.error('Lỗi khi tạo order_detail:', detailError);
+      throw new InternalServerErrorException('Lỗi hệ thống khi ghi chi tiết đơn hàng.');
+    }
+    const preparationTasksPayload = orderDetailData.map(detail => ({ order_detail_id: detail.id, task_status_id: todoTaskStatusId, barista_id: null }));
+    const { error: taskError } = await this.client.from('preparation_tasks').insert(preparationTasksPayload);
+    if (taskError) this.logger.error('Lỗi khi tạo preparation_tasks:', taskError);
+    return { message: `Đơn hàng cho bàn ${table_number} đã được ghi nhận.`, orderId: newOrderId };
   }
 
   async updateStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto) {
-    const newStatus = updateOrderStatusDto.status.toUpperCase();
-    const { data, error } = await this.client.from('orders').update({ status: newStatus }).eq('id', id).select().single();
+    const newStatusName = updateOrderStatusDto.status.toUpperCase();
+    const newStatusId = await this._getStatusId(newStatusName, 'order_status');
+    const { data, error } = await this.client.from('orders').update({ status_id: newStatusId }).eq('id', id).select().single();
     if (error) throw new InternalServerErrorException(`Lỗi khi cập nhật trạng thái đơn hàng: ${error.message}`);
-
-    if (newStatus === 'PAID') {
+    if (newStatusName === 'PAID') {
       this.logger.log(`Đơn hàng ${id} đã thanh toán. Bắt đầu trừ kho...`);
       this.deductStockForOrder(id).catch(e => {
         this.logger.error(`LỖI TRỪ KHO NGẦM cho đơn hàng ${id}:`, e.stack);
@@ -63,85 +59,94 @@ export class OrdersService {
     return data;
   }
 
+  /**
+   * Tái cấu trúc LẦN CUỐI: Lọc bằng status_id để đảm bảo truy vấn ổn định.
+   */
+  async getOrdersByStatus(statusName: string) {
+    const statusId = await this._getStatusId(statusName, 'order_status');
+
+    const { data, error } = await this.client
+      .from('orders')
+      .select(`
+        id, table_number, total_price, created_at,
+        order_status ( status_name ),
+        order_detail (
+          quantity,
+          products ( name )
+        )
+      `)
+      .eq('status_id', statusId) // SỬA LẠI: Lọc trực tiếp bằng status_id
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      this.logger.error(`Lỗi khi lấy đơn hàng theo trạng thái '${statusName}':`, error);
+      throw new InternalServerErrorException(`Lỗi khi lấy danh sách đơn hàng.`);
+    }
+    return data;
+  }
+
+  async getOpenOrderByTable(tableNumber: string) {
+    const { data, error } = await this.client.from('orders').select(`id, table_number, total_price, created_at, order_status ( status_name ), order_detail (quantity, products ( name, price ))`).eq('table_number', tableNumber).in('order_status.status_name', ['PENDING', 'PREPARING', 'COMPLETED']).order('created_at', { ascending: false });
+    if (error) {
+      this.logger.error(`Lỗi khi lấy đơn hàng mở của bàn ${tableNumber}:`, error);
+      throw new InternalServerErrorException('Lỗi truy vấn đơn hàng của bàn.');
+    }
+    return data.length > 0 ? data[0] : null;
+  }
+
   private async deductStockForOrder(orderId: string) {
-    this.logger.log(`[DEDUCT STOCK] Bắt đầu hàm deductStockForOrder cho đơn hàng: ${orderId}`);
-    const { data: orderItems, error: itemsError } = await this.client.from('order_items').select('quantity, product_id').eq('order_id', orderId);
-    if (itemsError) throw new Error(`Không thể lấy chi tiết đơn hàng: ${itemsError.message}`);
-    if (!orderItems) return;
+    const { data: orderDetails, error: itemsError } = await this.client.from('order_detail').select('quantity, product_id').eq('order_id', orderId);
+    if (itemsError || !orderDetails) return;
 
-    const productIds = orderItems.map(item => item.product_id);
+    const productIds = orderDetails.map(item => item.product_id);
     const { data: recipes, error: recipesError } = await this.client.from('recipes').select('product_id, ingredient_id, quantity').in('product_id', productIds);
-    if (recipesError) throw new Error(`Không thể lấy công thức: ${recipesError.message}`);
+    if (recipesError || !recipes) return;
 
-    // Lấy tất cả thông tin nguyên liệu cần thiết trong 1 lần gọi
     const ingredientIds = [...new Set(recipes.map(r => r.ingredient_id))];
-    const { data: ingredients, error: ingredientsError } = await this.client.from('ingredients').select('id, name, conversion_factor').in('id', ingredientIds);
-    if(ingredientsError) throw new Error(`Không thể lấy thông tin nguyên liệu: ${ingredientsError.message}`);
+    const { data: ingredients, error: ingredientsError } = await this.client.from('ingredients').select('id, stock_quantity, conversion_factor').in('id', ingredientIds);
+    if (ingredientsError || !ingredients) return;
 
-    // Tạo một Map để tra cứu thông tin nguyên liệu nhanh chóng
     const ingredientsMap = new Map(ingredients.map(i => [i.id, i]));
-
     const deductionMap = new Map<string, number>();
-    this.logger.log('[DEDUCT STOCK] Bắt đầu vòng lặp tính toán trừ kho...');
-    for (const item of orderItems) {
-      const itemRecipes = recipes.filter(r => r.product_id === item.product_id);
-      for (const recipe of itemRecipes) {
+
+    for (const detail of orderDetails) {
+      const productRecipes = recipes.filter(r => r.product_id === detail.product_id);
+      for (const recipe of productRecipes) {
         const ingredientInfo = ingredientsMap.get(recipe.ingredient_id);
         if (!ingredientInfo) continue;
 
-        this.logger.log(`-- Đang xử lý công thức cho nguyên liệu: ${ingredientInfo.name}`);
         const conversionFactor = ingredientInfo.conversion_factor || 1;
-        const deductionInRecipeUnits = (recipe.quantity || 0) * (item.quantity || 0);
-        const deductionInBaseUnits = deductionInRecipeUnits / conversionFactor;
-
-        this.logger.log(`   - Số lượng bán (item.quantity): ${item.quantity}`);
-        this.logger.log(`   - Lượng dùng/món (recipe.quantity): ${recipe.quantity}`);
-        this.logger.log(`   - Tổng lượng dùng (recipe_unit): ${deductionInRecipeUnits}`);
-        this.logger.log(`   - Hệ số quy đổi (conversionFactor): ${conversionFactor}`);
-        this.logger.log(`   - Lượng trừ kho (base_unit): ${deductionInRecipeUnits} / ${conversionFactor} = ${deductionInBaseUnits}`);
-
-        const currentDeduction = deductionMap.get(recipe.ingredient_id) || 0;
-        deductionMap.set(recipe.ingredient_id, currentDeduction + deductionInBaseUnits);
+        const deductionInBaseUnits = (recipe.quantity * detail.quantity) / conversionFactor;
+        const currentDeduction = deductionMap.get(ingredientInfo.id) || 0;
+        deductionMap.set(ingredientInfo.id, currentDeduction + deductionInBaseUnits);
       }
     }
-    this.logger.log('[DEDUCT STOCK] Kết quả tính toán (deductionMap):', deductionMap);
 
-    const logEntries: LogEntry[] = [];
-    for (const [ingredientId, totalDeductionInBaseUnits] of deductionMap.entries()) {
-      if (totalDeductionInBaseUnits <= 0) continue;
+    if (deductionMap.size === 0) return;
 
-      this.logger.log(`-- Chuẩn bị cập nhật kho cho Ingredient ID: ${ingredientId}`);
-      this.logger.log(`   - Tổng lượng trừ (base_unit): ${totalDeductionInBaseUnits}`);
+    const stockUpdatePromises: any[] = [];
+    const receiptDetailsPayload: { ingredient_id: string; quantity: number; }[] = [];
 
-      const { data: currentIngredient, error: fetchError } = await this.client.from('ingredients').select('stock_quantity').eq('id', ingredientId).single();
-      if (fetchError) {
-        this.logger.error(`   - Lỗi: Không thể lấy tồn kho hiện tại. Bỏ qua.`, fetchError.message);
-        continue;
-      }
+    for (const [ingredientId, totalDeduction] of deductionMap.entries()) {
+      const ingredientInfo = ingredientsMap.get(ingredientId);
+      if (!ingredientInfo) continue;
 
-      const currentStock = currentIngredient.stock_quantity || 0;
-      const newStock = currentStock - totalDeductionInBaseUnits;
-      this.logger.log(`   - Tồn kho hiện tại: ${currentStock}. Tồn kho mới sẽ là: ${newStock}`);
-
-      const { error: updateError } = await this.client.from('ingredients').update({ stock_quantity: newStock }).eq('id', ingredientId);
-      if (updateError) {
-        this.logger.error(`   - Lỗi: Cập nhật tồn kho thất bại. Bỏ qua.`, updateError.message);
-        continue;
-      }
-
-      logEntries.push({
-        ingredient_id: ingredientId,
-        change_amount: -totalDeductionInBaseUnits,
-        action_type: 'SALE',
-        note: `Bán hàng từ đơn ${orderId}`,
-      });
+      const newStock = (ingredientInfo.stock_quantity || 0) - totalDeduction;
+      stockUpdatePromises.push(this.client.from('ingredients').update({ stock_quantity: newStock }).eq('id', ingredientId));
+      receiptDetailsPayload.push({ ingredient_id: ingredientId, quantity: -totalDeduction });
     }
 
-    if (logEntries.length > 0) {
-      const { error: logError } = await this.client.from('inventory_log').insert(logEntries);
-      if (logError) this.logger.error(`[DEDUCT STOCK] Lỗi ghi log bán hàng: ${logError.message}`);
+    await Promise.all(stockUpdatePromises);
+
+    const { data: receiptData, error: receiptError } = await this.client.from('inventory_receipts').insert({ receipt_type: 'SALE_DEDUCTION' }).select('id').single();
+    if (receiptError) {
+      this.logger.error(`Lỗi tạo phiếu xuất kho cho đơn ${orderId}:`, receiptError);
+      return;
     }
 
-    this.logger.log(`[DEDUCT STOCK] Hoàn tất trừ kho cho đơn hàng ${orderId}`);
+    const finalReceiptDetails = receiptDetailsPayload.map(detail => ({ ...detail, receipt_id: receiptData.id }));
+    await this.client.from('receipt_details').insert(finalReceiptDetails);
+
+    this.logger.log(`Trừ kho và ghi nhận phiếu xuất kho thành công cho đơn hàng ${orderId}.`);
   }
 }

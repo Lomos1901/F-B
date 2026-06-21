@@ -1,22 +1,18 @@
-import { Controller, Get, Post, Delete, Param, Body, Patch, UseGuards } from '@nestjs/common';
+// backend/src/categories/categories.controller.ts
+
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('categories')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
-
-  @Get()
-  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.BARISTA, UserRole.CASHIER)
-  getAll() {
-    return this.categoriesService.getAll();
-  }
 
   @Post()
   @Roles(UserRole.OWNER, UserRole.MANAGER)
@@ -24,15 +20,24 @@ export class CategoriesController {
     return this.categoriesService.create(createCategoryDto);
   }
 
+  @Get()
+  // Cho phép mọi nhân viên xem danh mục
+  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.BARISTA, UserRole.CASHIER)
+  findAll() {
+    // SỬA LẠI: Đổi tên hàm cho đúng
+    return this.categoriesService.findAll();
+  }
+
   @Patch(':id')
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoriesService.update(id, updateCategoryDto);
   }
 
   @Delete(':id')
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  delete(@Param('id') id: string) {
-    return this.categoriesService.delete(id);
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    // SỬA LẠI: Đổi tên hàm cho đúng
+    return this.categoriesService.remove(id);
   }
 }
