@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/src/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // Import Link
 import { Coffee, Lock, Mail, LogIn } from 'lucide-react';
-
-// Bỏ Head và các link font thủ công vì đã được quản lý bởi layout.tsx
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -73,6 +72,15 @@ export default function LoginPage() {
               {!loading && <LogIn size={18} />}
             </button>
           </form>
+          {/* --- THÊM LIÊN KẾT ĐĂNG KÝ --- */}
+          <div className="text-center mt-6">
+            <p className="text-sm text-dark-text-secondary">
+              Chưa có tài khoản?{' '}
+              <Link href="/register" className="font-semibold text-brand-amber hover:underline">
+                Đăng ký
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </main>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ingredientService } from '@/src/services/ingredientService';
 import { useAuth } from '@/src/context/AuthContext';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, Inbox, ClipboardList, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Inbox, ClipboardList, AlertTriangle, Archive } from 'lucide-react';
 
 // --- Định nghĩa Interface ---
 interface Ingredient {
@@ -13,10 +13,11 @@ interface Ingredient {
   stock_quantity: number;
   base_unit: string;
   cost_per_unit: number;
+  recipe_unit: string;      // Thêm đơn vị pha chế
+  conversion_factor: number; // Thêm hệ số chuyển đổi
   ingredient_categories?: { name: string };
 }
 
-// SỬA LẠI: Định nghĩa kiểu cho các payload
 interface ImportStockPayload {
   amount: number;
   note?: string;
@@ -29,7 +30,6 @@ interface StocktakePayload {
   performed_by: string;
 }
 
-// SỬA LẠI: Định nghĩa kiểu cho props của từng modal
 interface ImportModalProps {
   ingredient: Ingredient;
   onClose: () => void;
@@ -50,7 +50,7 @@ interface DeleteModalProps {
   onHardConfirm: () => Promise<void>;
 }
 
-// --- MODAL COMPONENTS (Giao diện Dark Mode) ---
+// --- MODAL COMPONENTS ---
 
 const ImportStockModal = ({ ingredient, onClose, onConfirm }: ImportModalProps) => {
   const [amount, setAmount] = useState('');
@@ -67,7 +67,7 @@ const ImportStockModal = ({ ingredient, onClose, onConfirm }: ImportModalProps) 
       <div className="bg-dark-surface border border-dark-border p-6 rounded-lg w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h2 className="text-xl font-bold mb-4 text-brand-amber flex items-center gap-2"><Inbox size={20}/>Nhập kho: {ingredient.name}</h2>
         <div className="space-y-4">
-          <input type="number" placeholder="Số lượng nhập" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 bg-dark-bg border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
+          <input type="number" placeholder={`Số lượng nhập (theo ${ingredient.base_unit})`} value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 bg-dark-bg border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
           <input type="text" placeholder="Ghi chú (ví dụ: NCC ABC)" value={note} onChange={e => setNote(e.target.value)} className="w-full p-3 bg-dark-bg border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
         </div>
         <div className="flex justify-end mt-6 space-x-3">
@@ -96,7 +96,7 @@ const StocktakeModal = ({ ingredient, onClose, onConfirm }: StocktakeModalProps)
         <h2 className="text-xl font-bold mb-4 text-brand-amber flex items-center gap-2"><ClipboardList size={20}/>Kiểm kho: {ingredient.name}</h2>
         <p className="text-sm text-dark-text-secondary mb-4">Tồn kho hệ thống: <span className="font-bold text-white">{ingredient.stock_quantity} {ingredient.base_unit}</span></p>
         <div className="space-y-4">
-          <input type="number" placeholder="Số lượng thực tế đếm được" value={actualQuantity} onChange={e => setActualQuantity(e.target.value)} className="w-full p-3 bg-dark-bg border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
+          <input type="number" placeholder={`Số lượng thực tế (${ingredient.base_unit})`} value={actualQuantity} onChange={e => setActualQuantity(e.target.value)} className="w-full p-3 bg-dark-bg border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
           <input type="text" placeholder="Lý do kiểm kho (bắt buộc)" value={note} onChange={e => setNote(e.target.value)} className="w-full p-3 bg-dark-bg border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
         </div>
         <div className="flex justify-end mt-6 space-x-3">
@@ -152,7 +152,6 @@ export default function IngredientsPage() {
 
   useEffect(() => { loadIngredients(); }, []);
 
-  // SỬA LẠI: Thêm kiểu cho payload
   const handleImportStock = async (payload: ImportStockPayload) => {
     try {
       await ingredientService.importStock(modal!.data.id, payload);
@@ -161,7 +160,6 @@ export default function IngredientsPage() {
     } catch (err: any) { alert(`Lỗi: ${err.message}`); }
   };
 
-  // SỬA LẠI: Thêm kiểu cho payload
   const handleStocktake = async (payload: StocktakePayload) => {
     try {
       await ingredientService.stocktake(modal!.data.id, payload);
@@ -201,9 +199,11 @@ export default function IngredientsPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-dark-text-primary">Kho Nguyên liệu</h1>
         <div className="flex items-center gap-4">
-          <Link href="/ingredient-categories" className="px-4 py-2 rounded-lg font-semibold text-sm bg-dark-surface text-dark-text-secondary border border-dark-border hover:bg-dark-border transition-all">
-            Quản lý Danh mục
+          <Link href="/ingredients/archived" className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-gray-600 text-white hover:bg-gray-500 transition-all">
+            <Archive size={16} />
+            Thùng rác
           </Link>
+
           <Link href="/ingredients/create" className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-brand-amber text-black hover:bg-brand-amber-dark transition-all">
             <Plus size={16} />
             Thêm nguyên liệu
@@ -212,30 +212,35 @@ export default function IngredientsPage() {
       </div>
 
       <div className="bg-dark-surface border border-dark-border shadow-lg rounded-lg overflow-x-auto">
-        <table className="min-w-full">
+        <table className="min-w-full table-fixed">
           <thead className="bg-dark-bg">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Nguyên liệu</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Danh mục</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Tồn kho</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Giá vốn</th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Hành động</th>
+              <th className="w-1/3 px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Nguyên liệu</th>
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Danh mục</th>
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Tồn (Nhập)</th>
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Tồn (Pha chế)</th>
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Giá vốn</th>
+              <th className="w-auto px-6 py-3 text-center text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">Hành động</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-dark-border">
-            {ingredients.map((ing) => (
-              <tr key={ing.id} className="hover:bg-dark-bg transition-colors">
-                <td className="px-6 py-4 font-medium text-dark-text-primary">{ing.name}</td>
-                <td className="px-6 py-4 text-dark-text-secondary">{ing.ingredient_categories?.name || 'N/A'}</td>
-                <td className="px-6 py-4 text-dark-text-secondary font-mono">{ing.stock_quantity} {ing.base_unit}</td>
-                <td className="px-6 py-4 text-dark-text-secondary font-mono">{ing.cost_per_unit.toLocaleString('vi-VN')} đ</td>
-                <td className="px-6 py-4 text-center space-x-2">
-                  <button onClick={() => setModal({ type: 'import', data: ing })} className="p-2 text-green-400 hover:bg-dark-bg rounded-full"><Inbox size={16}/></button>
-                  <button onClick={() => setModal({ type: 'stocktake', data: ing })} className="p-2 text-blue-400 hover:bg-dark-bg rounded-full"><ClipboardList size={16}/></button>
-                  <button onClick={() => openDeleteModal(ing)} className="p-2 text-red-500 hover:bg-dark-bg rounded-full"><Trash2 size={16}/></button>
-                </td>
-              </tr>
-            ))}
+            {ingredients.map((ing) => {
+              const recipeStock = (ing.stock_quantity || 0) * (ing.conversion_factor || 1);
+              return (
+                <tr key={ing.id} className="hover:bg-dark-bg transition-colors">
+                  <td className="px-6 py-4 font-medium text-dark-text-primary truncate">{ing.name}</td>
+                  <td className="px-6 py-4 text-dark-text-secondary">{ing.ingredient_categories?.name || 'N/A'}</td>
+                  <td className="px-6 py-4 text-dark-text-secondary font-mono">{ing.stock_quantity} {ing.base_unit}</td>
+                  <td className="px-6 py-4 text-dark-text-secondary font-mono">{recipeStock.toLocaleString('vi-VN')} {ing.recipe_unit}</td>
+                  <td className="px-6 py-4 text-dark-text-secondary font-mono">{ing.cost_per_unit.toLocaleString('vi-VN')} đ</td>
+                  <td className="px-6 py-4 text-center space-x-2">
+                    <button onClick={() => setModal({ type: 'import', data: ing })} className="p-2 text-green-400 hover:bg-dark-bg rounded-full" title="Nhập kho"><Inbox size={16}/></button>
+                    <button onClick={() => setModal({ type: 'stocktake', data: ing })} className="p-2 text-blue-400 hover:bg-dark-bg rounded-full" title="Kiểm kho"><ClipboardList size={16}/></button>
+                    <button onClick={() => openDeleteModal(ing)} className="p-2 text-red-500 hover:bg-dark-bg rounded-full" title="Xóa"><Trash2 size={16}/></button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

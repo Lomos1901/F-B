@@ -48,20 +48,25 @@ export class OrdersService {
   async updateStatus(id: string, updateOrderStatusDto: UpdateOrderStatusDto) {
     const newStatusName = updateOrderStatusDto.status.toUpperCase();
     const newStatusId = await this._getStatusId(newStatusName, 'order_status');
-    const { data, error } = await this.client.from('orders').update({ status_id: newStatusId }).eq('id', id).select().single();
-    if (error) throw new InternalServerErrorException(`Lỗi khi cập nhật trạng thái đơn hàng: ${error.message}`);
-    if (newStatusName === 'PAID') {
-      this.logger.log(`Đơn hàng ${id} đã thanh toán. Bắt đầu trừ kho...`);
-      this.deductStockForOrder(id).catch(e => {
-        this.logger.error(`LỖI TRỪ KHO NGẦM cho đơn hàng ${id}:`, e.stack);
-      });
+
+    const { data: updatedOrder, error } = await this.client.from('orders').update({ status_id: newStatusId }).eq('id', id).select().single();
+    if (error) {
+      throw new InternalServerErrorException(`Lỗi khi cập nhật trạng thái đơn hàng: ${error.message}`);
     }
-    return data;
+
+    if (newStatusName === 'PAID') {
+      try {
+        this.logger.log(`Đơn hàng ${id} đã thanh toán. Bắt đầu trừ kho...`);
+        await this.deductStockForOrder(id);
+      } catch (deductionError) {
+        this.logger.error(`LỖI TRỪ KHO cho đơn hàng ${id}:`, (deductionError as Error).stack);
+        throw new InternalServerErrorException(`Cập nhật trạng thái thành công, nhưng trừ kho thất bại: ${(deductionError as Error).message}`);
+      }
+    }
+
+    return updatedOrder;
   }
 
-  /**
-   * Tái cấu trúc LẦN CUỐI: Lọc bằng status_id để đảm bảo truy vấn ổn định.
-   */
   async getOrdersByStatus(statusName: string) {
     const statusId = await this._getStatusId(statusName, 'order_status');
 
@@ -72,10 +77,10 @@ export class OrdersService {
         order_status ( status_name ),
         order_detail (
           quantity,
-          products ( name )
+          products ( name, price )
         )
       `)
-      .eq('status_id', statusId) // SỬA LẠI: Lọc trực tiếp bằng status_id
+      .eq('status_id', statusId)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -94,36 +99,51 @@ export class OrdersService {
     return data.length > 0 ? data[0] : null;
   }
 
+  /**
+   * Thực hiện trừ kho cho một đơn hàng đã thanh toán và ghi nhận lịch sử xuất kho.
+   * @param orderId ID của đơn hàng cần trừ kho.
+   */
   private async deductStockForOrder(orderId: string) {
+    // Lấy chi tiết các món trong đơn hàng.
     const { data: orderDetails, error: itemsError } = await this.client.from('order_detail').select('quantity, product_id').eq('order_id', orderId);
     if (itemsError || !orderDetails) return;
 
+    // Lấy công thức của các món đó.
     const productIds = orderDetails.map(item => item.product_id);
     const { data: recipes, error: recipesError } = await this.client.from('recipes').select('product_id, ingredient_id, quantity').in('product_id', productIds);
     if (recipesError || !recipes) return;
 
+    // Lấy thông tin tồn kho hiện tại của các nguyên liệu.
     const ingredientIds = [...new Set(recipes.map(r => r.ingredient_id))];
     const { data: ingredients, error: ingredientsError } = await this.client.from('ingredients').select('id, stock_quantity, conversion_factor').in('id', ingredientIds);
     if (ingredientsError || !ingredients) return;
 
+
+    // Tạo một "bản đồ" để cộng dồn lượng cần trừ cho mỗi nguyên liệu.
     const ingredientsMap = new Map(ingredients.map(i => [i.id, i]));
     const deductionMap = new Map<string, number>();
 
+    // Duyệt qua từng món trong đơn hàng để tính toán.
     for (const detail of orderDetails) {
       const productRecipes = recipes.filter(r => r.product_id === detail.product_id);
       for (const recipe of productRecipes) {
         const ingredientInfo = ingredientsMap.get(recipe.ingredient_id);
         if (!ingredientInfo) continue;
 
+        // Quy đổi từ đơn vị pha chế về đơn vị lưu kho (đơn vị nhập).
         const conversionFactor = ingredientInfo.conversion_factor || 1;
         const deductionInBaseUnits = (recipe.quantity * detail.quantity) / conversionFactor;
+
+        // Cộng dồn lượng cần trừ.
         const currentDeduction = deductionMap.get(ingredientInfo.id) || 0;
         deductionMap.set(ingredientInfo.id, currentDeduction + deductionInBaseUnits);
       }
     }
 
-    if (deductionMap.size === 0) return;
+    if (deductionMap.size === 0) return; // Không có gì để trừ, kết thúc.
 
+    // === BƯỚC 3: THỰC THI VÀO CSDL ===
+    // Chuẩn bị dữ liệu để cập nhật hàng loạt.
     const stockUpdatePromises: any[] = [];
     const receiptDetailsPayload: { ingredient_id: string; quantity: number; }[] = [];
 
@@ -133,19 +153,23 @@ export class OrdersService {
 
       const newStock = (ingredientInfo.stock_quantity || 0) - totalDeduction;
       stockUpdatePromises.push(this.client.from('ingredients').update({ stock_quantity: newStock }).eq('id', ingredientId));
+      // Lưu số lượng trừ dưới dạng số âm để ghi vào lịch sử.
       receiptDetailsPayload.push({ ingredient_id: ingredientId, quantity: -totalDeduction });
     }
 
-    await Promise.all(stockUpdatePromises);
-
+    // 3.1. Tạo một phiếu xuất kho.
     const { data: receiptData, error: receiptError } = await this.client.from('inventory_receipts').insert({ receipt_type: 'SALE_DEDUCTION' }).select('id').single();
     if (receiptError) {
       this.logger.error(`Lỗi tạo phiếu xuất kho cho đơn ${orderId}:`, receiptError);
-      return;
+      throw new InternalServerErrorException('Không thể tạo phiếu xuất kho.');
     }
 
+    // 3.2. Ghi chi tiết các nguyên liệu đã bị trừ vào phiếu xuất.
     const finalReceiptDetails = receiptDetailsPayload.map(detail => ({ ...detail, receipt_id: receiptData.id }));
     await this.client.from('receipt_details').insert(finalReceiptDetails);
+
+    // 3.3. Cập nhật lại số lượng tồn kho của các nguyên liệu.
+    await Promise.all(stockUpdatePromises);
 
     this.logger.log(`Trừ kho và ghi nhận phiếu xuất kho thành công cho đơn hàng ${orderId}.`);
   }

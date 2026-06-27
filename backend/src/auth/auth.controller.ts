@@ -8,7 +8,8 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto.email, registerDto.password, registerDto.fullName);
+    // Sửa lại để truyền cả 4 tham số
+    return this.authService.register(registerDto.email, registerDto.password, registerDto.fullName, registerDto.role);
   }
 
   @Post('login')

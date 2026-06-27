@@ -49,6 +49,7 @@ const BillModal = ({ order, onClose, onConfirmPayment }: { order: Order, onClose
             {order.order_detail.map((item, index) => (
               <li key={index} className="py-2 flex justify-between text-sm">
                 <span className="text-dark-text-primary">{item.products?.name} (x{item.quantity})</span>
+                {/* SỬA LỖI: Truy cập vào item.products.price thay vì item.price */}
                 <span className="text-dark-text-secondary">{(item.products?.price! * item.quantity).toLocaleString('vi-VN')}đ</span>
               </li>
             ))}
@@ -116,7 +117,7 @@ export default function POSPage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 h-full flex flex-col">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-dark-text-primary">Thu ngân (POS)</h1>
+        <h1 className="text-3xl font-bold text-dark-text-primary">Màn Hình Thu ngân</h1>
         <div className="mt-4">
           <input
             type="text"

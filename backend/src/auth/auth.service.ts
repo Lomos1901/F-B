@@ -21,9 +21,9 @@ export class AuthService {
   ) {}
 
   /**
-   * Tái cấu trúc: Thêm việc đồng bộ email vào bảng public.users.
+   * Tái cấu trúc: Thêm việc đồng bộ email và nhận 'role' từ tham số.
    */
-  async register(email: string, password: string, fullName: string) {
+  async register(email: string, password: string, fullName: string, role: UserRole) {
     const publicClient = this.supabaseService.getPublicClient();
 
     // 1. Tạo user trong schema `auth` của Supabase
@@ -45,8 +45,8 @@ export class AuthService {
     const { error: dbError } = await adminClient.from('users').insert({
       id: authData.user.id,
       full_name: fullName,
-      email: authData.user.email, // ĐỒNG BỘ EMAIL
-      role: UserRole.BARISTA, // Vai trò mặc định, kiểu TEXT tương thích với DB mới
+      email: authData.user.email,
+      role: role, // Sử dụng role từ tham số
     });
 
     if (dbError) {

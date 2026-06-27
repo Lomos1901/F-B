@@ -1,4 +1,5 @@
-import { IsEmail, IsString, IsNotEmpty, MinLength } from 'class-validator';
+import { IsEmail, IsString, IsNotEmpty, MinLength, IsEnum } from 'class-validator';
+import { UserRole } from '../enums/user-role.enum';
 
 export class RegisterDto {
   @IsEmail()
@@ -13,6 +14,11 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   fullName: string;
+
+  // Thêm trường role với validation
+  @IsEnum(UserRole)
+  @IsNotEmpty()
+  role: UserRole;
 }
 
 export class LoginDto {

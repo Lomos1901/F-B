@@ -1,4 +1,5 @@
 // src/services/authService.ts
+import { UserRole } from '../enums/user-role.enum';
 
 const API_URL = 'http://localhost:3001/auth';
 
@@ -10,7 +11,6 @@ export const authService = {
    * Gọi API đăng nhập.
    * @returns {Promise<{access_token: string, user: object}>} Dữ liệu trả về từ backend.
    */
-  // SỬA LẠI: Thêm kiểu dữ liệu cho các tham số
   async login(email: string, password: string) {
     const res = await fetch(`${API_URL}/login`, {
       method: 'POST',
@@ -36,13 +36,14 @@ export const authService = {
 
   /**
    * Gọi API đăng ký.
+   * SỬA LẠI: Thêm tham số 'role'.
    */
-  // SỬA LẠI: Thêm kiểu dữ liệu cho các tham số
-  async register(email: string, password: string, fullName: string) {
+  async register(email: string, password: string, fullName: string, role: UserRole) {
     const res = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, fullName }),
+      // Thêm 'role' vào body của request
+      body: JSON.stringify({ email, password, fullName, role }),
     });
 
     const data = await res.json();

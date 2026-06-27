@@ -162,8 +162,8 @@ export default function CategoriesPage() {
                   <td className="px-6 py-4 font-medium text-dark-text-primary">{cat.name}</td>
                   <td className="px-6 py-4 text-dark-text-secondary">{cat.description}</td>
                   <td className="px-6 py-4 text-center space-x-2">
-                    <button onClick={() => setEditingCategory(cat)} className="p-2 text-blue-400 hover:bg-dark-bg rounded-full"><Edit size={16}/></button>
-                    <button onClick={() => handleDelete(cat.id)} className="p-2 text-red-500 hover:bg-dark-bg rounded-full"><Trash2 size={16}/></button>
+                    <button onClick={() => setEditingCategory(cat)} className="p-2 text-blue-400 hover:bg-dark-bg rounded-full" title="Sửa"><Edit size={16}/></button>
+                    <button onClick={() => handleDelete(cat.id)} className="p-2 text-red-500 hover:bg-dark-bg rounded-full" title="Xóa"><Trash2 size={16}/></button>
                   </td>
                 </tr>
               ))}

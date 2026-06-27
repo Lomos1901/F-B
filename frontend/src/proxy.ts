@@ -1,33 +1,41 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// 🌟 Thay đổi quan trọng nhất: Đổi tên hàm từ 'middleware' thành 'proxy'
 export default function proxy(request: NextRequest) {
-  // Đọc token từ cookie. Đảm bảo lúc login thành công, bạn lưu cookie với tên là 'access_token'
   const token = request.cookies.get("access_token")?.value;
+  const { pathname } = request.nextUrl;
 
-  const pathname = request.nextUrl.pathname;
+  // 1. Định nghĩa tất cả các trang công khai (Whitelist)
+  const isPublicPage =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/qr-order') ||
+    pathname === '/';
 
-  // Xác định các trang không cần đăng nhập
-  const isAuthPage =
-    pathname.startsWith("/login") || pathname.startsWith("/register");
-  const isPublicPage = pathname === "/" || pathname.startsWith("/qr-order");
-
-  // 1. Nếu chưa đăng nhập mà cố vào các trang quản lý (ví dụ: /dashboard, /history) -> Đẩy về /login
-  if (!token && !isAuthPage && !isPublicPage) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  // 2. Nếu là trang công khai, cho phép truy cập
+  if (isPublicPage) {
+    // Xử lý trường hợp đặc biệt: nếu đã đăng nhập thì không cho vào lại trang login/register
+    if (token && (pathname.startsWith('/login') || pathname.startsWith('/register'))) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    // Với các trang công khai khác (qr-order, /), cho phép truy cập bình thường
+    return NextResponse.next();
   }
 
-  // 2. Nếu đã đăng nhập mà lại vào trang /login hoặc /register -> Đẩy thẳng vào /dashboard
-  if (token && isAuthPage) {
-    // Đã xóa chữ /(admin) đi, Next.js sẽ tự động hiểu và tìm đúng file bên trong thư mục (admin)
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // 3. Nếu không phải trang công khai, nó phải là trang được bảo vệ.
+  // Kiểm tra xem người dùng đã đăng nhập chưa.
+  if (!token) {
+    // Nếu chưa, chuyển hướng về trang đăng nhập.
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirectedFrom', pathname); // Gợi ý: Lưu lại trang họ định vào
+    return NextResponse.redirect(loginUrl);
   }
 
+  // Nếu đã đăng nhập, cho phép truy cập trang được bảo vệ.
   return NextResponse.next();
 }
 
-// Cấu hình matcher để proxy chạy trên toàn bộ hệ thống, loại trừ các file tĩnh và API
+// Cấu hình matcher vẫn giữ nguyên
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

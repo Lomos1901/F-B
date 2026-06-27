@@ -83,7 +83,7 @@ export default function KDSPage() {
   return (
     <div className="h-full flex flex-col">
       <header className="p-4 border-b border-dark-border">
-        <h1 className="text-2xl font-bold text-dark-text-primary">Màn hình Pha chế (KDS)</h1>
+        <h1 className="text-2xl font-bold text-dark-text-primary">Màn hình Pha chế</h1>
       </header>
       <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 p-6 overflow-y-auto">
         {/* Cột Chờ xác nhận */}

@@ -18,18 +18,28 @@ export class IngredientsService {
 
   /**
    * Tái cấu trúc: Lấy danh sách nguyên liệu kèm theo tên danh mục.
+   * SỬA LỖI: Liệt kê tường minh các cột để đảm bảo dữ liệu đầy đủ.
    */
   async findAll() {
     const { data, error } = await this.client
       .from('ingredients')
       .select(`
-        *,
+        id,
+        name,
+        stock_quantity,
+        base_unit,
+        cost_per_unit,
+        recipe_unit,
+        conversion_factor,
         ingredient_categories ( name )
       `)
       .eq('is_active', true)
       .order('name', { ascending: true });
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) {
+      this.logger.error('Lỗi khi thực hiện findAll ingredients:', error);
+      throw new InternalServerErrorException(error.message);
+    }
     return { status: 'Thành công', record_count: data.length, data: data };
   }
 
@@ -45,7 +55,6 @@ export class IngredientsService {
   }
 
   async create(createIngredientDto: CreateIngredientDto) {
-    // Lưu ý: min_threshold đã bị xóa
     const { data, error } = await this.client
       .from('ingredients')
       .insert({ ...createIngredientDto, stock_quantity: 0, is_active: true })
@@ -68,17 +77,12 @@ export class IngredientsService {
     return data;
   }
 
-  /**
-   * Tái cấu trúc HOÀN TOÀN: Logic nhập hàng theo hệ thống phiếu.
-   */
   async importStock(id: string, importStockDto: ImportStockDto) {
     if (importStockDto.amount <= 0) throw new BadRequestException('Số lượng nhập phải lớn hơn 0');
 
-    // Bắt đầu một transaction để đảm bảo an toàn
     const { data: current, error: fetchError } = await this.client.from('ingredients').select('stock_quantity').eq('id', id).single();
     if (fetchError || !current) throw new NotFoundException('Không tìm thấy nguyên liệu');
 
-    // 1. Tạo một phiếu nhập kho
     const { data: receiptData, error: receiptError } = await this.client
       .from('inventory_receipts')
       .insert({
@@ -93,7 +97,6 @@ export class IngredientsService {
       throw new InternalServerErrorException('Lỗi hệ thống khi tạo phiếu nhập kho.');
     }
 
-    // 2. Ghi chi tiết phiếu nhập
     const { error: detailError } = await this.client
       .from('receipt_details')
       .insert({
@@ -104,27 +107,20 @@ export class IngredientsService {
 
     if (detailError) {
       this.logger.error('Lỗi ghi chi tiết phiếu nhập kho:', detailError);
-      // Rollback: Xóa phiếu vừa tạo
       await this.client.from('inventory_receipts').delete().eq('id', receiptData.id);
       throw new InternalServerErrorException('Lỗi hệ thống khi ghi chi tiết phiếu nhập.');
     }
 
-    // 3. Cập nhật lại tồn kho
     const newStock = (current.stock_quantity || 0) + importStockDto.amount;
     const { error: updateError } = await this.client.from('ingredients').update({ stock_quantity: newStock }).eq('id', id);
 
     if (updateError) {
-      // Đây là trường hợp phức tạp, có thể cần một transaction thực sự ở mức DB
       this.logger.error('Lỗi cập nhật tồn kho sau khi đã ghi phiếu:', updateError);
-      // Không ném lỗi để không gây khó hiểu cho người dùng, nhưng cần ghi log
     }
 
     return { message: 'Nhập hàng thành công', new_stock: newStock };
   }
 
-  /**
-   * Tái cấu trúc HOÀN TOÀN: Logic kiểm kho theo hệ thống phiếu.
-   */
   async stocktake(id: string, stocktakeDto: StocktakeDto) {
     if (stocktakeDto.actual_quantity < 0) throw new BadRequestException('Số lượng thực tế không được âm');
     if (!stocktakeDto.note || stocktakeDto.note.trim() === '') throw new BadRequestException('Bắt buộc phải ghi chú lý do kiểm kho');
@@ -140,14 +136,11 @@ export class IngredientsService {
       return { message: 'Số lượng khớp hoàn toàn, không có biến động.', new_stock: actualStock };
     }
 
-    // 1. Tạo một phiếu kiểm kho
     const { data: receiptData, error: receiptError } = await this.client
       .from('inventory_receipts')
       .insert({
         receipt_type: 'STOCKTAKE_ADJUSTMENT',
         created_by: stocktakeDto.performed_by,
-        // Lưu ý: note của nghiệp vụ kiểm kho có thể lưu ở đâu? Hiện tại CSDL chưa có cột này trong inventory_receipts.
-        // Tạm thời bỏ qua hoặc cần cập nhật CSDL.
       })
       .select('id')
       .single();
@@ -157,13 +150,12 @@ export class IngredientsService {
       throw new InternalServerErrorException('Lỗi hệ thống khi tạo phiếu kiểm kho.');
     }
 
-    // 2. Ghi chi tiết chênh lệch
     const { error: detailError } = await this.client
       .from('receipt_details')
       .insert({
         receipt_id: receiptData.id,
         ingredient_id: id,
-        quantity: changeAmount, // Ghi lại lượng chênh lệch (có thể âm hoặc dương)
+        quantity: changeAmount,
       });
 
     if (detailError) {
@@ -172,7 +164,6 @@ export class IngredientsService {
       throw new InternalServerErrorException('Lỗi hệ thống khi ghi chi tiết phiếu kiểm kho.');
     }
 
-    // 3. Cập nhật lại tồn kho
     const { error: updateError } = await this.client.from('ingredients').update({ stock_quantity: actualStock }).eq('id', id);
     if (updateError) {
       this.logger.error('Lỗi cập nhật tồn kho sau khi đã ghi phiếu kiểm kho:', updateError);
@@ -181,8 +172,6 @@ export class IngredientsService {
     return { message: 'Điều chỉnh kiểm kho thành công', variance: changeAmount, new_stock: actualStock };
   }
 
-  // Các hàm checkDependencies, softDelete, hardDelete, restore không bị ảnh hưởng trực tiếp bởi CSDL mới
-  // và có thể giữ nguyên.
   async checkDependencies(id: string) {
     const { data, error } = await this.client.rpc('get_product_names_by_ingredient', { p_ingredient_id: id });
     if (error) {
@@ -194,7 +183,10 @@ export class IngredientsService {
   }
 
   async softDelete(id: string) {
-    const { error } = await this.client.from('ingredients').update({ is_active: false }).eq('id', id);
+    const { error } = await this.client
+      .from('ingredients')
+      .update({ is_active: false })
+      .eq('id', id);
     if (error) throw new InternalServerErrorException('Lỗi ẩn nguyên liệu: ' + error.message);
     return { message: 'Đã ngưng sử dụng nguyên liệu thành công!' };
   }
@@ -211,7 +203,10 @@ export class IngredientsService {
   }
 
   async restore(id: string) {
-    const { error } = await this.client.from('ingredients').update({ is_active: true }).eq('id', id);
+    const { error } = await this.client
+      .from('ingredients')
+      .update({ is_active: true })
+      .eq('id', id);
     if (error) throw new InternalServerErrorException('Lỗi khôi phục: ' + error.message);
     return { message: 'Đã khôi phục nguyên liệu thành công!' };
   }

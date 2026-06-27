@@ -121,9 +121,9 @@ export default function ProductsPage() {
                 {/* SỬA LẠI: Bọc các nút trong một div flex */}
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-center space-x-2">
-                    <button onClick={() => setSelectedProduct(product)} className="p-2 text-dark-text-secondary hover:text-white rounded-full"><Eye size={16}/></button>
-                    <Link href={`/products/edit/${product.id}`} className="p-2 text-blue-400 hover:text-white rounded-full inline-block"><Edit size={16}/></Link>
-                    <button onClick={() => handleDelete(product.id)} className="p-2 text-red-500 hover:text-white rounded-full"><Trash2 size={16}/></button>
+                    <button onClick={() => setSelectedProduct(product)} className="p-2 text-dark-text-secondary hover:text-white rounded-full" title="Xem công thức"><Eye size={16}/></button>
+                    <Link href={`/products/edit/${product.id}`} className="p-2 text-blue-400 hover:text-white rounded-full inline-block" title="Sửa"><Edit size={16}/></Link>
+                    <button onClick={() => handleDelete(product.id)} className="p-2 text-red-500 hover:text-white rounded-full" title="Xóa"><Trash2 size={16}/></button>
                   </div>
                 </td>
               </tr>

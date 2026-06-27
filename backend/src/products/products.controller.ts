@@ -1,6 +1,6 @@
 // backend/src/products/products.controller.ts
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, ParseUUIDPipe, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, UseInterceptors, UploadedFile, ParseUUIDPipe, Put } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -11,60 +11,56 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
 
 @Controller('products')
-@UseGuards(JwtAuthGuard, RolesGuard) // Áp dụng Guard cho toàn bộ controller
+// Bỏ Guard ở cấp controller để cho phép truy cập công khai theo mặc định
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   /**
-   * Tái cấu trúc: Endpoint để tạo sản phẩm và công thức.
-   * Chỉ Manager và Owner có quyền.
+   * Endpoint để tạo sản phẩm và công thức.
+   * YÊU CẦU XÁC THỰC: Chỉ Manager và Owner có quyền.
    */
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard) // Áp dụng Guard cho từng endpoint cần bảo vệ
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   create(@Body() createProductDto: CreateProductDto) {
-    // Đổi tên hàm gọi service cho đúng
     return this.productsService.createWithRecipe(createProductDto);
   }
 
   /**
-   * Tái cấu trúc: Endpoint để lấy tất cả sản phẩm.
-   * Mọi nhân viên đã đăng nhập đều có thể xem.
+   * Endpoint để lấy tất cả sản phẩm.
+   * CÔNG KHAI: Cho phép mọi người (cả khách hàng) truy cập.
    */
   @Get()
-  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.BARISTA, UserRole.CASHIER)
   findAll() {
-    // Đổi tên hàm gọi service cho đúng
     return this.productsService.findAllWithDetails();
   }
 
   /**
-   * Tái cấu trúc: Endpoint để lấy một sản phẩm.
-   * Mọi nhân viên đã đăng nhập đều có thể xem.
+   * Endpoint để lấy một sản phẩm.
+   * CÔNG KHAI: Cho phép mọi người truy cập.
    */
   @Get(':id')
-  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.BARISTA, UserRole.CASHIER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    // Đổi tên hàm gọi service cho đúng
     return this.productsService.findOneWithDetails(id);
   }
 
   /**
-   * Tái cấu trúc: Endpoint để cập nhật sản phẩm và công thức.
-   * Chỉ Manager và Owner có quyền.
-   * Sử dụng PUT vì nó mang ngữ nghĩa "thay thế toàn bộ".
+   * Endpoint để cập nhật sản phẩm và công thức.
+   * YÊU CẦU XÁC THỰC: Chỉ Manager và Owner có quyền.
    */
-  @Put(':id') // Đổi từ PATCH/PUT sang PUT cho rõ ràng
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateProductDto: UpdateProductDto) {
-    // Đổi tên hàm gọi service cho đúng
     return this.productsService.updateWithRecipe(id, updateProductDto);
   }
 
   /**
    * Endpoint để xóa sản phẩm.
-   * Chỉ Manager và Owner có quyền.
+   * YÊU CẦU XÁC THỰC: Chỉ Manager và Owner có quyền.
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.remove(id);
@@ -72,9 +68,10 @@ export class ProductsController {
 
   /**
    * Endpoint để tải ảnh lên.
-   * Chỉ Manager và Owner có quyền.
+   * YÊU CẦU XÁC THỰC: Chỉ Manager và Owner có quyền.
    */
   @Post('upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(@UploadedFile() file: Express.Multer.File) {
