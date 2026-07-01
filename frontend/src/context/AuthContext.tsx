@@ -3,7 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { authService } from '../services/authService'; // Import authService
+import { authService } from '../services/authService';
+import { toast } from 'react-toastify';
 
 interface User {
   id: string;
@@ -12,7 +13,6 @@ interface User {
   role: 'OWNER' | 'MANAGER' | 'BARISTA' | 'CASHIER';
 }
 
-// Mở rộng Context để chứa các hàm và trạng thái mới
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -22,7 +22,6 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Cung cấp giá trị mặc định cho các hàm
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // Logic kiểm tra cookie khi tải trang không đổi
     try {
       const userCookie = Cookies.get('user');
       if (userCookie) {
@@ -55,7 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // ĐỊNH NGHĨA HÀM LOGIN
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -63,30 +60,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await authService.login(email, password);
       const userData: User = data.user;
 
-      // Lưu thông tin vào state và cookie
       setUser(userData);
       Cookies.set('user', JSON.stringify(userData), { expires: 7 });
       Cookies.set('access_token', data.access_token, { expires: 7 });
 
-      // Chuyển hướng sau khi đăng nhập thành công
+      // Thông báo đăng nhập thành công
+      toast.success(`Chào mừng trở lại, ${userData.full_name}!`);
+
       router.push('/dashboard');
 
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi không xác định.');
+      const errorMessage = err.message || 'Đã xảy ra lỗi không xác định.';
+      setError(errorMessage);
+      toast.error(errorMessage); // Thông báo lỗi
     } finally {
       setLoading(false);
     }
   };
 
-  // ĐỊNH NGHĨA HÀM LOGOUT
   const logout = () => {
     setUser(null);
     Cookies.remove('user');
     Cookies.remove('access_token');
+    toast.info("Bạn đã đăng xuất."); // Thông báo đăng xuất
     router.push('/login');
   };
 
-  // Cung cấp đầy đủ các giá trị cho context
   const value = {
     user,
     isAuthenticated: !!user,

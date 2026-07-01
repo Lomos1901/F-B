@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { orderService } from '@/src/services/orderService';
 import { Check, CookingPot, Bell } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface OrderItem {
   quantity: number;
@@ -65,20 +66,25 @@ export default function KDSPage() {
 
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 5000); // Tải lại mỗi 5 giây
+    const interval = setInterval(loadOrders, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleUpdateStatus = async (orderId: string, status: string) => {
+  // SỬA LẠI: Thêm tableNumber vào hàm và nội dung thông báo
+  const handleUpdateStatus = async (orderId: string, status: string, tableNumber: string) => {
     try {
       await orderService.updateStatus(orderId, status);
+      const statusText = status === 'PREPARING' ? 'bắt đầu làm' : 'đã hoàn thành';
+      toast.success(`Đã ${statusText} đơn hàng của bàn ${tableNumber}.`);
       loadOrders();
     } catch (err: any) {
-      alert(`Lỗi khi cập nhật trạng thái: ${err.message}`);
+      toast.error(`Lỗi khi cập nhật trạng thái: ${err.message}`);
     }
   };
 
-  if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+  if (error && pendingOrders.length === 0 && preparingOrders.length === 0) {
+    return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -94,7 +100,8 @@ export default function KDSPage() {
               <OrderTicket
                 key={order.id}
                 order={order}
-                onAction={() => handleUpdateStatus(order.id, 'PREPARING')}
+                // SỬA LẠI: Truyền thêm order.table_number
+                onAction={() => handleUpdateStatus(order.id, 'PREPARING', order.table_number)}
                 actionText="Bắt đầu làm"
                 color="border-yellow-500"
                 buttonColor="bg-yellow-500 hover:bg-yellow-600"
@@ -111,7 +118,8 @@ export default function KDSPage() {
               <OrderTicket
                 key={order.id}
                 order={order}
-                onAction={() => handleUpdateStatus(order.id, 'COMPLETED')}
+                // SỬA LẠI: Truyền thêm order.table_number
+                onAction={() => handleUpdateStatus(order.id, 'COMPLETED', order.table_number)}
                 actionText="Hoàn thành"
                 color="border-blue-500"
                 buttonColor="bg-blue-500 hover:bg-blue-600"

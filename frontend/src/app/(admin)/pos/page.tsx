@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { orderService } from '@/src/services/orderService';
 import { X, Printer, CheckCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 // --- Định nghĩa Interface ---
 interface OrderItem {
@@ -49,7 +50,6 @@ const BillModal = ({ order, onClose, onConfirmPayment }: { order: Order, onClose
             {order.order_detail.map((item, index) => (
               <li key={index} className="py-2 flex justify-between text-sm">
                 <span className="text-dark-text-primary">{item.products?.name} (x{item.quantity})</span>
-                {/* SỬA LỖI: Truy cập vào item.products.price thay vì item.price */}
                 <span className="text-dark-text-secondary">{(item.products?.price! * item.quantity).toLocaleString('vi-VN')}đ</span>
               </li>
             ))}
@@ -87,6 +87,7 @@ export default function POSPage() {
       setAllOrders([...pending, ...preparing, ...completed]);
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -102,17 +103,18 @@ export default function POSPage() {
     if (!selectedOrder) return;
     try {
       await orderService.updateStatus(selectedOrder.id, 'PAID');
+      toast.success(`Thanh toán thành công cho bàn ${selectedOrder.table_number}!`);
       setSelectedOrder(null);
       loadOrders();
     } catch (err: any) {
-      alert(`Lỗi khi xác nhận thanh toán: ${err.message}`);
+      toast.error(`Lỗi khi xác nhận thanh toán: ${err.message}`);
     }
   };
 
   const filteredOrders = allOrders.filter(order => order.table_number.includes(searchTerm));
 
   if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải dữ liệu bàn...</div>;
-  if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+  if (error && allOrders.length === 0) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
 
   return (
     <div className="p-4 sm:p-6 md:p-8 h-full flex flex-col">

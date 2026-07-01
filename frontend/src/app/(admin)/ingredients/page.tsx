@@ -5,6 +5,7 @@ import { ingredientService } from '@/src/services/ingredientService';
 import { useAuth } from '@/src/context/AuthContext';
 import Link from 'next/link';
 import { Plus, Trash2, Inbox, ClipboardList, AlertTriangle, Archive } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 // --- Định nghĩa Interface ---
 interface Ingredient {
@@ -13,8 +14,8 @@ interface Ingredient {
   stock_quantity: number;
   base_unit: string;
   cost_per_unit: number;
-  recipe_unit: string;      // Thêm đơn vị pha chế
-  conversion_factor: number; // Thêm hệ số chuyển đổi
+  recipe_unit: string;
+  conversion_factor: number;
   ingredient_categories?: { name: string };
 }
 
@@ -58,7 +59,10 @@ const ImportStockModal = ({ ingredient, onClose, onConfirm }: ImportModalProps) 
   const { user } = useAuth();
 
   const handleSubmit = () => {
-    if (!amount || Number(amount) <= 0) return alert('Vui lòng nhập số lượng hợp lệ.');
+    if (!amount || Number(amount) <= 0) {
+      toast.error('Vui lòng nhập số lượng hợp lệ.');
+      return;
+    }
     onConfirm({ amount: Number(amount), note, performed_by: user!.id });
   };
 
@@ -85,8 +89,14 @@ const StocktakeModal = ({ ingredient, onClose, onConfirm }: StocktakeModalProps)
   const { user } = useAuth();
 
   const handleSubmit = () => {
-    if (actualQuantity === '' || Number(actualQuantity) < 0) return alert('Vui lòng nhập số lượng thực tế hợp lệ.');
-    if (!note.trim()) return alert('Vui lòng nhập lý do kiểm kho.');
+    if (actualQuantity === '' || Number(actualQuantity) < 0) {
+      toast.error('Vui lòng nhập số lượng thực tế hợp lệ.');
+      return;
+    }
+    if (!note.trim()) {
+      toast.error('Vui lòng nhập lý do kiểm kho.');
+      return;
+    }
     onConfirm({ actual_quantity: Number(actualQuantity), note, performed_by: user!.id });
   };
 
@@ -145,6 +155,7 @@ export default function IngredientsPage() {
       setIngredients(result.data || []);
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -155,44 +166,48 @@ export default function IngredientsPage() {
   const handleImportStock = async (payload: ImportStockPayload) => {
     try {
       await ingredientService.importStock(modal!.data.id, payload);
+      toast.success('Nhập kho thành công!');
       setModal(null);
       loadIngredients();
-    } catch (err: any) { alert(`Lỗi: ${err.message}`); }
+    } catch (err: any) { toast.error(`Lỗi: ${err.message}`); }
   };
 
   const handleStocktake = async (payload: StocktakePayload) => {
     try {
       await ingredientService.stocktake(modal!.data.id, payload);
+      toast.success('Kiểm kho thành công!');
       setModal(null);
       loadIngredients();
-    } catch (err: any) { alert(`Lỗi: ${err.message}`); }
+    } catch (err: any) { toast.error(`Lỗi: ${err.message}`); }
   };
 
   const openDeleteModal = async (ingredient: Ingredient) => {
     try {
       const usage = await ingredientService.checkUsage(ingredient.id);
       setModal({ type: 'delete', data: ingredient, usage });
-    } catch (err: any) { alert(`Lỗi khi kiểm tra phụ thuộc: ${err.message}`); }
+    } catch (err: any) { toast.error(`Lỗi khi kiểm tra phụ thuộc: ${err.message}`); }
   };
 
   const handleSoftDelete = async () => {
     try {
       await ingredientService.softDelete(modal!.data.id);
+      toast.success('Đã ẩn nguyên liệu.');
       setModal(null);
       loadIngredients();
-    } catch (err: any) { alert(`Lỗi: ${err.message}`); }
+    } catch (err: any) { toast.error(`Lỗi: ${err.message}`); }
   };
 
   const handleHardDelete = async () => {
     try {
       await ingredientService.hardDelete(modal!.data.id);
+      toast.success('Đã xóa vĩnh viễn nguyên liệu.');
       setModal(null);
       loadIngredients();
-    } catch (err: any) { alert(`Lỗi: ${err.message}`); }
+    } catch (err: any) { toast.error(`Lỗi: ${err.message}`); }
   };
 
   if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải dữ liệu kho...</div>;
-  if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+  if (error && ingredients.length === 0) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
 
   return (
     <main className="p-4 sm:p-6 md:p-8">

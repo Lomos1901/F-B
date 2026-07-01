@@ -1,9 +1,12 @@
-'use client'; // Bắt buộc vì cần hook để kiểm tra route
+'use client';
 
-import Sidebar from '@/src/components/Sidebar';
 import { useAuth } from '@/src/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Sidebar from '@/src/components/Sidebar';
+// Xóa import ToastContainer vì đã có ở RootLayout
+// import { ToastContainer } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
 
 export default function AdminLayout({
   children,
@@ -14,28 +17,26 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    // Nếu chưa loading xong và chưa có user, chuyển về trang login
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
 
-  // Trong khi đang tải, có thể hiển thị một màn hình loading
   if (loading || !user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-dark-bg">
-        <p className="text-dark-text-secondary">Đang tải dữ liệu người dùng...</p>
+      <div className="flex items-center justify-center min-h-screen bg-dark-bg text-dark-text-primary">
+        Đang tải dữ liệu người dùng...
       </div>
     );
   }
 
-  // Nếu đã có user, hiển thị layout với sidebar
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen bg-dark-bg text-dark-text-primary">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-dark-bg">
+      <main className="flex-1 p-4 sm:p-6 md:p-8">
         {children}
       </main>
+      {/* Xóa ToastContainer khỏi đây */}
     </div>
   );
 }

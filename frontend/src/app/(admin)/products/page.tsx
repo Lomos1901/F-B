@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { productService } from '@/src/services/productService';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 // --- Định nghĩa Interface ---
 interface Recipe {
@@ -63,6 +64,7 @@ export default function ProductsPage() {
         setProducts(data);
       } catch (err: any) {
         setError(err.message);
+        toast.error(err.message);
       } finally {
         setLoading(false);
       }
@@ -74,15 +76,16 @@ export default function ProductsPage() {
     if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
       try {
         await productService.remove(id);
+        toast.success('Xóa sản phẩm thành công!');
         setProducts(products.filter(p => p.id !== id));
       } catch (err: any) {
-        alert(`Lỗi: ${err.message}`);
+        toast.error(`Lỗi: ${err.message}`);
       }
     }
   };
 
   if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải thực đơn...</div>;
-  if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+  if (error && products.length === 0) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
 
   return (
     <main className="p-4 sm:p-6 md:p-8">
@@ -118,7 +121,6 @@ export default function ProductsPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-dark-text-secondary font-mono">{product.price.toLocaleString('vi-VN')} đ</td>
-                {/* SỬA LẠI: Bọc các nút trong một div flex */}
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-center space-x-2">
                     <button onClick={() => setSelectedProduct(product)} className="p-2 text-dark-text-secondary hover:text-white rounded-full" title="Xem công thức"><Eye size={16}/></button>

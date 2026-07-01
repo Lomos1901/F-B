@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { UserRole } from '@/src/enums/user-role.enum';
-import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History, Users } from 'lucide-react'; // Thêm icon Users
 import { ReactNode } from 'react';
 
 interface NavLinkProps {
@@ -18,7 +18,7 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const isActive = (path: string) => pathname.startsWith(path);
 
-  if (!user) return null; // Không hiển thị sidebar nếu chưa đăng nhập
+  if (!user) return null;
 
   const isManagement = user.role === UserRole.OWNER || user.role === UserRole.MANAGER;
 
@@ -55,6 +55,8 @@ export default function Sidebar() {
                 <NavLink href="/products" icon={<ClipboardList size={18} />}>Thực đơn</NavLink>
                 <NavLink href="/categories" icon={<Book size={18} />}>Danh mục Thực đơn</NavLink>
                 <NavLink href="/inventory-receipts" icon={<History size={18} />}>Lịch sử Phiếu kho</NavLink>
+                {/* THÊM LINK MỚI */}
+                <NavLink href="/users" icon={<Users size={18} />}>Quản lý Nhân viên</NavLink>
               </div>
             </div>
           </>

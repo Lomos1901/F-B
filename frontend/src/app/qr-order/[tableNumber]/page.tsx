@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { productService } from '@/src/services/productService';
 import { orderService } from '@/src/services/orderService';
 import { Plus, Minus, ShoppingCart, Send, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 // --- Định nghĩa Interface ---
 interface Product {
@@ -94,6 +95,7 @@ export default function QROrderPage() {
         setProductsByCategory(grouped);
       } catch (err: any) {
         setError('Không thể tải thực đơn. Vui lòng thử lại sau.');
+        toast.error('Không thể tải thực đơn. Vui lòng thử lại sau.');
       } finally {
         setLoading(false);
       }
@@ -123,16 +125,20 @@ export default function QROrderPage() {
   const getTotalPrice = () => cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
   const handleOrder = async () => {
-    if (cart.length === 0) return alert('Vui lòng chọn món trước khi đặt hàng.');
+    if (cart.length === 0) {
+      toast.warning('Vui lòng chọn món trước khi đặt hàng.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price }));
       await orderService.createForCustomer(tableNumber, orderItems);
       setOrderSuccess(true);
-      setCart([]);
+      // Không cần toast ở đây vì đã có màn hình success riêng
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

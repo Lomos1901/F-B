@@ -2,20 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { ingredientCategoryService } from '@/src/services/ingredientCategoryService';
-import { Tag, Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface IngredientCategory {
   id: string;
   name: string;
 }
 
-// --- COMPONENT MODAL CHỈNH SỬA ---
 const EditCategoryModal = ({ category, onClose, onSave }: { category: IngredientCategory, onClose: () => void, onSave: (id: string, name: string) => void }) => {
   const [name, setName] = useState(category.name);
 
   const handleSaveClick = () => {
     if (!name.trim()) {
-      alert('Tên danh mục không được để trống.');
+      toast.error('Tên danh mục không được để trống.');
       return;
     }
     onSave(category.id, name);
@@ -44,7 +44,6 @@ const EditCategoryModal = ({ category, onClose, onSave }: { category: Ingredient
   );
 };
 
-
 export default function IngredientCategoriesPage() {
   const [categories, setCategories] = useState<IngredientCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +57,7 @@ export default function IngredientCategoriesPage() {
       setCategories(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -72,20 +72,22 @@ export default function IngredientCategoriesPage() {
     if (!newCategoryName.trim()) return;
     try {
       await ingredientCategoryService.create(newCategoryName);
+      toast.success('Tạo danh mục thành công!');
       setNewCategoryName('');
       loadCategories();
     } catch (err: any) {
-      alert(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.message}`);
     }
   };
 
   const handleUpdate = async (id: string, name: string) => {
     try {
       await ingredientCategoryService.update(id, name);
-      setEditingCategory(null); // Đóng modal sau khi lưu
+      toast.success('Cập nhật danh mục thành công!');
+      setEditingCategory(null);
       loadCategories();
     } catch (err: any) {
-      alert(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.message}`);
     }
   };
 
@@ -93,21 +95,21 @@ export default function IngredientCategoriesPage() {
     if (confirm('Bạn có chắc muốn xóa danh mục này?')) {
       try {
         await ingredientCategoryService.remove(id);
+        toast.success('Xóa danh mục thành công!');
         loadCategories();
       } catch (err: any) {
-        alert(`Lỗi: ${err.message}`);
+        toast.error(`Lỗi: ${err.message}`);
       }
     }
   };
 
   if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải...</div>;
-  if (error) return <div className="p-8 text-red-500">{error}</div>;
+  if (error && categories.length === 0) return <div className="p-8 text-red-500">{error}</div>;
 
   return (
     <main className="p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-dark-text-primary mb-8">Danh mục Nguyên liệu</h1>
-
         <form onSubmit={handleCreate} className="mb-8 p-6 bg-dark-surface border border-dark-border rounded-lg">
           <label htmlFor="new-category-name" className="text-lg font-semibold text-dark-text-primary mb-2 block">Thêm danh mục mới</label>
           <div className="flex gap-4">
@@ -123,7 +125,6 @@ export default function IngredientCategoriesPage() {
             <button type="submit" className="px-6 py-2.5 bg-brand-amber text-black font-bold rounded-lg hover:bg-brand-amber-dark transition-colors">Thêm</button>
           </div>
         </form>
-
         <div className="bg-dark-surface border border-dark-border rounded-lg shadow-lg overflow-hidden">
           <table className="min-w-full">
             <thead className="bg-dark-bg">
@@ -146,7 +147,6 @@ export default function IngredientCategoriesPage() {
           </table>
         </div>
       </div>
-      {/* Render Modal khi có danh mục được chọn để sửa */}
       {editingCategory && (
         <EditCategoryModal
           category={editingCategory}

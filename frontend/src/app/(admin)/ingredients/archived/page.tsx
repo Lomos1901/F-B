@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import { ingredientService } from "@/src/services/ingredientService";
 import Link from "next/link";
 import { Trash2, RotateCw, ArrowLeft, Archive } from "lucide-react";
+import { toast } from "react-toastify";
 
 // Định nghĩa kiểu dữ liệu cho một nguyên liệu
 interface Ingredient {
   id: string;
   name: string;
   unit: string;
-  stock_quantity: number; // Sửa lại cho khớp với CSDL
+  stock_quantity: number;
   ingredient_category: {
     name: string;
   };
@@ -31,8 +32,9 @@ export default function ArchivedIngredientsPage() {
       setIngredients(response.data || []);
       setError(null);
     } catch (err: any) {
-      setError(err.message);
-      alert(err.message || "Không thể tải danh sách nguyên liệu đã xóa.");
+      const errorMessage = err.message || "Không thể tải danh sách nguyên liệu đã xóa.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -42,10 +44,10 @@ export default function ArchivedIngredientsPage() {
     if (confirm("Bạn có chắc chắn muốn khôi phục nguyên liệu này?")) {
       try {
         await ingredientService.restore(id);
-        alert("Khôi phục nguyên liệu thành công!");
+        toast.success("Khôi phục nguyên liệu thành công!");
         fetchArchivedIngredients();
       } catch (err: any) {
-        alert(err.message || "Khôi phục thất bại.");
+        toast.error(err.message || "Khôi phục thất bại.");
       }
     }
   };
@@ -54,16 +56,16 @@ export default function ArchivedIngredientsPage() {
     if (confirm("Hành động này không thể hoàn tác! Bạn có chắc chắn muốn xóa vĩnh viễn nguyên liệu này?")) {
       try {
         await ingredientService.hardDelete(id);
-        alert("Đã xóa vĩnh viễn nguyên liệu.");
+        toast.success("Đã xóa vĩnh viễn nguyên liệu.");
         fetchArchivedIngredients();
       } catch (err: any) {
-        alert(err.message || "Xóa vĩnh viễn thất bại.");
+        toast.error(err.message || "Xóa vĩnh viễn thất bại.");
       }
     }
   };
 
   if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải dữ liệu...</div>;
-  if (error) return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+  if (error && ingredients.length === 0) return <div className="p-8 text-red-500">{error}</div>;
 
   return (
     <main className="p-4 sm:p-6 md:p-8">
@@ -116,7 +118,7 @@ export default function ArchivedIngredientsPage() {
             ))}
           </tbody>
         </table>
-        {ingredients.length === 0 && (
+        {ingredients.length === 0 && !loading && (
           <p className="text-center py-6 text-dark-text-secondary">Thùng rác trống.</p>
         )}
       </div>

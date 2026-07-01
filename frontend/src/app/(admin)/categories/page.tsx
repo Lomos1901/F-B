@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { categoryService } from '@/src/services/categoryService';
 import { Edit, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface Category {
   id: string;
@@ -10,14 +11,13 @@ interface Category {
   description?: string;
 }
 
-// --- COMPONENT MODAL CHỈNH SỬA ---
 const EditCategoryModal = ({ category, onClose, onSave }: { category: Category, onClose: () => void, onSave: (id: string, name: string, description: string) => void }) => {
   const [name, setName] = useState(category.name);
   const [description, setDescription] = useState(category.description || '');
 
   const handleSaveClick = () => {
     if (!name.trim()) {
-      alert('Tên danh mục không được để trống.');
+      toast.error('Tên danh mục không được để trống.');
       return;
     }
     onSave(category.id, name, description);
@@ -72,6 +72,7 @@ export default function CategoriesPage() {
       setCategories(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -86,21 +87,23 @@ export default function CategoriesPage() {
     if (!newCategoryName.trim()) return;
     try {
       await categoryService.create({ name: newCategoryName, description: newCategoryDesc });
+      toast.success('Tạo danh mục thành công!');
       setNewCategoryName('');
       setNewCategoryDesc('');
       loadCategories();
     } catch (err: any) {
-      alert(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.message}`);
     }
   };
 
   const handleUpdate = async (id: string, name: string, description: string) => {
     try {
       await categoryService.update(id, { name, description });
+      toast.success('Cập nhật danh mục thành công!');
       setEditingCategory(null);
       loadCategories();
     } catch (err: any) {
-      alert(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.message}`);
     }
   };
 
@@ -108,21 +111,21 @@ export default function CategoriesPage() {
     if (confirm('Bạn có chắc muốn xóa danh mục này?')) {
       try {
         await categoryService.remove(id);
+        toast.success('Xóa danh mục thành công!');
         loadCategories();
       } catch (err: any) {
-        alert(`Lỗi: ${err.message}`);
+        toast.error(`Lỗi: ${err.message}`);
       }
     }
   };
 
   if (loading) return <div className="p-8 text-dark-text-secondary">Đang tải...</div>;
-  if (error) return <div className="p-8 text-red-500">{error}</div>;
+  if (error && categories.length === 0) return <div className="p-8 text-red-500">{error}</div>;
 
   return (
     <main className="p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-dark-text-primary mb-8">Danh mục Thực đơn</h1>
-
         <form onSubmit={handleCreate} className="mb-8 p-6 bg-dark-surface border border-dark-border rounded-lg space-y-4">
           <h2 className="text-lg font-semibold text-dark-text-primary mb-2">Thêm danh mục mới</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -146,7 +149,6 @@ export default function CategoriesPage() {
             <button type="submit" className="px-6 py-2.5 bg-brand-amber text-black font-bold rounded-lg hover:bg-brand-amber-dark transition-colors">Thêm</button>
           </div>
         </form>
-
         <div className="bg-dark-surface border border-dark-border rounded-lg shadow-lg overflow-hidden">
           <table className="min-w-full">
             <thead className="bg-dark-bg">

@@ -10,7 +10,8 @@ import { RecipesModule } from './recipes/recipes.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { IngredientCategoriesModule } from './ingredient-categories/ingredient-categories.module';
-import { InventoryReceiptsModule } from './inventory-receipts/inventory-receipts.module'; // THÊM MODULE MỚI
+import { InventoryReceiptsModule } from './inventory-receipts/inventory-receipts.module';
+import { UsersModule } from './users/users.module'; // Import UsersModule
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { InventoryReceiptsModule } from './inventory-receipts/inventory-receipts
     CategoriesModule,
     ProductsModule,
     IngredientCategoriesModule,
-    InventoryReceiptsModule, // THÊM MODULE MỚI VÀO ĐÂY
+    InventoryReceiptsModule,
+    UsersModule, // Thêm UsersModule vào đây
   ],
   controllers: [AppController],
   providers: [AppService],

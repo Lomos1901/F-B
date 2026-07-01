@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { categoryService } from '@/src/services/categoryService';
 import { ingredientService } from '@/src/services/ingredientService';
 import { productService } from '@/src/services/productService';
-import { ArrowLeft, Plus, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { ArrowLeft, Plus, Trash2, Image as ImageIcon, Loader2, Save } from 'lucide-react';
 
 // --- Định nghĩa Interface ---
 interface Category { id: string; name: string; }
@@ -30,7 +31,6 @@ export default function EditProductPage() {
   const [fetchingData, setFetchingData] = useState(true);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // --- Data Loading ---
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function EditProductPage() {
           setRecipeRows(loadedRecipes);
         }
       } catch (e: any) {
-        setError('Lỗi tải dữ liệu sản phẩm: ' + e.message);
+        toast.error('Lỗi tải dữ liệu sản phẩm: ' + e.message);
       } finally {
         setFetchingData(false);
       }
@@ -87,8 +87,9 @@ export default function EditProductPage() {
     try {
       const data = await productService.uploadImage(formData);
       setImageUrl(data.imageUrl);
+      toast.success('Tải ảnh lên thành công!');
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setUploading(false);
     }
@@ -97,11 +98,10 @@ export default function EditProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId || !productName.trim() || !productPrice) {
-      setError('Vui lòng điền đầy đủ Tên, Danh mục và Giá bán.');
+      toast.error('Vui lòng điền đầy đủ Tên, Danh mục và Giá bán.');
       return;
     }
     setLoading(true);
-    setError(null);
 
     const validRows = recipeRows.filter(row => row.ingredient_id && Number(row.ui_quantity) > 0);
     const ingredientsPayload = validRows.map(row => ({
@@ -119,10 +119,10 @@ export default function EditProductPage() {
 
     try {
       await productService.update(id, productPayload);
-      alert('Cập nhật món nước thành công!');
+      toast.success('Cập nhật món thành công!');
       router.push('/products');
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -142,9 +142,6 @@ export default function EditProductPage() {
 
         <form onSubmit={handleSubmit} className="bg-dark-surface border border-dark-border shadow-lg rounded-lg">
           <div className="p-8 space-y-8">
-            {error && <p className="text-red-400 bg-red-500/10 p-3 rounded-md text-sm">{error}</p>}
-
-            {/* --- PHẦN FORM ĐÃ BỊ THIẾU --- */}
             <div className="space-y-5">
               <h3 className="text-sm font-bold text-dark-text-secondary border-b border-dark-border pb-2 uppercase tracking-wider">1. Thông tin thương mại</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -196,8 +193,8 @@ export default function EditProductPage() {
           </div>
 
           <div className="bg-dark-bg border-t border-dark-border px-8 py-4 flex justify-end">
-            <button type="submit" disabled={loading || uploading} className="px-6 py-3 bg-brand-amber text-black font-bold rounded-lg hover:bg-brand-amber-dark disabled:opacity-50 transition-all">
-              {loading ? 'Đang lưu...' : 'Lưu Thay đổi'}
+            <button type="submit" disabled={loading || uploading} className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 disabled:opacity-50 transition-all">
+              <Save size={18} /> {loading ? 'Đang lưu...' : 'Lưu Thay đổi'}
             </button>
           </div>
         </form>
