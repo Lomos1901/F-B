@@ -15,6 +15,7 @@ export class InventoryReceiptsService {
 
   /**
    * Lấy tất cả các phiếu kho và chi tiết của chúng.
+   * SỬA LỖI: Thêm recipe_unit và conversion_factor để frontend có thể tính toán.
    */
   async findAllWithDetails() {
     const { data, error } = await this.client
@@ -24,7 +25,7 @@ export class InventoryReceiptsService {
         users ( full_name ),
         receipt_details (
           quantity,
-          ingredients ( name, base_unit )
+          ingredients ( name, base_unit, recipe_unit, conversion_factor )
         )
       `)
       .order('created_at', { ascending: false });

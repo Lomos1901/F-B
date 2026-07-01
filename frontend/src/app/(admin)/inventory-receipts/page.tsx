@@ -6,12 +6,16 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 // --- Định nghĩa Interface ---
+interface IngredientInfo {
+  name: string;
+  base_unit: string;
+  recipe_unit?: string;
+  conversion_factor?: number;
+}
+
 interface ReceiptDetail {
   quantity: number;
-  ingredients: {
-    name: string;
-    base_unit: string;
-  };
+  ingredients: IngredientInfo;
 }
 
 interface Receipt {
@@ -22,7 +26,6 @@ interface Receipt {
   receipt_details: ReceiptDetail[];
 }
 
-// SỬA LẠI: Khai báo kiểu cho props
 const ReceiptTypeBadge = ({ type }: { type: Receipt['receipt_type'] }) => {
   const styles = {
     IMPORT: 'bg-blue-900/50 text-blue-300',
@@ -37,8 +40,35 @@ const ReceiptTypeBadge = ({ type }: { type: Receipt['receipt_type'] }) => {
   return <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[type] || 'bg-gray-700'}`}>{text[type] || type}</span>;
 };
 
+// --- Component hiển thị số lượng thông minh ---
+const SmartQuantity = ({ detail }: { detail: ReceiptDetail }) => {
+  const { quantity, ingredients } = detail;
+  const { base_unit, recipe_unit, conversion_factor = 1 } = ingredients;
+
+  const absQuantity = Math.abs(quantity);
+  const sign = quantity > 0 ? '+' : '-';
+
+  // Quy tắc: Nếu số lượng nhỏ hơn 1 đơn vị cơ bản (ví dụ: < 1kg, < 1 lít)
+  // và có đơn vị pha chế, thì hiển thị theo đơn vị pha chế.
+  if (absQuantity < 1 && recipe_unit && conversion_factor) {
+    const recipeQuantity = absQuantity * conversion_factor;
+    return (
+      <span className={`font-mono font-semibold ${quantity > 0 ? 'text-green-400' : 'text-red-400'}`}>
+        {sign}{recipeQuantity.toLocaleString('vi-VN')} {recipe_unit}
+      </span>
+    );
+  }
+
+  // Mặc định, hiển thị theo đơn vị cơ bản.
+  return (
+    <span className={`font-mono font-semibold ${quantity > 0 ? 'text-green-400' : 'text-red-400'}`}>
+      {sign}{absQuantity.toLocaleString('vi-VN')} {base_unit}
+    </span>
+  );
+};
+
+
 export default function InventoryReceiptsPage() {
-  // SỬA LẠI: Khai báo kiểu cho state
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,9 +112,7 @@ export default function InventoryReceiptsPage() {
                 {receipt.receipt_details.map((detail, index) => (
                   <li key={index} className="py-2 flex justify-between items-center">
                     <span className="font-medium">{detail.ingredients.name}</span>
-                    <span className={`font-mono font-semibold ${detail.quantity > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {detail.quantity > 0 ? '+' : ''}{detail.quantity} {detail.ingredients.base_unit}
-                    </span>
+                    <SmartQuantity detail={detail} />
                   </li>
                 ))}
               </ul>

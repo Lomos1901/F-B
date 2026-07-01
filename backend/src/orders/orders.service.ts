@@ -100,77 +100,23 @@ export class OrdersService {
   }
 
   /**
-   * Thực hiện trừ kho cho một đơn hàng đã thanh toán và ghi nhận lịch sử xuất kho.
+   * NÂNG CẤP: Ủy thác toàn bộ logic trừ kho cho hàm RPC trong CSDL.
+   * Hàm này giờ đây chỉ cần gọi hàm 'handle_sale_deduction' và xử lý lỗi.
    * @param orderId ID của đơn hàng cần trừ kho.
    */
   private async deductStockForOrder(orderId: string) {
-    // Lấy chi tiết các món trong đơn hàng.
-    const { data: orderDetails, error: itemsError } = await this.client.from('order_detail').select('quantity, product_id').eq('order_id', orderId);
-    if (itemsError || !orderDetails) return;
+    this.logger.log(`Bắt đầu gọi RPC 'handle_sale_deduction' cho order: ${orderId}`);
 
-    // Lấy công thức của các món đó.
-    const productIds = orderDetails.map(item => item.product_id);
-    const { data: recipes, error: recipesError } = await this.client.from('recipes').select('product_id, ingredient_id, quantity').in('product_id', productIds);
-    if (recipesError || !recipes) return;
+    const { error } = await this.client.rpc('handle_sale_deduction', {
+      p_order_id: orderId,
+    });
 
-    // Lấy thông tin tồn kho hiện tại của các nguyên liệu.
-    const ingredientIds = [...new Set(recipes.map(r => r.ingredient_id))];
-    const { data: ingredients, error: ingredientsError } = await this.client.from('ingredients').select('id, stock_quantity, conversion_factor').in('id', ingredientIds);
-    if (ingredientsError || !ingredients) return;
-
-
-    // Tạo một "bản đồ" để cộng dồn lượng cần trừ cho mỗi nguyên liệu.
-    const ingredientsMap = new Map(ingredients.map(i => [i.id, i]));
-    const deductionMap = new Map<string, number>();
-
-    // Duyệt qua từng món trong đơn hàng để tính toán.
-    for (const detail of orderDetails) {
-      const productRecipes = recipes.filter(r => r.product_id === detail.product_id);
-      for (const recipe of productRecipes) {
-        const ingredientInfo = ingredientsMap.get(recipe.ingredient_id);
-        if (!ingredientInfo) continue;
-
-        // Quy đổi từ đơn vị pha chế về đơn vị lưu kho (đơn vị nhập).
-        const conversionFactor = ingredientInfo.conversion_factor || 1;
-        const deductionInBaseUnits = (recipe.quantity * detail.quantity) / conversionFactor;
-
-        // Cộng dồn lượng cần trừ.
-        const currentDeduction = deductionMap.get(ingredientInfo.id) || 0;
-        deductionMap.set(ingredientInfo.id, currentDeduction + deductionInBaseUnits);
-      }
+    // Nếu hàm RPC trả về lỗi, ném ra một exception để transaction ở tầng ứng dụng có thể bắt được.
+    if (error) {
+      this.logger.error(`Lỗi khi thực thi RPC 'handle_sale_deduction' cho order ${orderId}:`, error);
+      throw new InternalServerErrorException(`Lỗi từ CSDL khi trừ kho: ${error.message}`);
     }
 
-    if (deductionMap.size === 0) return; // Không có gì để trừ, kết thúc.
-
-    // === BƯỚC 3: THỰC THI VÀO CSDL ===
-    // Chuẩn bị dữ liệu để cập nhật hàng loạt.
-    const stockUpdatePromises: any[] = [];
-    const receiptDetailsPayload: { ingredient_id: string; quantity: number; }[] = [];
-
-    for (const [ingredientId, totalDeduction] of deductionMap.entries()) {
-      const ingredientInfo = ingredientsMap.get(ingredientId);
-      if (!ingredientInfo) continue;
-
-      const newStock = (ingredientInfo.stock_quantity || 0) - totalDeduction;
-      stockUpdatePromises.push(this.client.from('ingredients').update({ stock_quantity: newStock }).eq('id', ingredientId));
-      // Lưu số lượng trừ dưới dạng số âm để ghi vào lịch sử.
-      receiptDetailsPayload.push({ ingredient_id: ingredientId, quantity: -totalDeduction });
-    }
-
-    // 3.1. Tạo một phiếu xuất kho.
-    const { data: receiptData, error: receiptError } = await this.client.from('inventory_receipts').insert({ receipt_type: 'SALE_DEDUCTION' }).select('id').single();
-    if (receiptError) {
-      this.logger.error(`Lỗi tạo phiếu xuất kho cho đơn ${orderId}:`, receiptError);
-      throw new InternalServerErrorException('Không thể tạo phiếu xuất kho.');
-    }
-
-    // 3.2. Ghi chi tiết các nguyên liệu đã bị trừ vào phiếu xuất.
-    const finalReceiptDetails = receiptDetailsPayload.map(detail => ({ ...detail, receipt_id: receiptData.id }));
-    await this.client.from('receipt_details').insert(finalReceiptDetails);
-
-    // 3.3. Cập nhật lại số lượng tồn kho của các nguyên liệu.
-    await Promise.all(stockUpdatePromises);
-
-    this.logger.log(`Trừ kho và ghi nhận phiếu xuất kho thành công cho đơn hàng ${orderId}.`);
+    this.logger.log(`RPC 'handle_sale_deduction' thực thi thành công cho order: ${orderId}`);
   }
 }
