@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { dashboardService } from '@/src/services/dashboardService';
 import { toast } from 'react-toastify';
-import { DollarSign, ShoppingCart, BarChart, AlertTriangle, TrendingUp, Package, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { DollarSign, ShoppingCart, BarChart, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react';
+import DashboardChart from '@/src/components/charts/DashboardChart'; // Import component biểu đồ mới
 
 // --- Định nghĩa Interfaces ---
 interface KpiData {
@@ -46,35 +46,6 @@ const KpiCard = ({ title, value, icon, formatAsCurrency = false }: { title: stri
   </div>
 );
 
-const RevenueChart = ({ data }: { data: ChartData[] }) => {
-  if (!data || data.length === 0) {
-    return <div className="text-center py-10 text-dark-text-secondary">Không có dữ liệu doanh thu.</div>;
-  }
-  const maxValue = Math.max(...data.map(d => d.total_revenue));
-  const chartHeight = 200;
-
-  return (
-    <div className="h-full flex items-end space-x-2">
-      {data.map((item, index) => {
-        const barHeight = maxValue > 0 ? (item.total_revenue / maxValue) * chartHeight : 0;
-        return (
-          <div key={index} className="flex-1 flex flex-col items-center justify-end group">
-            <div
-              className="w-full bg-brand-amber/20 rounded-t-md hover:bg-brand-amber/40 transition-colors"
-              style={{ height: `${barHeight}px` }}
-            >
-              <div className="opacity-0 group-hover:opacity-100 bg-dark-bg text-white text-xs rounded py-1 px-2 absolute -top-8 left-1/2 -translate-x-1/2">
-                {item.total_revenue.toLocaleString('vi-VN')}đ
-              </div>
-            </div>
-            <span className="text-xs text-dark-text-secondary mt-2">{format(new Date(item.report_date), 'dd/MM')}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +66,7 @@ export default function DashboardPage() {
     fetchData();
   }, [days]);
 
-  if (loading) {
+  if (loading && !data) { // Chỉ hiển thị loading toàn trang ở lần tải đầu tiên
     return (
       <div className="flex justify-center items-center h-full">
         <Loader2 className="animate-spin text-brand-amber" size={48} />
@@ -113,7 +84,6 @@ export default function DashboardPage() {
     <main className="p-4 sm:p-6 md:p-8">
       <h1 className="text-3xl font-bold text-dark-text-primary mb-8">Tổng quan</h1>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <KpiCard title="Doanh thu hôm nay" value={kpis.total_revenue} icon={<DollarSign size={24} className="text-green-400"/>} formatAsCurrency />
         <KpiCard title="Số đơn hôm nay" value={kpis.order_count} icon={<ShoppingCart size={24} className="text-blue-400"/>} />
@@ -122,21 +92,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Chart */}
         <div className="lg:col-span-2 bg-dark-surface p-6 rounded-lg border border-dark-border">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Biểu đồ Doanh thu</h2>
-            <div className="flex gap-2">
-              <button onClick={() => setDays(7)} className={`px-3 py-1 text-sm rounded-md ${days === 7 ? 'bg-brand-amber text-black' : 'bg-dark-bg'}`}>7 ngày</button>
-              <button onClick={() => setDays(30)} className={`px-3 py-1 text-sm rounded-md ${days === 30 ? 'bg-brand-amber text-black' : 'bg-dark-bg'}`}>30 ngày</button>
+            <div className="flex items-center gap-2">
+              {loading && <Loader2 className="animate-spin text-dark-text-secondary" size={16} />}
+              <button onClick={() => setDays(7)} className={`px-3 py-1 text-sm rounded-md ${days === 7 ? 'bg-brand-amber text-black font-semibold' : 'bg-dark-bg'}`}>7 ngày</button>
+              <button onClick={() => setDays(30)} className={`px-3 py-1 text-sm rounded-md ${days === 30 ? 'bg-brand-amber text-black font-semibold' : 'bg-dark-bg'}`}>30 ngày</button>
             </div>
           </div>
-          <div style={{ height: '250px' }}>
-            <RevenueChart data={revenueChartData} />
+          <div className="h-[300px]">
+            {/* THAY THẾ BIỂU ĐỒ CŨ BẰNG COMPONENT MỚI */}
+            <DashboardChart data={revenueChartData} />
           </div>
         </div>
 
-        {/* Side Widgets */}
         <div className="space-y-8">
           <div className="bg-dark-surface p-6 rounded-lg border border-dark-border">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><TrendingUp size={20}/>Top 5 Món bán chạy</h2>
