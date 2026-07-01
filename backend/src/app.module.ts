@@ -11,7 +11,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { IngredientCategoriesModule } from './ingredient-categories/ingredient-categories.module';
 import { InventoryReceiptsModule } from './inventory-receipts/inventory-receipts.module';
-import { UsersModule } from './users/users.module'; // Import UsersModule
+import { UsersModule } from './users/users.module';
+import { DashboardModule } from './dashboard/dashboard.module'; // Import DashboardModule
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { UsersModule } from './users/users.module'; // Import UsersModule
     ProductsModule,
     IngredientCategoriesModule,
     InventoryReceiptsModule,
-    UsersModule, // Thêm UsersModule vào đây
+    UsersModule,
+    DashboardModule, // Thêm DashboardModule vào đây
   ],
   controllers: [AppController],
   providers: [AppService],
