@@ -12,7 +12,8 @@ import { ProductsModule } from './products/products.module';
 import { IngredientCategoriesModule } from './ingredient-categories/ingredient-categories.module';
 import { InventoryReceiptsModule } from './inventory-receipts/inventory-receipts.module';
 import { UsersModule } from './users/users.module';
-import { DashboardModule } from './dashboard/dashboard.module'; // Import DashboardModule
+import { DashboardModule } from './dashboard/dashboard.module';
+import { AnalyticsModule } from './analytics/analytics.module'; // Import AnalyticsModule
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { DashboardModule } from './dashboard/dashboard.module'; // Import Dashbo
     IngredientCategoriesModule,
     InventoryReceiptsModule,
     UsersModule,
-    DashboardModule, // Thêm DashboardModule vào đây
+    DashboardModule,
+    AnalyticsModule, // Thêm AnalyticsModule vào đây
   ],
   controllers: [AppController],
   providers: [AppService],

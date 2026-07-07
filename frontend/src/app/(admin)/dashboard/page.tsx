@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { dashboardService } from '@/src/services/dashboardService';
 import { toast } from 'react-toastify';
-import { DollarSign, ShoppingCart, BarChart, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react';
-import DashboardChart from '@/src/components/charts/DashboardChart'; // Import component biểu đồ mới
+import { DollarSign, ShoppingCart, BarChart, AlertTriangle, TrendingUp, Loader2, Bell, ArrowRight } from 'lucide-react';
+import DashboardChart from '@/src/components/charts/DashboardChart';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 // --- Định nghĩa Interfaces ---
 interface KpiData {
@@ -20,17 +23,18 @@ interface TopProduct {
   product_name: string;
   total_quantity: number;
 }
-interface LowStockItem {
-  name: string;
-  stock_quantity: number;
-  base_unit: string;
+interface Anomaly {
+  id: string;
+  alert_category: string; // Thêm category để chọn icon
+  message: string;
+  created_at: string;
 }
 interface DashboardData {
   kpis: KpiData;
   pendingOrdersCount: number;
   revenueChartData: ChartData[];
   topSellingProducts: TopProduct[];
-  lowStockIngredients: LowStockItem[];
+  anomalies: Anomaly[];
 }
 
 // --- Components con ---
@@ -46,6 +50,15 @@ const KpiCard = ({ title, value, icon, formatAsCurrency = false }: { title: stri
   </div>
 );
 
+const AlertIcon = ({ category }: { category: string }) => {
+  switch (category) {
+    case 'SALES_SPIKE':
+      return <TrendingUp className="text-green-400" size={24} />;
+    default:
+      return <AlertTriangle className="text-yellow-400" size={24} />;
+  }
+};
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,8 +68,13 @@ export default function DashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const result = await dashboardService.getData(days);
-        setData(result);
+        const [dashboardResult, anomaliesResult] = await Promise.all([
+          dashboardService.getData(days),
+          dashboardService.getLatestAnomalies()
+        ]);
+
+        setData({ ...dashboardResult, anomalies: anomaliesResult });
+
       } catch (err: any) {
         toast.error(err.message);
       } finally {
@@ -66,7 +84,7 @@ export default function DashboardPage() {
     fetchData();
   }, [days]);
 
-  if (loading && !data) { // Chỉ hiển thị loading toàn trang ở lần tải đầu tiên
+  if (loading && !data) {
     return (
       <div className="flex justify-center items-center h-full">
         <Loader2 className="animate-spin text-brand-amber" size={48} />
@@ -78,7 +96,7 @@ export default function DashboardPage() {
     return <div className="text-center text-red-500">Không thể tải dữ liệu dashboard.</div>;
   }
 
-  const { kpis, pendingOrdersCount, revenueChartData, topSellingProducts, lowStockIngredients } = data;
+  const { kpis, pendingOrdersCount, revenueChartData, topSellingProducts, anomalies } = data;
 
   return (
     <main className="p-4 sm:p-6 md:p-8">
@@ -102,32 +120,51 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="h-[300px]">
-            {/* THAY THẾ BIỂU ĐỒ CŨ BẰNG COMPONENT MỚI */}
             <DashboardChart data={revenueChartData} />
           </div>
         </div>
 
         <div className="space-y-8">
+          {/* WIDGET CẢNH BÁO ĐÃ NÂNG CẤP */}
+          <div className="bg-dark-surface p-6 rounded-lg border border-dark-border">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2"><Bell size={20}/>Cảnh báo Mới nhất</h2>
+            <div className="space-y-6">
+              {anomalies && anomalies.length > 0 ? (
+                anomalies.map((item) => (
+                  <div key={item.id} className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-dark-bg flex items-center justify-center">
+                      <AlertIcon category={item.alert_category} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-dark-text-primary">{item.message}</p>
+                      <p className="text-xs text-dark-text-secondary mt-1">
+                        {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: vi })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-dark-text-secondary text-center py-8">Không có cảnh báo mới.</p>
+              )}
+            </div>
+            <Link href="/alerts" className="mt-8 block text-center text-sm font-semibold text-brand-amber hover:underline">
+              Xem tất cả trong Trung tâm Cảnh báo
+            </Link>
+          </div>
+
           <div className="bg-dark-surface p-6 rounded-lg border border-dark-border">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><TrendingUp size={20}/>Top 5 Món bán chạy</h2>
             <ul className="space-y-3">
-              {topSellingProducts.map((product, index) => (
-                <li key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-dark-text-primary">{index + 1}. {product.product_name}</span>
-                  <span className="font-bold text-dark-text-secondary">{product.total_quantity}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-dark-surface p-6 rounded-lg border border-dark-border">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-yellow-400"><AlertTriangle size={20}/>Cảnh báo Tồn kho</h2>
-            <ul className="space-y-3">
-              {lowStockIngredients.map((item, index) => (
-                <li key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-dark-text-primary">{item.name}</span>
-                  <span className="font-bold text-red-400">{item.stock_quantity} {item.base_unit}</span>
-                </li>
-              ))}
+              {topSellingProducts && topSellingProducts.length > 0 ? (
+                topSellingProducts.map((product, index) => (
+                  <li key={index} className="flex justify-between items-center text-sm">
+                    <span className="text-dark-text-primary">{index + 1}. {product.product_name}</span>
+                    <span className="font-bold text-dark-text-secondary">{product.total_quantity}</span>
+                  </li>
+                ))
+              ) : (
+                <p className="text-sm text-dark-text-secondary text-center py-4">Chưa có dữ liệu.</p>
+              )}
             </ul>
           </div>
         </div>
