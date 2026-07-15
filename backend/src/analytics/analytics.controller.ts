@@ -12,12 +12,16 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   /**
-   * API để lấy danh sách các cảnh báo, có hỗ trợ limit và lọc theo trạng thái chưa đọc.
+   * API cho trang chẩn đoán: Lấy chi tiết các chỉ số của ngày hôm nay.
    */
+  @Get('today-diagnostics')
+  getTodayDiagnostics() {
+    return this.analyticsService.getTodayDiagnostics();
+  }
+
   @Get('anomalies')
   getAnomalies(
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    // SỬA LỖI: Thêm Query để nhận tham số 'unread'
     @Query('unread', new DefaultValuePipe(false), ParseBoolPipe) unreadOnly: boolean,
   ) {
     return this.analyticsService.getAnomalies(limit, unreadOnly);
