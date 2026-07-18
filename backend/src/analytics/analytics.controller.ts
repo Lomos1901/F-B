@@ -11,12 +11,17 @@ import { UserRole } from '../auth/enums/user-role.enum';
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
-  /**
-   * API cho trang chẩn đoán: Lấy chi tiết các chỉ số của ngày hôm nay.
-   */
   @Get('today-diagnostics')
   getTodayDiagnostics() {
     return this.analyticsService.getTodayDiagnostics();
+  }
+
+  /**
+   * API MỚI: Lấy dữ liệu chẩn đoán cho kho hàng.
+   */
+  @Get('inventory-diagnostics')
+  getInventoryDiagnostics() {
+    return this.analyticsService.getInventoryDiagnostics();
   }
 
   @Get('anomalies')
@@ -35,8 +40,11 @@ export class AnalyticsController {
   }
 
   @Post('run-analysis')
-  runDailyAnalysis() {
-    this.analyticsService.runDailyAnalysis();
+  runDailyAnalysis(
+    // Giữ lại tham số force từ lần trước
+    @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean,
+  ) {
+    this.analyticsService.runDailyAnalysis(force);
     return { message: 'Đã kích hoạt quy trình phân tích dữ liệu. Kết quả sẽ được ghi nhận vào hệ thống.' };
   }
 }

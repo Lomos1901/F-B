@@ -12,11 +12,18 @@ const getAuthHeaders = () => {
 };
 
 export const analyticsService = {
+  /**
+   * SỬA LỖI: Khôi phục lại logic trả về dữ liệu.
+   */
   async getAnomalies() {
     const res = await fetch(`${API_URL}/anomalies`, { headers: getAuthHeaders() });
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.message || 'Không thể lấy danh sách cảnh báo.');
+    }
+    // Nếu response không có nội dung, trả về mảng rỗng để tránh lỗi json
+    if (res.status === 204 || res.headers.get('content-length') === '0') {
+      return [];
     }
     return res.json();
   },
@@ -37,13 +44,22 @@ export const analyticsService = {
     const res = await fetch(`${API_URL}/today-diagnostics`, { headers: getAuthHeaders() });
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.message || 'Không thể lấy dữ liệu chẩn đoán.');
+      throw new Error(error.message || 'Không thể lấy dữ liệu chẩn đoán doanh số.');
     }
     return res.json();
   },
 
-  async runAnalysis() {
-    const res = await fetch(`${API_URL}/run-analysis`, {
+  async getInventoryDiagnostics() {
+    const res = await fetch(`${API_URL}/inventory-diagnostics`, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Không thể lấy dữ liệu chẩn đoán kho.');
+    }
+    return res.json();
+  },
+
+  async runAnalysis(force: boolean = false) {
+    const res = await fetch(`${API_URL}/run-analysis?force=${force}`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });

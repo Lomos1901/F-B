@@ -5,7 +5,7 @@ import { analyticsService } from '@/src/services/analyticsService';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { toast } from 'react-toastify';
-import { Bell, TrendingUp, AlertTriangle, Loader2, Eye } from 'lucide-react';
+import { Bell, TrendingUp, AlertTriangle, Loader2, Eye, Info, BarChart2 } from 'lucide-react';
 
 interface Anomaly {
   id: string;
@@ -13,16 +13,19 @@ interface Anomaly {
   message: string;
   recommended_action: string;
   created_at: string;
-  anomaly_score: number;
-  is_read: boolean; // Thêm trạng thái đã đọc
+  is_read: boolean;
 }
 
 const AlertIcon = ({ category }: { category: string }) => {
   switch (category) {
     case 'SALES_SPIKE':
       return <TrendingUp className="text-green-400" size={20} />;
+    case 'GHOST_PRODUCT':
+      return <BarChart2 className="text-purple-400" size={20} />;
+    case 'INVENTORY_FORECAST':
+      return <Info className="text-yellow-400" size={20} />;
     default:
-      return <AlertTriangle className="text-yellow-400" size={20} />;
+      return <AlertTriangle className="text-gray-400" size={20} />;
   }
 };
 
@@ -31,11 +34,17 @@ export default function AlertsCenterPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchAnomalies = async () => {
+    setLoading(true);
     try {
       const data = await analyticsService.getAnomalies();
-      setAnomalies(data);
+
+      // THÊM "MÁY DÒ": In dữ liệu thô ra console của trình duyệt
+      console.log('Dữ liệu thô nhận được từ API getAnomalies:', data);
+
+      setAnomalies(Array.isArray(data) ? data : []);
     } catch (err: any) {
       toast.error(err.message);
+      setAnomalies([]);
     } finally {
       setLoading(false);
     }
@@ -46,15 +55,11 @@ export default function AlertsCenterPage() {
   }, []);
 
   const handleMarkAsRead = async (id: string) => {
-    // Cập nhật giao diện ngay lập tức để tạo cảm giác nhanh
     setAnomalies(anomalies.map(a => a.id === id ? { ...a, is_read: true } : a));
-
     try {
       await analyticsService.markAsRead(id);
-      // Không cần toast success để tránh làm phiền
     } catch (err: any) {
       toast.error(err.message);
-      // Nếu có lỗi, rollback lại trạng thái
       setAnomalies(anomalies.map(a => a.id === id ? { ...a, is_read: false } : a));
     }
   };
@@ -97,20 +102,15 @@ export default function AlertsCenterPage() {
                   {formatDistanceToNow(new Date(anomaly.created_at), { addSuffix: true, locale: vi })}
                 </p>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="font-bold text-lg" style={{ color: `hsl(40, 100%, ${100 - anomaly.anomaly_score * 50}%)` }}>
-                  {Math.round(anomaly.anomaly_score * 100)}
-                </div>
-                {!anomaly.is_read && (
-                  <button
-                    onClick={() => handleMarkAsRead(anomaly.id)}
-                    className="p-2 text-dark-text-secondary hover:bg-dark-bg hover:text-white rounded-full"
-                    title="Đánh dấu đã đọc"
-                  >
-                    <Eye size={16} />
-                  </button>
-                )}
-              </div>
+              {!anomaly.is_read && (
+                <button
+                  onClick={() => handleMarkAsRead(anomaly.id)}
+                  className="p-2 text-dark-text-secondary hover:bg-dark-bg hover:text-white rounded-full"
+                  title="Đánh dấu đã đọc"
+                >
+                  <Eye size={16} />
+                </button>
+              )}
             </div>
           ))
         )}
