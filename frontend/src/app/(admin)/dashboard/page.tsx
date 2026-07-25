@@ -25,9 +25,10 @@ interface TopProduct {
 }
 interface Anomaly {
   id: string;
-  alert_category: string; // Thêm category để chọn icon
+  alert_category: string;
   message: string;
   created_at: string;
+  is_read: boolean;
 }
 interface DashboardData {
   kpis: KpiData;
@@ -44,19 +45,15 @@ const KpiCard = ({ title, value, icon, formatAsCurrency = false }: { title: stri
       <p className="text-sm font-medium text-dark-text-secondary">{title}</p>
       {icon}
     </div>
-    <p className="text-3xl font-bold mt-2">
+    {/* SỬA LỖI GIAO DIỆN: Sử dụng responsive font size */}
+    <p className="text-2xl lg:text-3xl font-bold mt-2 break-words">
       {formatAsCurrency ? value.toLocaleString('vi-VN') + 'đ' : value.toLocaleString('vi-VN')}
     </p>
   </div>
 );
 
 const AlertIcon = ({ category }: { category: string }) => {
-  switch (category) {
-    case 'SALES_SPIKE':
-      return <TrendingUp className="text-green-400" size={24} />;
-    default:
-      return <AlertTriangle className="text-yellow-400" size={24} />;
-  }
+  // ... (giữ nguyên)
 };
 
 export default function DashboardPage() {
@@ -125,7 +122,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-8">
-          {/* WIDGET CẢNH BÁO ĐÃ NÂNG CẤP */}
           <div className="bg-dark-surface p-6 rounded-lg border border-dark-border">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-2"><Bell size={20}/>Cảnh báo Mới nhất</h2>
             <div className="space-y-6">
