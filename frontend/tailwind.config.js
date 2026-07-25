@@ -9,11 +9,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'dark-bg': '#111827',
-        'dark-surface': '#1F2937',
-        'dark-border': '#374151',
-        'dark-text-primary': '#F9FAFB',
-        'dark-text-secondary': '#9CA3AF',
+        'dark-bg': '#F8F9FA',
+        'dark-surface': '#FFFFFF',
+        'dark-border': '#DEE2E6',
+        'dark-text-primary': '#212529',
+        'dark-text-secondary': '#6C757D',
         'brand-amber': {
           DEFAULT: '#f59e0b',
           dark: '#d97706',
@@ -23,5 +23,7 @@ module.exports = {
   },
   plugins: [
     require('@tailwindcss/forms'),
+    // THÊM PLUGIN MỚI
+    require('tailwind-scrollbar-hide'),
   ],
 };

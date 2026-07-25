@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { orderService } from '@/src/services/orderService';
-import { Check, CookingPot, Bell } from 'lucide-react';
+import { Check, CookingPot, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 interface OrderItem {
@@ -23,21 +23,23 @@ const OrderTicket = ({ order, onAction, actionText, color, buttonColor, icon }: 
   const timeAgo = formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: vi });
 
   return (
-    <div className={`bg-dark-surface rounded-lg shadow-lg border-l-4 ${color} flex flex-col`}>
-      <div className="p-4 border-b border-dark-border">
-        <h3 className="font-bold text-lg text-dark-text-primary">Bàn {order.table_number}</h3>
-        <p className="text-xs text-dark-text-secondary">{timeAgo}</p>
+    <div className={`bg-white rounded-xl shadow-lg border-l-8 ${color} flex flex-col transition-all duration-300 hover:shadow-2xl`}>
+      <div className="p-5 border-b border-slate-200">
+        <div className="flex justify-between items-center">
+          <h3 className="font-extrabold text-2xl text-slate-800">Bàn {order.table_number}</h3>
+          <p className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{timeAgo}</p>
+        </div>
       </div>
-      <ul className="flex-grow p-4 space-y-2 text-sm">
+      <ul className="flex-grow p-5 space-y-3 text-base">
         {order.order_detail.map((item, index) => (
-          <li key={index} className="flex justify-between">
-            <span className="text-dark-text-primary">{item.products?.name || 'Sản phẩm không xác định'}</span>
-            <span className="font-bold text-dark-text-primary">x{item.quantity}</span>
+          <li key={index} className="flex justify-between items-center">
+            <span className="text-slate-700">{item.products?.name || 'Sản phẩm không xác định'}</span>
+            <span className="font-bold text-slate-900 bg-slate-100 rounded-md px-3 py-1">x{item.quantity}</span>
           </li>
         ))}
       </ul>
-      <div className="p-3 bg-dark-bg">
-        <button onClick={onAction} className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md font-bold text-sm text-white ${buttonColor} transition-transform transform hover:scale-105`}>
+      <div className="p-4 bg-slate-50/70 rounded-b-xl">
+        <button onClick={onAction} className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white ${buttonColor} transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2`}>
           {icon}
           {actionText}
         </button>
@@ -49,6 +51,7 @@ const OrderTicket = ({ order, onAction, actionText, color, buttonColor, icon }: 
 export default function KDSPage() {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [preparingOrders, setPreparingOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadOrders = async () => {
@@ -61,6 +64,8 @@ export default function KDSPage() {
       setPreparingOrders(preparing);
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,7 +75,6 @@ export default function KDSPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // SỬA LẠI: Thêm tableNumber vào hàm và nội dung thông báo
   const handleUpdateStatus = async (orderId: string, status: string, tableNumber: string) => {
     try {
       await orderService.updateStatus(orderId, status);
@@ -82,53 +86,54 @@ export default function KDSPage() {
     }
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen bg-slate-100"><Loader2 size={48} className="animate-spin text-brand-amber" /></div>;
+  }
+
   if (error && pendingOrders.length === 0 && preparingOrders.length === 0) {
-    return <div className="p-8 text-red-500">Lỗi: {error}</div>;
+    return <div className="p-8 text-center text-red-600 bg-red-50 rounded-lg">Lỗi tải dữ liệu: {error}</div>;
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <header className="p-4 border-b border-dark-border">
-        <h1 className="text-2xl font-bold text-dark-text-primary">Màn hình Pha chế</h1>
+    <div className="h-screen flex flex-col bg-slate-100 font-sans">
+      <header className="p-4 border-b border-slate-200 bg-white shadow-sm sticky top-0 z-10">
+        <h1 className="text-2xl font-bold text-slate-800">Màn hình Pha chế (KDS)</h1>
       </header>
-      <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 p-6 overflow-y-auto">
-        {/* Cột Chờ xác nhận */}
-        <div className="flex flex-col">
-          <h2 className="text-xl font-semibold text-yellow-400 mb-4">Chờ xác nhận ({pendingOrders.length})</h2>
-          <div className="space-y-4">
+      <main className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        {/* SỬA LỖI GIAO DIỆN: Bỏ màu nền cột, dùng nền trắng */}
+        <div className="bg-white rounded-xl p-4 flex flex-col shadow-md border border-slate-200">
+          <h2 className="text-xl font-bold text-yellow-800 mb-4 px-2">Chờ xác nhận ({pendingOrders.length})</h2>
+          <div className="flex-grow overflow-y-auto space-y-5 pr-2">
             {pendingOrders.map(order => (
               <OrderTicket
                 key={order.id}
                 order={order}
-                // SỬA LẠI: Truyền thêm order.table_number
                 onAction={() => handleUpdateStatus(order.id, 'PREPARING', order.table_number)}
                 actionText="Bắt đầu làm"
-                color="border-yellow-500"
-                buttonColor="bg-yellow-500 hover:bg-yellow-600"
-                icon={<CookingPot size={16} />}
+                color="border-yellow-400"
+                buttonColor="bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500"
+                icon={<CookingPot size={18} />}
               />
             ))}
           </div>
         </div>
-        {/* Cột Đang làm */}
-        <div className="flex flex-col">
-          <h2 className="text-xl font-semibold text-blue-400 mb-4">Đang làm ({preparingOrders.length})</h2>
-          <div className="space-y-4">
+        <div className="bg-white rounded-xl p-4 flex flex-col shadow-md border border-slate-200">
+          <h2 className="text-xl font-bold text-blue-800 mb-4 px-2">Đang làm ({preparingOrders.length})</h2>
+          <div className="flex-grow overflow-y-auto space-y-5 pr-2">
             {preparingOrders.map(order => (
               <OrderTicket
                 key={order.id}
                 order={order}
-                // SỬA LẠI: Truyền thêm order.table_number
                 onAction={() => handleUpdateStatus(order.id, 'COMPLETED', order.table_number)}
                 actionText="Hoàn thành"
-                color="border-blue-500"
-                buttonColor="bg-blue-500 hover:bg-blue-600"
-                icon={<Check size={16} />}
+                color="border-blue-400"
+                buttonColor="bg-blue-500 hover:bg-blue-600 focus:ring-blue-500"
+                icon={<Check size={18} />}
               />
             ))}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
