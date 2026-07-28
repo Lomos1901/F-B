@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { UserRole } from '@/src/enums/user-role.enum';
-import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History, Users, Bell, ChevronLeft, ChevronRight, Settings, UserCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History, Users, Bell, ChevronLeft, ChevronRight, Settings, UserCircle, ReceiptText, Briefcase } from 'lucide-react';
 import { ReactNode, useState, useEffect } from 'react';
 
 interface NavLinkProps {
@@ -104,6 +104,7 @@ export default function Sidebar() {
             <NavLink href="/dashboard" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Tổng quan</NavLink>
             <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Thu ngân (POS)</NavLink>
             <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Pha chế (KDS)</NavLink>
+            <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn (Lịch sử)</NavLink>
 
             <div className="px-3 mb-2 mt-6">
               {isExpanded ? (
@@ -112,6 +113,7 @@ export default function Sidebar() {
                 <div className="w-6 h-px bg-dark-border mx-auto" />
               )}
             </div>
+            <NavLink href="/shift-history" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Ca</NavLink>
             <NavLink href="/products" icon={<ClipboardList size={20} />} isExpanded={isExpanded}>Thực đơn</NavLink>
             <NavLink href="/categories" icon={<Book size={20} />} isExpanded={isExpanded}>Danh mục Thực đơn</NavLink>
             <NavLink href="/ingredients" icon={<Box size={20} />} isExpanded={isExpanded}>Kho nguyên liệu</NavLink>
@@ -119,17 +121,36 @@ export default function Sidebar() {
             <NavLink href="/inventory-receipts" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Nhập/Xuất</NavLink>
             <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Nhân sự</NavLink>
             <NavLink href="/alerts" icon={<Bell size={20} />} isExpanded={isExpanded}>Cảnh báo</NavLink>
-            {user.role === UserRole.OWNER && (
-              <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
-            )}
+            <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
           </>
         )}
+        
+        {(!isManagement) && (
+          <>
+            <div className="px-3 mb-2 mt-2">
+              {isExpanded ? (
+                <p className="text-xs font-bold text-dark-text-secondary/60 uppercase tracking-widest pl-2">Hoạt động</p>
+              ) : (
+                <div className="w-6 h-px bg-dark-border mx-auto" />
+              )}
+            </div>
 
-        {user.role === UserRole.BARISTA && (
-          <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Màn hình pha chế</NavLink>
-        )}
-        {user.role === UserRole.CASHIER && (
-          <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Màn hình thu ngân</NavLink>
+            {user.role === UserRole.CASHIER && (
+              <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Màn hình thu ngân</NavLink>
+            )}
+
+            {user.role === UserRole.BARISTA && (
+              <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Màn hình pha chế</NavLink>
+            )}
+
+            {user.role === UserRole.CASHIER && (
+              <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn</NavLink>
+            )}
+
+            {(user.role === UserRole.CASHIER || user.role === UserRole.OWNER || user.role === UserRole.MANAGER) && (
+              <NavLink href="/shifts" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Ca làm việc</NavLink>
+            )}
+          </>
         )}
         
         <div className="px-3 mb-2 mt-6">

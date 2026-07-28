@@ -19,17 +19,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const { data, error } = await this.supabaseService
-      .getAdminClient()
-      .from('users')
-      .select('role')
-      .eq('id', payload.sub)
-      .single();
-
-    if (error || !data) {
+    // Không cần truy vấn CSDL vì JWT đã chứa đầy đủ thông tin (sub, email, role).
+    // Điều này giúp tăng hiệu suất và tránh lỗi do rate limit.
+    if (!payload.sub) {
       return null;
     }
-
-    return { ...payload, role: data.role };
+    return payload;
   }
 }

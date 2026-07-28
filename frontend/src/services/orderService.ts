@@ -47,6 +47,15 @@ export const orderService = {
     return res.json();
   },
 
+  async getDailyReceipts(date?: string) {
+    const url = date ? `${API_URL}/receipts/daily?date=${date}` : `${API_URL}/receipts/daily`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      throw new Error('Lỗi khi tải danh sách hóa đơn trong ngày');
+    }
+    return res.json();
+  },
+
   /**
    * Tái cấu trúc: Lấy đơn hàng đang mở của một bàn.
    * Dùng cho POS cũ (hiện không dùng nhưng vẫn giữ lại).

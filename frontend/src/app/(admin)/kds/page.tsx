@@ -130,8 +130,8 @@ export default function KDSPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#FCF9F8] overflow-hidden" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-      <header className="px-4 py-3 bg-[#FCF9F8] flex items-center justify-between border-b border-black/5 z-10 shrink-0">
+    <div className="min-h-screen flex flex-col bg-[#FCF9F8]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+      <header className="px-4 py-3 bg-[#FCF9F8] flex items-center justify-between border-b border-black/5 z-20 sticky top-0">
         <h1 className="text-2xl font-bold text-[#4B2C20]">Pha chế</h1>
         <button 
           onClick={handleManualRefresh} 
@@ -160,17 +160,17 @@ export default function KDSPage() {
         </div>
       </div>
 
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full flex sm:grid sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1">
+        <div className="flex sm:grid sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8">
           
           {/* Pending Column */}
-          <div className={`h-full flex flex-col ${activeTab === 'PENDING' ? 'w-full' : 'hidden'} sm:flex`}>
-             <div className="hidden sm:flex items-center gap-2 mb-4">
+          <div className={`flex flex-col ${activeTab === 'PENDING' ? 'w-full' : 'hidden'} sm:flex`}>
+             <div className="hidden sm:flex items-center gap-2 mb-4 sticky top-0 bg-[#FCF9F8] z-10 py-1">
                <h2 className="text-xl font-bold text-[#4B2C20]">Chờ xác nhận</h2>
                <span className="bg-[#FFB800]/20 text-[#4B2C20] px-3 py-1 rounded-full text-sm font-medium border border-[#FFB800]/30">{pendingOrders.length}</span>
              </div>
              
-             <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-4 scrollbar-hide">
+             <div className="space-y-4 pb-4">
                 {pendingOrders.length === 0 ? (
                   <EmptyState />
                 ) : (
@@ -189,13 +189,13 @@ export default function KDSPage() {
           </div>
 
           {/* Preparing Column */}
-          <div className={`h-full flex flex-col ${activeTab === 'PREPARING' ? 'w-full' : 'hidden'} sm:flex`}>
-             <div className="hidden sm:flex items-center gap-2 mb-4">
+          <div className={`flex flex-col ${activeTab === 'PREPARING' ? 'w-full' : 'hidden'} sm:flex`}>
+             <div className="hidden sm:flex items-center gap-2 mb-4 sticky top-0 bg-[#FCF9F8] z-10 py-1">
                <h2 className="text-xl font-bold text-[#4B2C20]">Đang làm</h2>
                <span className="bg-emerald-500/20 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium border border-emerald-500/30">{preparingOrders.length}</span>
              </div>
              
-             <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-4 scrollbar-hide">
+             <div className="space-y-4 pb-4">
                 {preparingOrders.length === 0 ? (
                   <EmptyState />
                 ) : (

@@ -6,7 +6,6 @@ import { AppService } from './app.service';
 import { IngredientsModule } from './ingredients/ingredients.module';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
-import { RecipesModule } from './recipes/recipes.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { IngredientCategoriesModule } from './ingredient-categories/ingredient-categories.module';
@@ -15,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module'; // Import AnalyticsModule
 import { PaymentsModule } from './payments/payments.module';
+import { ShiftsModule } from './shifts/shifts.module';
 
 @Module({
   imports: [
@@ -23,7 +23,6 @@ import { PaymentsModule } from './payments/payments.module';
     IngredientsModule,
     AuthModule,
     OrdersModule,
-    RecipesModule,
     CategoriesModule,
     ProductsModule,
     IngredientCategoriesModule,
@@ -31,7 +30,8 @@ import { PaymentsModule } from './payments/payments.module';
     UsersModule,
     DashboardModule,
     AnalyticsModule,
-    PaymentsModule, // Thêm AnalyticsModule vào đây
+    PaymentsModule,
+    ShiftsModule, // Thêm AnalyticsModule vào đây
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,7 +14,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/dashboard');
+      if (user.role === 'BARISTA') {
+        router.push('/kds');
+      } else if (user.role === 'CASHIER') {
+        router.push('/pos');
+      } else {
+        router.push('/dashboard');
+      }
     }
   }, [user, router]);
 

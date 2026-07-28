@@ -21,9 +21,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Đổi thành cổng 3001 để tránh trùng với cổng 3000 của frontend
-  await app.listen(3001);
-  console.log('🚀 Backend Sẫm Coffee đang chạy tại: http://localhost:3001');
+  // Đổi thành cổng 3001 cho local, hoặc dùng PORT từ biến môi trường khi deploy lên server
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`🚀 Backend Sẫm Coffee đang chạy tại: http://localhost:${port}`);
 }
 bootstrap().catch((err) => {
   console.error('Error starting app:', err);

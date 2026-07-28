@@ -40,9 +40,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     try {
       const userCookie = Cookies.get('user');
-      if (userCookie) {
+      const tokenCookie = Cookies.get('access_token');
+      if (userCookie && tokenCookie) {
         const userData: User = JSON.parse(userCookie);
         setUser(userData);
+      } else {
+        // Nếu thiếu 1 trong 2, coi như chưa đăng nhập
+        Cookies.remove('user');
+        Cookies.remove('access_token');
       }
     } catch (e) {
       console.error("Failed to parse user cookie:", e);
@@ -67,7 +72,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Thông báo đăng nhập thành công
       toast.success(`Chào mừng trở lại, ${userData.full_name}!`);
 
-      router.push('/dashboard');
+      if (userData.role === 'BARISTA') {
+        router.push('/kds');
+      } else if (userData.role === 'CASHIER') {
+        router.push('/pos');
+      } else {
+        router.push('/dashboard');
+      }
 
     } catch (err: any) {
       const errorMessage = err.message || 'Đã xảy ra lỗi không xác định.';

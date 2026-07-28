@@ -21,6 +21,7 @@ export class PaymentsService {
     const { data, error } = await this.client
       .from('payment_methods')
       .select('id, name, code')
+      .neq('code', 'MOMO')
       .order('created_at', { ascending: true });
 
     if (error) {

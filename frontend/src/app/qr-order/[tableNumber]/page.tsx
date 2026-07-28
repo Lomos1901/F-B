@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { productService } from '@/src/services/productService';
 import { orderService } from '@/src/services/orderService';
-import { Plus, Minus, X, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { Plus, Minus, X, CheckCircle2, ShoppingBag, Coffee } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // --- Interfaces ---
@@ -202,22 +202,50 @@ export default function QROrderPage() {
 
   return (
     <div className="bg-[#FCF9F8] min-h-screen pb-24 lg:pb-8" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-      {/* Top App Bar */}
-      <header className="bg-[#4B2C20] text-white p-4 sticky top-0 z-30 shadow-md flex flex-col items-center justify-center">
-        <h1 className="text-xl font-bold tracking-wider">SẪM COFFEE</h1>
-        <p className="text-sm opacity-90 mt-1 bg-white/20 px-3 py-0.5 rounded-full">Bàn {tableNumber}</p>
+      {/* Top App Bar - Refined for Material 3 */}
+      <header className="bg-[#4B2C20] text-white p-4 sticky top-0 z-30 shadow-md flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#FFB800] rounded-full flex items-center justify-center text-[#4B2C20]">
+            <Coffee size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-wider leading-tight">SẪM COFFEE</h1>
+            <p className="text-xs font-medium opacity-90">Bàn {tableNumber}</p>
+          </div>
+        </div>
+        <button className="p-2 rounded-full hover:bg-white/10 transition-colors lg:hidden" onClick={() => setIsCartOpen(true)}>
+          <div className="relative">
+            <ShoppingBag size={24} />
+            {getTotalItems() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#FFB800] text-[#4B2C20] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {getTotalItems()}
+              </span>
+            )}
+          </div>
+        </button>
       </header>
 
-      {/* Category Chips (Sticky) */}
-      <div className="flex gap-2 overflow-x-auto p-4 bg-[#FCF9F8]/95 backdrop-blur-sm sticky top-[72px] z-20 shadow-sm border-b border-gray-100 scrollbar-hide">
+      {/* Hero Image Section with Brand Intro */}
+      <section className="relative w-full h-48 sm:h-64 lg:h-72 bg-[#4B2C20] overflow-hidden">
+        {/* Placeholder for real hero image - using a nice gradient/pattern for now */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#4B2C20] to-[#7B4D36] opacity-90"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1559925393-8be0a33e7a14?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center mix-blend-overlay opacity-40"></div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white bg-black/20">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-2 shadow-sm">Thưởng thức hương vị</h2>
+          <p className="text-sm sm:text-base font-medium opacity-90 max-w-md shadow-sm">Khám phá menu đa dạng của Sẫm Coffee. Chạm để chọn món, chúng tôi sẽ phục vụ ngay tại bàn {tableNumber}.</p>
+        </div>
+      </section>
+
+      {/* Category Chips (Sticky) - Material 3 Filter Chips */}
+      <div className="flex gap-3 overflow-x-auto px-4 py-3 bg-[#FCF9F8]/95 backdrop-blur-md sticky top-[72px] z-20 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border-b border-gray-200 scrollbar-hide">
         {categories.map(cat => (
           <button
             key={cat}
             onClick={() => scrollToCategory(cat)}
-            className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-colors border ${
+            className={`whitespace-nowrap px-6 py-2.5 rounded-[16px] text-sm font-bold transition-all duration-300 ease-in-out border-2 ${
               activeCategory === cat 
-                ? 'bg-[#4B2C20] text-white border-[#4B2C20]' 
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-black/5'
+                ? 'bg-[#4B2C20] text-white border-[#4B2C20] shadow-md transform scale-[1.02]' 
+                : 'bg-white text-gray-700 border-transparent hover:border-gray-300 hover:bg-gray-50 shadow-sm'
             }`}
           >
             {cat}
@@ -225,43 +253,48 @@ export default function QROrderPage() {
         ))}
       </div>
 
-      <div className="container mx-auto p-4 lg:flex lg:gap-6 lg:max-w-7xl mt-2">
+      <div className="container mx-auto p-4 lg:p-6 lg:flex lg:gap-8 lg:max-w-[1440px]">
         {/* Main Content (Menu) */}
-        <main className="lg:w-[60%] xl:w-[65%]">
+        <main className="lg:w-[65%] xl:w-[70%]">
           {categories.map(categoryName => (
-            <section key={categoryName} id={`category-${categoryName}`} className="mb-8 pt-2">
-              <h2 className="text-xl font-bold text-[#1C1B1F] mb-4 pl-1">{categoryName}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <section key={categoryName} id={`category-${categoryName}`} className="mb-10 pt-4 scroll-mt-[130px]">
+              <h2 className="text-2xl font-bold text-[#4B2C20] mb-5 pl-2 border-l-4 border-[#FFB800] rounded-sm">{categoryName}</h2>
+              {/* 1 col mobile, 2 col sm, 3 col md/lg */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-5">
                 {productsByCategory[categoryName].map(product => {
                   const quantity = getCartItemQuantity(product.id);
                   return (
-                    <div key={product.id} className="bg-white rounded-2xl p-3 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-gray-50 flex items-center gap-4">
-                      <img 
-                        src={product.image_url || '/placeholder.svg'} 
-                        alt={product.name} 
-                        className="w-20 h-20 lg:w-24 lg:h-24 rounded-xl object-cover bg-gray-100"
-                      />
-                      <div className="flex-1 flex flex-col justify-center">
-                        <h3 className="font-bold text-[#1C1B1F] text-base leading-tight mb-1">{product.name}</h3>
-                        <p className="text-sm font-semibold text-[#4B2C20]">{product.price.toLocaleString('vi-VN')} đ</p>
+                    <div key={product.id} className="bg-white rounded-[24px] p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 hover:shadow-lg duration-300">
+                      <div className="flex items-start gap-4">
+                        <img 
+                          src={product.image_url || '/placeholder.svg'} 
+                          alt={product.name} 
+                          className="w-24 h-24 rounded-[16px] object-cover bg-gray-50 shadow-inner"
+                        />
+                        <div className="flex-1 flex flex-col min-h-[96px]">
+                          <h3 className="font-bold text-[#1C1B1F] text-[15px] leading-snug mb-1.5">{product.name}</h3>
+                          <p className="text-[15px] font-bold text-[#4B2C20] mt-auto">{product.price.toLocaleString('vi-VN')} đ</p>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-end pr-1">
+                      
+                      <div className="pt-2 border-t border-gray-100 mt-1">
                         {quantity > 0 ? (
-                          <div className="flex flex-col sm:flex-row items-center gap-2 bg-[#FCF9F8] rounded-full p-1 border border-gray-100">
-                            <button onClick={() => updateCart(product, quantity - 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm text-[#4B2C20]">
-                              <Minus size={16} />
+                          <div className="flex items-center justify-between bg-[#FCF9F8] rounded-[16px] p-1.5 border border-gray-200">
+                            <button onClick={() => updateCart(product, quantity - 1)} className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-white shadow-sm text-[#4B2C20] active:scale-95 transition-transform">
+                              <Minus size={18} />
                             </button>
-                            <span className="font-semibold text-sm w-4 text-center">{quantity}</span>
-                            <button onClick={() => updateCart(product, quantity + 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#4B2C20] text-white shadow-sm">
-                              <Plus size={16} />
+                            <span className="font-bold text-base w-8 text-center text-[#4B2C20]">{quantity}</span>
+                            <button onClick={() => updateCart(product, quantity + 1)} className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-[#4B2C20] text-white shadow-sm active:scale-95 transition-transform">
+                              <Plus size={18} />
                             </button>
                           </div>
                         ) : (
                           <button 
                             onClick={() => updateCart(product, 1)} 
-                            className="w-10 h-10 flex items-center justify-center rounded-full bg-[#F3EDF7] text-[#4B2C20] hover:bg-black/5 transition-colors"
+                            className="w-full h-[52px] flex items-center justify-center gap-2 rounded-[16px] bg-[#FFB800] text-[#4B2C20] font-bold text-[15px] hover:bg-[#e6a600] active:scale-[0.98] transition-all shadow-sm"
                           >
                             <Plus size={20} />
+                            <span>Thêm món</span>
                           </button>
                         )}
                       </div>
@@ -274,34 +307,36 @@ export default function QROrderPage() {
         </main>
 
         {/* Cart Sidebar (Tablet & Desktop) */}
-        <aside className="hidden lg:block lg:w-[40%] xl:w-[35%] sticky top-[140px] h-[calc(100vh-160px)]">
-          {renderCartContent(false)}
+        <aside className="hidden lg:block lg:w-[35%] xl:w-[30%]">
+          <div className="sticky top-[140px] h-[calc(100vh-160px)]">
+            {renderCartContent(false)}
+          </div>
         </aside>
       </div>
 
-      {/* Cart Footer Bar (Mobile) */}
+      {/* Cart Footer Bar (Mobile) - Material 3 Floating Bottom Bar */}
       {cart.length > 0 && !isCartOpen && (
-        <div className="lg:hidden fixed bottom-4 left-4 right-4 bg-[#4B2C20] rounded-3xl p-3 shadow-xl flex items-center justify-between z-40">
-          <div className="flex flex-col text-white ml-3">
-            <span className="text-xs opacity-80 font-medium">{getTotalItems()} món</span>
-            <span className="font-bold text-lg">{getTotalPrice().toLocaleString('vi-VN')} đ</span>
+        <div className="lg:hidden fixed bottom-6 left-4 right-4 bg-[#4B2C20] rounded-[24px] p-4 shadow-[0_8px_30px_rgba(75,44,32,0.3)] flex items-center justify-between z-40 animate-[slideUp_0.3s_ease-out]">
+          <div className="flex flex-col text-white ml-2">
+            <span className="text-[13px] opacity-90 font-medium">{getTotalItems()} món đã chọn</span>
+            <span className="font-bold text-xl">{getTotalPrice().toLocaleString('vi-VN')} đ</span>
           </div>
           <button 
             onClick={() => setIsCartOpen(true)} 
-            className="bg-[#FFB800] text-[#4B2C20] px-5 py-2.5 rounded-full font-bold flex items-center gap-2 hover:bg-[#e6a600] transition-colors"
+            className="bg-[#FFB800] text-[#4B2C20] h-12 px-6 rounded-[16px] font-bold flex items-center gap-2 active:scale-95 transition-transform shadow-md"
           >
-            <ShoppingBag size={18} />
-            Xem giỏ hàng
+            <ShoppingBag size={20} />
+            Xem giỏ
           </button>
         </div>
       )}
 
-      {/* Cart Bottom Sheet (Mobile) */}
+      {/* Cart Bottom Sheet (Mobile) - Material 3 Standard */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 lg:hidden">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 lg:hidden backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="absolute inset-0" onClick={() => setIsCartOpen(false)}></div>
-          <div className="bg-white h-[85vh] rounded-t-3xl overflow-hidden flex flex-col relative animate-[slideUp_0.3s_ease-out]">
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-1"></div>
+          <div className="bg-white h-[85vh] rounded-t-[32px] overflow-hidden flex flex-col relative animate-[slideUp_0.3s_ease-out] shadow-2xl">
+            <div className="w-16 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2"></div>
             {renderCartContent(true)}
           </div>
         </div>
@@ -309,8 +344,12 @@ export default function QROrderPage() {
       
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -318,6 +357,9 @@ export default function QROrderPage() {
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        html {
+          scroll-behavior: smooth;
         }
       `}} />
     </div>

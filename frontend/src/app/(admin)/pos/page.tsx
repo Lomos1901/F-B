@@ -6,7 +6,7 @@ import { vi } from 'date-fns/locale';
 import { orderService } from '@/src/services/orderService';
 import { paymentService } from '@/src/services/paymentService';
 import { QRCodeSVG } from 'qrcode.react';
-import { Printer, CheckCircle, Search, Clock, ReceiptText, Coffee, Loader2, AlertCircle, RefreshCw, X, LayoutGrid, ClipboardList, MoreHorizontal, QrCode } from 'lucide-react';
+import { Printer, CheckCircle, Search, Clock, ReceiptText, Coffee, Loader2, AlertCircle, RefreshCw, X, LayoutGrid, ClipboardList, MoreHorizontal, QrCode, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // --- Interfaces ---
@@ -53,6 +53,8 @@ export default function POSPage() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isMobileReceiptOpen, setIsMobileReceiptOpen] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, tableNumber: string, orderId: string | null}>({isOpen: false, tableNumber: '', orderId: null});
   
   // Payment State
   const [paymentMethods, setPaymentMethods] = useState<{id: string, name: string, code: string}[]>([]);
@@ -115,6 +117,32 @@ export default function POSPage() {
       await executePayment();
     } else {
       setPaymentStep(2);
+    }
+  };
+
+  const handleCancelOrderClick = () => {
+    if (!selectedOrder) return;
+    setConfirmModal({isOpen: true, tableNumber: selectedOrder.table_number, orderId: selectedOrder.id});
+  };
+
+  const executeCancelOrder = async () => {
+    if (!confirmModal.orderId) return;
+    
+    setIsCanceling(true);
+    const orderIdToCancel = confirmModal.orderId;
+    const tableNum = confirmModal.tableNumber;
+    setConfirmModal({isOpen: false, tableNumber: '', orderId: null});
+    
+    try {
+      await orderService.updateStatus(orderIdToCancel, 'CANCELLED');
+      toast.success(`Đã hủy đơn bàn ${tableNum}`);
+      setSelectedOrderId(null);
+      setIsMobileReceiptOpen(false);
+      await loadOrders(true);
+    } catch (err: any) {
+      toast.error(`Lỗi hủy đơn: ${err.message}`);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -202,22 +230,68 @@ export default function POSPage() {
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-200 bg-white grid grid-cols-2 gap-3">
-        <button className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 text-[#4B2C20] rounded-xl font-medium hover:bg-black/5 active:bg-black/10 transition-colors">
-          <Printer size={18} /> 
-          <span>In tạm tính</span>
-        </button>
+      <div className="p-4 border-t border-gray-200 bg-white flex flex-col gap-3">
         <button 
           onClick={handleOpenPaymentModal}
-          disabled={processingPayment}
-          className="flex items-center justify-center gap-2 py-3 px-4 bg-[#FFB800] hover:bg-[#FFB800]/90 active:bg-[#FFB800]/80 text-[#4B2C20] rounded-xl font-bold transition-colors disabled:opacity-50"
+          disabled={processingPayment || isCanceling}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#FFB800] hover:bg-[#FFB800]/90 active:bg-[#FFB800]/80 text-[#4B2C20] rounded-xl font-bold transition-colors disabled:opacity-50"
         >
           {processingPayment ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18}/>} 
           <span>Thanh toán</span>
         </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 text-[#4B2C20] rounded-xl font-medium hover:bg-black/5 active:bg-black/10 transition-colors">
+            <Printer size={18} /> 
+            <span>In bill</span>
+          </button>
+          <button 
+            onClick={handleCancelOrderClick}
+            disabled={processingPayment || isCanceling}
+            className="flex items-center justify-center gap-2 py-3 px-4 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-colors disabled:opacity-50"
+          >
+            {isCanceling ? <Loader2 size={18} className="animate-spin"/> : <X size={18}/>} 
+            <span>Hủy đơn</span>
+          </button>
+        </div>
       </div>
     </div>
   );
+
+  const renderConfirmModal = () => {
+    if (!confirmModal.isOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-xl animate-in zoom-in-95 duration-200">
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-[#4B2C20] mb-2">Hủy đơn hàng?</h3>
+            <p className="text-gray-600 mb-6">Bạn có chắc chắn muốn hủy đơn của Bàn {confirmModal.tableNumber}? Hành động này không thể hoàn tác.</p>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmModal({isOpen: false, tableNumber: '', orderId: null})}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                disabled={isCanceling}
+              >
+                Không
+              </button>
+              <button 
+                onClick={executeCancelOrder}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors flex justify-center items-center gap-2"
+                disabled={isCanceling}
+              >
+                {isCanceling ? <Loader2 size={18} className="animate-spin"/> : null}
+                Đồng ý hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FCF9F8] text-[#4B2C20]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
@@ -518,6 +592,7 @@ export default function POSPage() {
         </div>
       )}
 
+      {renderConfirmModal()}
     </div>
   );
 }

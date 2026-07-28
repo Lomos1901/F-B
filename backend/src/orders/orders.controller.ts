@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -32,6 +33,16 @@ export class OrdersController {
   createOrderForCustomer(@Body() createOrderDto: CreateOrderDto) {
     // Không có thông tin người dùng cho đơn hàng của khách
     return this.ordersService.create(createOrderDto);
+  }
+
+  /**
+   * API lấy danh sách hóa đơn trong ngày.
+   */
+  @Get('receipts/daily')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.CASHIER)
+  getDailyReceipts(@Query('date') date?: string) {
+    return this.ordersService.getDailyReceipts(date);
   }
 
   /**

@@ -3,19 +3,27 @@
 import {
   Injectable,
   InternalServerErrorException,
+  BadRequestException,
   Logger,
+  Inject,
+  forwardRef
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { ShiftsService } from '../shifts/shifts.service';
 
 @Injectable()
 export class OrdersService {
   private readonly client: SupabaseClient;
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    @Inject(forwardRef(() => ShiftsService))
+    private readonly shiftsService: ShiftsService
+  ) {
     this.client = this.supabaseService.getAdminClient();
   }
 
@@ -43,6 +51,15 @@ export class OrdersService {
     );
     const pendingStatusId = await this._getStatusId('PENDING', 'order_status');
     const todoTaskStatusId = await this._getStatusId('TODO', 'task_status');
+    
+    // Assign shift_id if there is an active shift
+    const currentShift = await this.shiftsService.getCurrentShift();
+    
+    if (!currentShift) {
+      throw new BadRequestException('Quán hiện đang đóng cửa hoặc chưa tới giờ hoạt động. Vui lòng gọi nhân viên.');
+    }
+    const shiftId = currentShift.id;
+
     const { data: orderData, error: orderError } = await this.client
       .from('orders')
       .insert({
@@ -50,6 +67,7 @@ export class OrdersService {
         total_price: totalPrice,
         status_id: pendingStatusId,
         created_by: createdByUserId,
+        shift_id: shiftId
       })
       .select('id')
       .single();
@@ -122,6 +140,40 @@ export class OrdersService {
     }
 
     return updatedOrder;
+  }
+
+  async getDailyReceipts(dateStr?: string) {
+    // Nếu không truyền ngày, lấy ngày hôm nay
+    const targetDate = dateStr ? new Date(dateStr) : new Date();
+    // Set thời gian bắt đầu và kết thúc của ngày (Local time hoặc UTC)
+    // Supabase lưu created_at dạng UTC, ta sẽ lấy khoảng thời gian của ngày hôm đó
+    targetDate.setHours(0, 0, 0, 0);
+    const startOfDay = targetDate.toISOString();
+    
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+    const endOfDay = endDate.toISOString();
+
+    const statusId = await this._getStatusId('PAID', 'order_status');
+
+    const { data, error } = await this.client
+      .from('orders')
+      .select(`
+        id, table_number, total_price, created_at,
+        order_status ( status_name ),
+        payments ( id, amount, payment_methods (name) ),
+        order_detail ( quantity, products ( name, price ) )
+      `)
+      .eq('status_id', statusId)
+      .gte('created_at', startOfDay)
+      .lte('created_at', endOfDay)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      this.logger.error('Lỗi khi lấy hóa đơn trong ngày:', error);
+      throw new InternalServerErrorException('Lỗi khi lấy danh sách hóa đơn.');
+    }
+    return data;
   }
 
   async getOrdersByStatus(statusName: string) {
