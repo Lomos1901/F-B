@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Patch, Param, ParseUUIDPipe, Query, UseGuards, DefaultValuePipe, ParseIntPipe, ParseBoolPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+  DefaultValuePipe,
+  ParseIntPipe,
+  ParseBoolPipe,
+} from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -27,15 +39,14 @@ export class AnalyticsController {
   @Get('anomalies')
   getAnomalies(
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('unread', new DefaultValuePipe(false), ParseBoolPipe) unreadOnly: boolean,
+    @Query('unread', new DefaultValuePipe(false), ParseBoolPipe)
+    unreadOnly: boolean,
   ) {
     return this.analyticsService.getAnomalies(limit, unreadOnly);
   }
 
   @Patch('anomalies/:id/read')
-  markAsRead(
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  markAsRead(@Param('id', ParseUUIDPipe) id: string) {
     return this.analyticsService.markAsRead(id);
   }
 
@@ -45,6 +56,9 @@ export class AnalyticsController {
     @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean,
   ) {
     this.analyticsService.runDailyAnalysis(force);
-    return { message: 'Đã kích hoạt quy trình phân tích dữ liệu. Kết quả sẽ được ghi nhận vào hệ thống.' };
+    return {
+      message:
+        'Đã kích hoạt quy trình phân tích dữ liệu. Kết quả sẽ được ghi nhận vào hệ thống.',
+    };
   }
 }

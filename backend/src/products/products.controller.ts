@@ -1,6 +1,18 @@
 // backend/src/products/products.controller.ts
 
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, UseInterceptors, UploadedFile, ParseUUIDPipe, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseUUIDPipe,
+  Put,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -51,7 +63,10 @@ export class ProductsController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateProductDto: UpdateProductDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
     return this.productsService.updateWithRecipe(id, updateProductDto);
   }
 

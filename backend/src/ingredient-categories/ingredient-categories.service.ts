@@ -1,6 +1,11 @@
 // backend/src/ingredient-categories/ingredient-categories.service.ts
 
-import { Injectable, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -34,7 +39,8 @@ export class IngredientCategoriesService {
       .single();
 
     if (error) {
-      if (error.code === '23505') { // Lỗi trùng tên
+      if (error.code === '23505') {
+        // Lỗi trùng tên
         throw new BadRequestException('Tên danh mục này đã tồn tại.');
       }
       this.logger.error('Lỗi khi tạo danh mục nguyên liệu:', error);
@@ -62,11 +68,17 @@ export class IngredientCategoriesService {
   }
 
   async remove(id: string) {
-    const { error } = await this.client.from('ingredient_categories').delete().eq('id', id);
+    const { error } = await this.client
+      .from('ingredient_categories')
+      .delete()
+      .eq('id', id);
 
     if (error) {
-      if (error.code === '23503') { // Lỗi khóa ngoại
-        throw new BadRequestException('Không thể xóa danh mục này vì vẫn còn nguyên liệu thuộc về nó.');
+      if (error.code === '23503') {
+        // Lỗi khóa ngoại
+        throw new BadRequestException(
+          'Không thể xóa danh mục này vì vẫn còn nguyên liệu thuộc về nó.',
+        );
       }
       this.logger.error(`Lỗi khi xóa danh mục ID ${id}:`, error);
       throw new InternalServerErrorException(error.message);

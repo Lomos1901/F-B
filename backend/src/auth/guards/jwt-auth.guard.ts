@@ -13,7 +13,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   /**
    * Ghi đè phương thức canActivate để thêm logic bỏ qua API công khai.
    */
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
     // Lấy metadata 'isPublic' từ decorator @Public()
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),

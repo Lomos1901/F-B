@@ -1,6 +1,11 @@
 // backend/src/products/products.service.ts
 
-import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -21,18 +26,20 @@ export class ProductsService {
   async findAllWithDetails() {
     const { data, error } = await this.client
       .from('products')
-      .select(`
+      .select(
+        `
         id, name, price, image_url,
         categories ( name ),
         recipes (
           quantity,
           ingredients ( name, recipe_unit )
         )
-      `)
+      `,
+      )
       .order('name', { ascending: true });
 
     if (error) {
-      console.error("Lỗi khi thực thi findAllWithDetails:", error);
+      console.error('Lỗi khi thực thi findAllWithDetails:', error);
       throw new InternalServerErrorException(error.message);
     }
     return data;
@@ -44,18 +51,21 @@ export class ProductsService {
   async findOneWithDetails(id: string) {
     const { data, error } = await this.client
       .from('products')
-      .select(`
+      .select(
+        `
         *,
         recipes (
           ingredient_id,
           quantity
         )
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') throw new NotFoundException(`Không tìm thấy sản phẩm với ID: ${id}`);
+      if (error.code === 'PGRST116')
+        throw new NotFoundException(`Không tìm thấy sản phẩm với ID: ${id}`);
       console.error(`Lỗi khi thực thi findOneWithDetails cho ID ${id}:`, error);
       throw new InternalServerErrorException(error.message);
     }
@@ -75,21 +85,27 @@ export class ProductsService {
       .single();
 
     if (productError) {
-      throw new InternalServerErrorException(`Lỗi khi tạo sản phẩm: ${productError.message}`);
+      throw new InternalServerErrorException(
+        `Lỗi khi tạo sản phẩm: ${productError.message}`,
+      );
     }
 
     if (ingredients && ingredients.length > 0) {
-      const recipePayload = ingredients.map(ing => ({
+      const recipePayload = ingredients.map((ing) => ({
         product_id: newProduct.id,
         ingredient_id: ing.ingredient_id,
         quantity: ing.quantity_required,
       }));
 
-      const { error: recipeError } = await this.client.from('recipes').insert(recipePayload);
+      const { error: recipeError } = await this.client
+        .from('recipes')
+        .insert(recipePayload);
 
       if (recipeError) {
         await this.client.from('products').delete().eq('id', newProduct.id);
-        throw new InternalServerErrorException(`Lỗi khi tạo công thức: ${recipeError.message}`);
+        throw new InternalServerErrorException(
+          `Lỗi khi tạo công thức: ${recipeError.message}`,
+        );
       }
     }
 
@@ -110,24 +126,35 @@ export class ProductsService {
       .single();
 
     if (productError) {
-      throw new InternalServerErrorException(`Lỗi khi cập nhật sản phẩm: ${productError.message}`);
+      throw new InternalServerErrorException(
+        `Lỗi khi cập nhật sản phẩm: ${productError.message}`,
+      );
     }
 
-    const { error: deleteError } = await this.client.from('recipes').delete().eq('product_id', id);
+    const { error: deleteError } = await this.client
+      .from('recipes')
+      .delete()
+      .eq('product_id', id);
     if (deleteError) {
-      throw new InternalServerErrorException(`Lỗi khi xóa công thức cũ: ${deleteError.message}`);
+      throw new InternalServerErrorException(
+        `Lỗi khi xóa công thức cũ: ${deleteError.message}`,
+      );
     }
 
     if (ingredients && ingredients.length > 0) {
-      const recipePayload = ingredients.map(ing => ({
+      const recipePayload = ingredients.map((ing) => ({
         product_id: id,
         ingredient_id: ing.ingredient_id,
         quantity: ing.quantity_required,
       }));
 
-      const { error: recipeError } = await this.client.from('recipes').insert(recipePayload);
+      const { error: recipeError } = await this.client
+        .from('recipes')
+        .insert(recipePayload);
       if (recipeError) {
-        throw new InternalServerErrorException(`Lỗi khi cập nhật công thức mới: ${recipeError.message}`);
+        throw new InternalServerErrorException(
+          `Lỗi khi cập nhật công thức mới: ${recipeError.message}`,
+        );
       }
     }
 
@@ -138,7 +165,9 @@ export class ProductsService {
     const { error } = await this.client.from('products').delete().eq('id', id);
     if (error) {
       if (error.code === '23503') {
-        throw new BadRequestException('Không thể xóa sản phẩm này vì nó đã tồn tại trong các đơn hàng hoặc công thức.');
+        throw new BadRequestException(
+          'Không thể xóa sản phẩm này vì nó đã tồn tại trong các đơn hàng hoặc công thức.',
+        );
       }
       throw new InternalServerErrorException(error.message);
     }
@@ -147,9 +176,16 @@ export class ProductsService {
 
   async uploadImage(file: Express.Multer.File) {
     const fileName = `${Date.now()}-${file.originalname.replace(/\s/g, '-')}`;
-    const { data, error } = await this.client.storage.from('product-images').upload(fileName, file.buffer, { contentType: file.mimetype });
-    if (error) throw new InternalServerErrorException('Lỗi khi tải ảnh lên: ' + error.message);
-    const { data: urlData } = this.client.storage.from('product-images').getPublicUrl(data.path);
+    const { data, error } = await this.client.storage
+      .from('product-images')
+      .upload(fileName, file.buffer, { contentType: file.mimetype });
+    if (error)
+      throw new InternalServerErrorException(
+        'Lỗi khi tải ảnh lên: ' + error.message,
+      );
+    const { data: urlData } = this.client.storage
+      .from('product-images')
+      .getPublicUrl(data.path);
     return { imageUrl: urlData.publicUrl };
   }
 }

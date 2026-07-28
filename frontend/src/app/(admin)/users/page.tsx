@@ -25,7 +25,7 @@ const RoleBadge = ({ role }: { role: string }) => {
     BARISTA: 'bg-green-900/50 text-green-300',
     CASHIER: 'bg-blue-900/50 text-blue-300',
   };
-  return <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[role] || 'bg-gray-700'}`}>{role}</span>;
+  return <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[role as keyof typeof styles] || 'bg-gray-700'}`}>{role}</span>;
 };
 
 // --- COMPONENT MODAL CHỈNH SỬA ---

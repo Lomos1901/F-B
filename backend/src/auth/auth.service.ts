@@ -23,21 +23,30 @@ export class AuthService {
   /**
    * Tái cấu trúc: Thêm việc đồng bộ email và nhận 'role' từ tham số.
    */
-  async register(email: string, password: string, fullName: string, role: UserRole) {
+  async register(
+    email: string,
+    password: string,
+    fullName: string,
+    role: UserRole,
+  ) {
     const publicClient = this.supabaseService.getPublicClient();
 
     // 1. Tạo user trong schema `auth` của Supabase
-    const { data: authData, error: authError } = await publicClient.auth.signUp({
-      email,
-      password,
-    });
+    const { data: authData, error: authError } = await publicClient.auth.signUp(
+      {
+        email,
+        password,
+      },
+    );
 
     if (authError) {
       this.logger.error('Lỗi khi signUp trên Supabase Auth:', authError);
       throw new BadRequestException(authError.message);
     }
     if (!authData.user) {
-      throw new InternalServerErrorException('Không thể tạo user trong Supabase Auth.');
+      throw new InternalServerErrorException(
+        'Không thể tạo user trong Supabase Auth.',
+      );
     }
 
     // 2. Tạo hồ sơ tương ứng trong bảng `public.users`
@@ -53,7 +62,9 @@ export class AuthService {
       this.logger.error('Lỗi khi tạo hồ sơ trong public.users:', dbError);
       // Rollback: Xóa user đã tạo bên Auth để tránh user "mồ côi"
       await adminClient.auth.admin.deleteUser(authData.user.id);
-      throw new InternalServerErrorException('Lỗi hệ thống khi khởi tạo hồ sơ nhân viên.');
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống khi khởi tạo hồ sơ nhân viên.',
+      );
     }
 
     return {
@@ -68,13 +79,16 @@ export class AuthService {
   async login(email: string, password: string) {
     const publicClient = this.supabaseService.getPublicClient();
 
-    const { data: authData, error: authError } = await publicClient.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: authData, error: authError } =
+      await publicClient.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (authError || !authData.session) {
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác.');
+      throw new UnauthorizedException(
+        'Tài khoản hoặc mật khẩu không chính xác.',
+      );
     }
 
     const userUuid = authData.user.id;
@@ -88,7 +102,9 @@ export class AuthService {
       .single();
 
     if (userError || !userData) {
-      throw new UnauthorizedException('Không tìm thấy thông tin cấu hình quyền cho tài khoản này.');
+      throw new UnauthorizedException(
+        'Không tìm thấy thông tin cấu hình quyền cho tài khoản này.',
+      );
     }
 
     // Tạo payload cho JWT token tùy chỉnh

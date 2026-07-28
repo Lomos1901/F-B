@@ -1,5 +1,14 @@
 // src/products/dto/create-product.dto.ts
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsUUID, IsArray, ValidateNested, Min } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  IsArray,
+  ValidateNested,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class RecipeItemDto {

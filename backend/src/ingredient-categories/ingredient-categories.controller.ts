@@ -1,6 +1,16 @@
 // backend/src/ingredient-categories/ingredient-categories.controller.ts
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { IngredientCategoriesService } from './ingredient-categories.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -16,7 +26,9 @@ class IngredientCategoryDto {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.OWNER, UserRole.MANAGER) // Chỉ quản lý mới được truy cập module này
 export class IngredientCategoriesController {
-  constructor(private readonly ingredientCategoriesService: IngredientCategoriesService) {}
+  constructor(
+    private readonly ingredientCategoriesService: IngredientCategoriesService,
+  ) {}
 
   @Post()
   create(@Body() dto: IngredientCategoryDto) {
@@ -29,7 +41,10 @@ export class IngredientCategoriesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: IngredientCategoryDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: IngredientCategoryDto,
+  ) {
     return this.ingredientCategoriesService.update(id, dto.name);
   }
 

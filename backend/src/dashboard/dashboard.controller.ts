@@ -1,4 +1,11 @@
-import { Controller, Get, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -13,7 +20,7 @@ export class DashboardController {
 
   @Get()
   getDashboardData(
-    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
   ) {
     // Đảm bảo số ngày hợp lệ
     const validDays = days > 0 ? days : 7;

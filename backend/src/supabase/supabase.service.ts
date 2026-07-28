@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common'; // Thêm Logger
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common'; // Thêm Logger
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
@@ -17,16 +21,32 @@ export class SupabaseService {
 
     // In ra các giá trị để debug
     this.logger.debug(`SUPABASE_URL: ${url}`);
-    this.logger.debug(`SUPABASE_ANON_KEY: ${anonKey ? '***Đã có***' : '!!!THIẾU!!!'}`);
-    this.logger.debug(`SUPABASE_KEY (Service Role): ${serviceKey ? '***Đã có***' : '!!!THIẾU!!!'}`);
+    this.logger.debug(
+      `SUPABASE_ANON_KEY: ${anonKey ? '***Đã có***' : '!!!THIẾU!!!'}`,
+    );
+    this.logger.debug(
+      `SUPABASE_KEY (Service Role): ${serviceKey ? '***Đã có***' : '!!!THIẾU!!!'}`,
+    );
 
     if (!url || !serviceKey || !anonKey) {
-      this.logger.error('KHỞI TẠO THẤT BẠI: Một hoặc nhiều biến môi trường Supabase bị thiếu.');
-      throw new InternalServerErrorException('Thiếu cấu hình Supabase URL/KEY/ANON_KEY');
+      this.logger.error(
+        'KHỞI TẠO THẤT BẠI: Một hoặc nhiều biến môi trường Supabase bị thiếu.',
+      );
+      throw new InternalServerErrorException(
+        'Thiếu cấu hình Supabase URL/KEY/ANON_KEY',
+      );
     }
 
-    this.supabaseAdmin = createClient(url, serviceKey, { auth: { persistSession: false } });
-    this.supabasePublic = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+    this.supabaseAdmin = createClient(url, serviceKey, {
+      auth: { persistSession: false },
+    });
+    this.supabasePublic = createClient(url, anonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
 
     this.logger.log('Khởi tạo SupabaseService thành công!');
   }

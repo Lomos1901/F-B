@@ -11,7 +11,9 @@ import { UserRole } from '../auth/enums/user-role.enum';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.OWNER, UserRole.MANAGER) // Chỉ quản lý mới được xem lịch sử kho
 export class InventoryReceiptsController {
-  constructor(private readonly inventoryReceiptsService: InventoryReceiptsService) {}
+  constructor(
+    private readonly inventoryReceiptsService: InventoryReceiptsService,
+  ) {}
 
   @Get()
   findAll() {

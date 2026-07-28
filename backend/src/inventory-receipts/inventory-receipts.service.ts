@@ -1,6 +1,10 @@
 // backend/src/inventory-receipts/inventory-receipts.service.ts
 
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -20,19 +24,23 @@ export class InventoryReceiptsService {
   async findAllWithDetails() {
     const { data, error } = await this.client
       .from('inventory_receipts')
-      .select(`
+      .select(
+        `
         id, receipt_type, created_at,
         users ( full_name ),
         receipt_details (
           quantity,
           ingredients ( name, base_unit, recipe_unit, conversion_factor )
         )
-      `)
+      `,
+      )
       .order('created_at', { ascending: false });
 
     if (error) {
       this.logger.error('Lỗi khi lấy lịch sử phiếu kho:', error);
-      throw new InternalServerErrorException('Không thể lấy lịch sử phiếu kho.');
+      throw new InternalServerErrorException(
+        'Không thể lấy lịch sử phiếu kho.',
+      );
     }
     return data;
   }

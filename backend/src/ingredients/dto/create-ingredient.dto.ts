@@ -1,6 +1,12 @@
 // backend/src/ingredients/dto/create-ingredient.dto.ts
 
-import { IsString, IsNumber, IsPositive, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsPositive,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateIngredientDto {
   @IsString()

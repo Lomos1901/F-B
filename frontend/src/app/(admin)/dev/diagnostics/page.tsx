@@ -118,7 +118,7 @@ export default function DiagnosticsPage() {
                 inventoryDiagnostics.map((item, index) => (
                   <tr key={index} className={item.is_alert ? 'bg-yellow-500/10' : 'hover:bg-dark-bg'}>
                     <td className="px-4 py-4 font-medium text-dark-text-primary">{item.ingredient_name}</td>
-                    <td className="px-4 py-4 text-center font-mono text-white">{`${parseFloat(item.stock_quantity).toFixed(2)} ${item.unit}`}</td>
+                    <td className="px-4 py-4 text-center font-mono text-white">{`${Number(item.stock_quantity).toFixed(2)} ${item.unit}`}</td>
                     <td className="px-4 py-4 text-center font-mono text-dark-text-secondary">{typeof item.consumption_rate === 'number' ? item.consumption_rate.toFixed(2) : item.consumption_rate}</td>
                     <td className="px-4 py-4 text-center font-mono font-bold text-brand-amber">{typeof item.days_remaining === 'number' ? item.days_remaining.toFixed(2) : item.days_remaining}</td>
                     <td className="px-4 py-4 text-center font-mono text-dark-text-secondary">{item.threshold}</td>

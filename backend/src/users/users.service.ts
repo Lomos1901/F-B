@@ -1,4 +1,10 @@
-import { Injectable, InternalServerErrorException, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,7 +26,9 @@ export class UsersService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new InternalServerErrorException('Không thể lấy danh sách người dùng.');
+      throw new InternalServerErrorException(
+        'Không thể lấy danh sách người dùng.',
+      );
     }
 
     return data;
@@ -29,18 +37,24 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     const { email, password, fullName, role } = createUserDto;
 
-    const { data: authData, error: authError } = await this.client.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
+    const { data: authData, error: authError } =
+      await this.client.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
 
     if (authError) {
-      this.logger.error('Lỗi khi tạo user trong Supabase Auth (Admin):', authError);
+      this.logger.error(
+        'Lỗi khi tạo user trong Supabase Auth (Admin):',
+        authError,
+      );
       throw new BadRequestException(authError.message);
     }
     if (!authData.user) {
-      throw new InternalServerErrorException('Không thể tạo user trong Supabase Auth.');
+      throw new InternalServerErrorException(
+        'Không thể tạo user trong Supabase Auth.',
+      );
     }
 
     const { error: dbError } = await this.client.from('users').insert({
@@ -53,7 +67,9 @@ export class UsersService {
     if (dbError) {
       this.logger.error('Lỗi khi tạo hồ sơ trong public.users:', dbError);
       await this.client.auth.admin.deleteUser(authData.user.id);
-      throw new InternalServerErrorException('Lỗi hệ thống khi khởi tạo hồ sơ nhân viên.');
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống khi khởi tạo hồ sơ nhân viên.',
+      );
     }
 
     return {
@@ -72,10 +88,13 @@ export class UsersService {
 
     if (error) {
       this.logger.error(`Lỗi khi cập nhật user ${id}:`, error);
-      if (error.code === 'PGRST116') { // Lỗi không tìm thấy dòng để cập nhật
+      if (error.code === 'PGRST116') {
+        // Lỗi không tìm thấy dòng để cập nhật
         throw new NotFoundException('Không tìm thấy người dùng để cập nhật.');
       }
-      throw new InternalServerErrorException('Lỗi hệ thống khi cập nhật người dùng.');
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống khi cập nhật người dùng.',
+      );
     }
 
     return { message: 'Cập nhật thông tin người dùng thành công!', user: data };
@@ -89,7 +108,9 @@ export class UsersService {
       if (error.message.includes('not found')) {
         throw new NotFoundException('Không tìm thấy người dùng để xóa.');
       }
-      throw new InternalServerErrorException('Lỗi hệ thống khi xóa người dùng.');
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống khi xóa người dùng.',
+      );
     }
 
     return { message: 'Xóa người dùng thành công!' };

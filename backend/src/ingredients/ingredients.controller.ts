@@ -1,6 +1,16 @@
 // backend/src/ingredients/ingredients.controller.ts
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { IngredientsService } from './ingredients.service';
 import { CreateIngredientDto } from './dto/create-ingredient.dto';
 import { UpdateIngredientDto } from './dto/update-ingredient.dto';
@@ -45,7 +55,10 @@ export class IngredientsController {
    */
   @Post(':id/import')
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  importStock(@Param('id', ParseUUIDPipe) id: string, @Body() importStockDto: ImportStockDto) {
+  importStock(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() importStockDto: ImportStockDto,
+  ) {
     return this.ingredientsService.importStock(id, importStockDto);
   }
 
@@ -55,13 +68,19 @@ export class IngredientsController {
    */
   @Post(':id/stocktake')
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  stocktake(@Param('id', ParseUUIDPipe) id: string, @Body() stocktakeDto: StocktakeDto) {
+  stocktake(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() stocktakeDto: StocktakeDto,
+  ) {
     return this.ingredientsService.stocktake(id, stocktakeDto);
   }
 
   @Patch(':id')
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateIngredientDto: UpdateIngredientDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateIngredientDto: UpdateIngredientDto,
+  ) {
     return this.ingredientsService.updateMetadata(id, updateIngredientDto);
   }
 

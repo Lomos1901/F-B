@@ -9,7 +9,8 @@ export class RecipesController {
   @Post()
   async saveRecipe(
     @Body('product_id') productId: string,
-    @Body('ingredients') ingredients: { ingredient_id: string; quantity_required: number }[]
+    @Body('ingredients')
+    ingredients: { ingredient_id: string; quantity_required: number }[],
   ) {
     return this.recipesService.createRecipe(productId, ingredients);
   }

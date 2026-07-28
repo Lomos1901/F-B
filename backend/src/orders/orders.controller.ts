@@ -1,4 +1,14 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Param, Patch, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  Param,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -52,7 +62,10 @@ export class OrdersController {
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.BARISTA, UserRole.CASHIER)
-  updateStatus(@Param('id') id: string, @Body() updateOrderStatusDto: UpdateOrderStatusDto) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  ) {
     return this.ordersService.updateStatus(id, updateOrderStatusDto);
   }
 }

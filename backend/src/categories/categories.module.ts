@@ -6,6 +6,6 @@ import { SupabaseModule } from '../supabase/supabase.module'; // Thêm dòng nà
 @Module({
   imports: [SupabaseModule], // Kích hoạt Supabase cho Module
   providers: [CategoriesService],
-  controllers: [CategoriesController]
+  controllers: [CategoriesController],
 })
 export class CategoriesModule {}

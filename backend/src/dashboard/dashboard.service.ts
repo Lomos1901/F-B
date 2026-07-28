@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -25,7 +29,9 @@ export class DashboardService {
 
     if (error) {
       this.logger.error("Lỗi khi thực thi RPC 'get_dashboard_data':", error);
-      throw new InternalServerErrorException('Không thể lấy dữ liệu dashboard từ CSDL.');
+      throw new InternalServerErrorException(
+        'Không thể lấy dữ liệu dashboard từ CSDL.',
+      );
     }
 
     // Dữ liệu trả về từ RPC đã là một đối tượng JSON hoàn chỉnh.

@@ -14,7 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'; // Import thêm Co
     // Sử dụng registerAsync để đảm bảo biến môi trường được nạp trước
     JwtModule.registerAsync({
       imports: [ConfigModule], // Import ConfigModule vào đây
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('SUPABASE_JWT_SECRET'),
         signOptions: { expiresIn: '1d' },
       }),

@@ -1,6 +1,11 @@
 // backend/src/categories/categories.service.ts
 
-import { Injectable, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -81,12 +86,17 @@ export class CategoriesService {
    * Cải tiến: Thêm xử lý lỗi khóa ngoại.
    */
   async remove(id: string) {
-    const { error } = await this.client.from('categories').delete().eq('id', id);
+    const { error } = await this.client
+      .from('categories')
+      .delete()
+      .eq('id', id);
 
     if (error) {
       // Mã '23503' là lỗi foreign key violation
       if (error.code === '23503') {
-        throw new BadRequestException('Không thể xóa danh mục này vì vẫn còn sản phẩm thuộc về nó.');
+        throw new BadRequestException(
+          'Không thể xóa danh mục này vì vẫn còn sản phẩm thuộc về nó.',
+        );
       }
       this.logger.error(`Lỗi khi xóa danh mục ID ${id}:`, error);
       throw new InternalServerErrorException(error.message);

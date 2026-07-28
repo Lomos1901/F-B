@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -32,12 +37,22 @@ export class AnalyticsService {
    * KHÔI PHỤC HÀM
    */
   async getTodayDiagnostics() {
-    const { data: allProducts, error: productsError } = await this.client.from('products').select('id, name');
-    if (productsError) throw new InternalServerErrorException('Không thể lấy danh sách sản phẩm.');
+    const { data: allProducts, error: productsError } = await this.client
+      .from('products')
+      .select('id, name');
+    if (productsError)
+      throw new InternalServerErrorException(
+        'Không thể lấy danh sách sản phẩm.',
+      );
     if (!allProducts) return [];
 
-    const { data: paidStatus, error: statusError } = await this.client.from('order_status').select('id').eq('status_name', 'PAID').single();
-    if (statusError || !paidStatus) throw new InternalServerErrorException('Không tìm thấy status PAID.');
+    const { data: paidStatus, error: statusError } = await this.client
+      .from('order_status')
+      .select('id')
+      .eq('status_name', 'PAID')
+      .single();
+    if (statusError || !paidStatus)
+      throw new InternalServerErrorException('Không tìm thấy status PAID.');
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -51,33 +66,46 @@ export class AnalyticsService {
       .gte('updated_at', todayStart.toISOString())
       .lte('updated_at', todayEnd.toISOString());
 
-    if (ordersError) throw new InternalServerErrorException('Không thể lấy đơn hàng hôm nay.');
+    if (ordersError)
+      throw new InternalServerErrorException('Không thể lấy đơn hàng hôm nay.');
 
     const todaySalesMap = new Map<string, number>();
     if (todayOrders.length > 0) {
-      const orderIds = todayOrders.map(o => o.id);
+      const orderIds = todayOrders.map((o) => o.id);
       const { data: todayDetails, error: detailsError } = await this.client
         .from('order_detail')
         .select('product_id, quantity')
         .in('order_id', orderIds);
 
-      if (detailsError) throw new InternalServerErrorException('Không thể lấy chi tiết đơn hàng hôm nay.');
+      if (detailsError)
+        throw new InternalServerErrorException(
+          'Không thể lấy chi tiết đơn hàng hôm nay.',
+        );
 
       for (const detail of todayDetails) {
-        todaySalesMap.set(detail.product_id, (todaySalesMap.get(detail.product_id) || 0) + detail.quantity);
+        todaySalesMap.set(
+          detail.product_id,
+          (todaySalesMap.get(detail.product_id) || 0) + detail.quantity,
+        );
       }
     }
 
-    const productIds = allProducts.map(p => p.id);
-    const { data: allStats, error: statsError } = await this.client.rpc('get_products_sales_stats', {
-      p_product_ids: productIds,
-      p_days: 30,
-    });
-    if (statsError) throw new InternalServerErrorException('Không thể lấy dữ liệu thống kê.');
+    const productIds = allProducts.map((p) => p.id);
+    const { data: allStats, error: statsError } = await this.client.rpc(
+      'get_products_sales_stats',
+      {
+        p_product_ids: productIds,
+        p_days: 30,
+      },
+    );
+    if (statsError)
+      throw new InternalServerErrorException('Không thể lấy dữ liệu thống kê.');
 
-    const statsMap = new Map<string, ProductSalesStat>((allStats || []).map((s: ProductSalesStat) => [s.product_id, s]));
+    const statsMap = new Map<string, ProductSalesStat>(
+      (allStats || []).map((s: ProductSalesStat) => [s.product_id, s]),
+    );
 
-    return allProducts.map(product => {
+    return allProducts.map((product) => {
       const today_quantity = Number(todaySalesMap.get(product.id) || 0);
       const stats = statsMap.get(product.id);
       const mean_daily_sales = stats ? Number(stats.mean_daily_sales) : 0;
@@ -102,24 +130,36 @@ export class AnalyticsService {
     const FORECAST_THRESHOLD_DAYS = 3;
     const results: InventoryDiagnosticItem[] = [];
 
-    const { data: ingredients, error } = await this.client.from('ingredients').select('id, name, stock_quantity, base_unit, conversion_factor');
-    if (error) throw new InternalServerErrorException('Không thể lấy danh sách nguyên liệu.');
+    const { data: ingredients, error } = await this.client
+      .from('ingredients')
+      .select('id, name, stock_quantity, base_unit, conversion_factor');
+    if (error)
+      throw new InternalServerErrorException(
+        'Không thể lấy danh sách nguyên liệu.',
+      );
 
     for (const ingredient of ingredients) {
       if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0) {
         continue;
       }
-      const { data: rateData, error: rpcError } = await this.client.rpc('get_ingredient_consumption_rate', { p_ingredient_id: ingredient.id, p_days: 14 });
+      const { data: rateData, error: rpcError } = await this.client.rpc(
+        'get_ingredient_consumption_rate',
+        { p_ingredient_id: ingredient.id, p_days: 14 },
+      );
 
       if (rpcError) {
-        this.logger.error(`[Inventory Diagnostics] Lỗi RPC cho '${ingredient.name}':`, rpcError);
+        this.logger.error(
+          `[Inventory Diagnostics] Lỗi RPC cho '${ingredient.name}':`,
+          rpcError,
+        );
         continue;
       }
 
       const consumptionRate = rateData?.[0]?.avg_daily_consumption ?? 0;
       let daysRemaining: number | string = 'N/A';
       if (consumptionRate > 0) {
-        const stockInBaseUnit = ingredient.stock_quantity * ingredient.conversion_factor;
+        const stockInBaseUnit =
+          ingredient.stock_quantity * ingredient.conversion_factor;
         daysRemaining = stockInBaseUnit / consumptionRate;
       }
 
@@ -128,9 +168,13 @@ export class AnalyticsService {
         stock_quantity: ingredient.stock_quantity,
         unit: ingredient.base_unit,
         consumption_rate: consumptionRate,
-        days_remaining: typeof daysRemaining === 'number' ? daysRemaining : 'N/A',
+        days_remaining:
+          typeof daysRemaining === 'number' ? daysRemaining : 'N/A',
         threshold: FORECAST_THRESHOLD_DAYS,
-        is_alert: typeof daysRemaining === 'number' && daysRemaining < FORECAST_THRESHOLD_DAYS && consumptionRate > 0,
+        is_alert:
+          typeof daysRemaining === 'number' &&
+          daysRemaining < FORECAST_THRESHOLD_DAYS &&
+          consumptionRate > 0,
       });
     }
     return results;
@@ -140,8 +184,14 @@ export class AnalyticsService {
    * KHÔI PHỤC HÀM VÀ THÊM LOGGING
    */
   async getAnomalies(limit: number = 50, unreadOnly: boolean = false) {
-    this.logger.log(`[Service/getAnomalies] Bắt đầu với limit=${limit}, unreadOnly=${unreadOnly}`);
-    let query = this.client.from('ai_anomalies').select('*').order('created_at', { ascending: false }).limit(limit);
+    this.logger.log(
+      `[Service/getAnomalies] Bắt đầu với limit=${limit}, unreadOnly=${unreadOnly}`,
+    );
+    let query = this.client
+      .from('ai_anomalies')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
     if (unreadOnly) {
       this.logger.log(`[Service/getAnomalies] Đang áp dụng bộ lọc unreadOnly.`);
       query = query.eq('is_read', false);
@@ -149,9 +199,13 @@ export class AnalyticsService {
     const { data, error } = await query;
     if (error) {
       this.logger.error('Lỗi khi lấy danh sách anomalies:', error);
-      throw new InternalServerErrorException('Không thể lấy danh sách cảnh báo.');
+      throw new InternalServerErrorException(
+        'Không thể lấy danh sách cảnh báo.',
+      );
     }
-    this.logger.log(`[Service/getAnomalies] Query từ CSDL trả về ${data?.length ?? 0} dòng.`);
+    this.logger.log(
+      `[Service/getAnomalies] Query từ CSDL trả về ${data?.length ?? 0} dòng.`,
+    );
     return data || [];
   }
 
@@ -159,9 +213,16 @@ export class AnalyticsService {
    * KHÔI PHỤC HÀM
    */
   async markAsRead(id: string) {
-    const { data, error } = await this.client.from('ai_anomalies').update({ is_read: true }).eq('id', id).select().single();
-    if (error) throw new InternalServerErrorException('Không thể cập nhật cảnh báo.');
-    if (!data) throw new NotFoundException(`Không tìm thấy cảnh báo với ID ${id}.`);
+    const { data, error } = await this.client
+      .from('ai_anomalies')
+      .update({ is_read: true })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error)
+      throw new InternalServerErrorException('Không thể cập nhật cảnh báo.');
+    if (!data)
+      throw new NotFoundException(`Không tìm thấy cảnh báo với ID ${id}.`);
     return data;
   }
 
@@ -169,7 +230,9 @@ export class AnalyticsService {
    * SỬA LỖI: Thêm tham số 'force' vào hàm
    */
   async runDailyAnalysis(force: boolean = false) {
-    this.logger.log(`Bắt đầu quy trình phân tích dữ liệu hàng ngày... (Force mode: ${force})`);
+    this.logger.log(
+      `Bắt đầu quy trình phân tích dữ liệu hàng ngày... (Force mode: ${force})`,
+    );
     await this.analyzeProductSalesAnomalies(force);
     await this.analyzeInventoryForecasts(force);
     this.logger.log('Hoàn tất quy trình phân tích.');
@@ -186,9 +249,19 @@ export class AnalyticsService {
           const payload = {
             expected_value: item.mean_daily_sales,
             actual_value: item.today_quantity,
-            anomaly_score: (item.today_quantity - item.mean_daily_sales) / (item.stddev_daily_sales || 1),
+            anomaly_score:
+              (item.today_quantity - item.mean_daily_sales) /
+              (item.stddev_daily_sales || 1),
           };
-          await this.createAnomalyRecord('products', item.product_name, 'SALES_SPIKE', message, 'Kiểm tra tồn kho các nguyên liệu liên quan.', force, payload);
+          await this.createAnomalyRecord(
+            'products',
+            item.product_name,
+            'SALES_SPIKE',
+            message,
+            'Kiểm tra tồn kho các nguyên liệu liên quan.',
+            force,
+            payload,
+          );
         }
         if (item.today_quantity === 0 && item.mean_daily_sales > 3) {
           const message = `Sản phẩm '${item.product_name}' không bán được ly nào hôm nay (so với trung bình ${item.mean_daily_sales} ly/ngày).`;
@@ -197,11 +270,22 @@ export class AnalyticsService {
             actual_value: 0,
             anomaly_score: item.mean_daily_sales / 3,
           };
-          await this.createAnomalyRecord('products', item.product_name, 'GHOST_PRODUCT', message, 'Cân nhắc chạy khuyến mãi hoặc xem lại vị trí trên menu.', force, payload);
+          await this.createAnomalyRecord(
+            'products',
+            item.product_name,
+            'GHOST_PRODUCT',
+            message,
+            'Cân nhắc chạy khuyến mãi hoặc xem lại vị trí trên menu.',
+            force,
+            payload,
+          );
         }
       }
     } catch (error) {
-      this.logger.error('[Sales] Đã xảy ra lỗi trong quá trình phân tích doanh số:', error);
+      this.logger.error(
+        '[Sales] Đã xảy ra lỗi trong quá trình phân tích doanh số:',
+        error,
+      );
     }
     this.logger.log('[Sales] Hoàn tất phân tích doanh số.');
   }
@@ -210,21 +294,34 @@ export class AnalyticsService {
     this.logger.log('[Inventory] Bắt đầu phân tích dự báo tồn kho...');
     const FORECAST_THRESHOLD_DAYS = 3;
     try {
-      const { data: ingredients, error } = await this.client.from('ingredients').select('id, name, stock_quantity, conversion_factor');
+      const { data: ingredients, error } = await this.client
+        .from('ingredients')
+        .select('id, name, stock_quantity, conversion_factor');
       if (error) {
-        this.logger.error('[Inventory] Lỗi khi lấy danh sách nguyên liệu:', error);
+        this.logger.error(
+          '[Inventory] Lỗi khi lấy danh sách nguyên liệu:',
+          error,
+        );
         return;
       }
       for (const ingredient of ingredients) {
-        if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0) continue;
-        const { data: rateData, error: rpcError } = await this.client.rpc('get_ingredient_consumption_rate', { p_ingredient_id: ingredient.id, p_days: 14 });
+        if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0)
+          continue;
+        const { data: rateData, error: rpcError } = await this.client.rpc(
+          'get_ingredient_consumption_rate',
+          { p_ingredient_id: ingredient.id, p_days: 14 },
+        );
         if (rpcError) {
-          this.logger.error(`[Inventory] Lỗi RPC cho '${ingredient.name}':`, rpcError);
+          this.logger.error(
+            `[Inventory] Lỗi RPC cho '${ingredient.name}':`,
+            rpcError,
+          );
           continue;
         }
         const consumptionRate = rateData?.[0]?.avg_daily_consumption;
         if (consumptionRate && consumptionRate > 0) {
-          const stockInBaseUnit = ingredient.stock_quantity * ingredient.conversion_factor;
+          const stockInBaseUnit =
+            ingredient.stock_quantity * ingredient.conversion_factor;
           let daysRemaining = stockInBaseUnit / consumptionRate;
           if (daysRemaining < 0) {
             daysRemaining = 0;
@@ -239,20 +336,43 @@ export class AnalyticsService {
             const payload = {
               expected_value: FORECAST_THRESHOLD_DAYS,
               actual_value: daysRemaining,
-              anomaly_score: 1 - (daysRemaining / FORECAST_THRESHOLD_DAYS),
+              anomaly_score: 1 - daysRemaining / FORECAST_THRESHOLD_DAYS,
             };
-            await this.createAnomalyRecord('ingredients', ingredient.name, 'INVENTORY_FORECAST', message, 'Lên kế hoạch nhập hàng ngay.', force, payload);
+            await this.createAnomalyRecord(
+              'ingredients',
+              ingredient.name,
+              'INVENTORY_FORECAST',
+              message,
+              'Lên kế hoạch nhập hàng ngay.',
+              force,
+              payload,
+            );
           }
         }
       }
     } catch (error) {
-      this.logger.error('[Inventory] Đã xảy ra lỗi trong quá trình phân tích tồn kho:', error);
+      this.logger.error(
+        '[Inventory] Đã xảy ra lỗi trong quá trình phân tích tồn kho:',
+        error,
+      );
     }
     this.logger.log('[Inventory] Hoàn tất phân tích dự báo tồn kho.');
   }
 
-  private async createAnomalyRecord(entityType: string, entityName: string, category: string, message: string, action: string, force: boolean, extraPayload: object = {}) {
-    const { data: entity } = await this.client.from(entityType).select('id').eq('name', entityName).single();
+  private async createAnomalyRecord(
+    entityType: string,
+    entityName: string,
+    category: string,
+    message: string,
+    action: string,
+    force: boolean,
+    extraPayload: object = {},
+  ) {
+    const { data: entity } = await this.client
+      .from(entityType)
+      .select('id')
+      .eq('name', entityName)
+      .single();
     if (!entity) return;
 
     if (!force) {
@@ -261,7 +381,10 @@ export class AnalyticsService {
         .select('id')
         .eq('entity_id', entity.id)
         .eq('alert_category', category)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        .gte(
+          'created_at',
+          new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        );
 
       if (checkError) {
         this.logger.error('Lỗi khi kiểm tra cảnh báo tồn tại:', checkError);
@@ -285,7 +408,9 @@ export class AnalyticsService {
     });
     if (error) {
       this.logger.error('Lỗi khi ghi nhận sự kiện bất thường:', error);
-      throw new InternalServerErrorException(`Không thể tạo bản ghi bất thường: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Không thể tạo bản ghi bất thường: ${error.message}`,
+      );
     }
   }
 }

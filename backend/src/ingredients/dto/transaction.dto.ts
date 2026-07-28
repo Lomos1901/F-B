@@ -3,7 +3,14 @@
 // cho các giao dịch liên quan đến kho nguyên liệu, như Nhập hàng và Kiểm kho.
 // Việc sử dụng DTO giúp xác thực dữ liệu đầu vào một cách tự động và an toàn.
 
-import { IsNumber, IsPositive, IsString, IsOptional, IsUUID, Min } from 'class-validator';
+import {
+  IsNumber,
+  IsPositive,
+  IsString,
+  IsOptional,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 /**
  * DTO cho chức năng Nhập hàng (Import Stock).

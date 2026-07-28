@@ -6,11 +6,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Kích hoạt ValidationPipe trên toàn bộ ứng dụng
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Tự động loại bỏ các thuộc tính không có trong DTO
-    forbidNonWhitelisted: true, // Ném lỗi nếu có thuộc tính không mong muốn
-    transform: true, // Tự động chuyển đổi kiểu dữ liệu (ví dụ: string sang number)
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Tự động loại bỏ các thuộc tính không có trong DTO
+      forbidNonWhitelisted: true, // Ném lỗi nếu có thuộc tính không mong muốn
+      transform: true, // Tự động chuyển đổi kiểu dữ liệu (ví dụ: string sang number)
+    }),
+  );
 
   // Bật CORS để bên frontend (Next.js) gọi API không bị chặn
   app.enableCors({
@@ -23,4 +25,6 @@ async function bootstrap() {
   await app.listen(3001);
   console.log('🚀 Backend Sẫm Coffee đang chạy tại: http://localhost:3001');
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Error starting app:', err);
+});
