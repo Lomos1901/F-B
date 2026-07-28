@@ -1,7 +1,7 @@
 // src/services/authService.ts
 import { UserRole } from '../enums/user-role.enum';
 
-const API_URL = 'http://localhost:3001/auth';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth`;
 
 /**
  * Service để tương tác với các API của module Auth.

@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie';
 
-const API_URL = 'http://localhost:3001/payments';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/payments`;
 
 const getAuthHeaders = () => {
   const token = Cookies.get('access_token');

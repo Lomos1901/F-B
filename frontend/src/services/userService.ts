@@ -2,7 +2,7 @@
 import Cookies from 'js-cookie';
 import { UserRole } from '../enums/user-role.enum';
 
-const API_URL = 'http://localhost:3001/users';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/users`;
 
 const getAuthHeaders = () => {
   const token = Cookies.get('access_token');
