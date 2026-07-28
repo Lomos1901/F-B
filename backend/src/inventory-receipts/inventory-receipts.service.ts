@@ -21,8 +21,8 @@ export class InventoryReceiptsService {
    * Lấy tất cả các phiếu kho và chi tiết của chúng.
    * SỬA LỖI: Thêm recipe_unit và conversion_factor để frontend có thể tính toán.
    */
-  async findAllWithDetails() {
-    const { data, error } = await this.client
+  async findAllWithDetails(startDate?: string, endDate?: string, type?: string) {
+    let query = this.client
       .from('inventory_receipts')
       .select(
         `
@@ -35,6 +35,19 @@ export class InventoryReceiptsService {
       `,
       )
       .order('created_at', { ascending: false });
+
+    if (startDate) {
+      query = query.gte('created_at', startDate);
+    }
+    if (endDate) {
+      const endDateTime = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
+      query = query.lte('created_at', endDateTime);
+    }
+    if (type && type !== 'ALL') {
+      query = query.eq('receipt_type', type);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       this.logger.error('Lỗi khi lấy lịch sử phiếu kho:', error);

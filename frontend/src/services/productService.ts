@@ -102,4 +102,17 @@ export const productService = {
     }
     return res.json();
   },
+
+  async toggleActive(id: string, is_active: boolean) {
+    const res = await fetch(`${API_URL}/${id}/toggle-active`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ is_active }),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Lỗi khi cập nhật trạng thái món');
+    }
+    return res.json();
+  }
 };

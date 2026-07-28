@@ -1,6 +1,6 @@
 // backend/src/inventory-receipts/inventory-receipts.controller.ts
 
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { InventoryReceiptsService } from './inventory-receipts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -16,7 +16,11 @@ export class InventoryReceiptsController {
   ) {}
 
   @Get()
-  findAll() {
-    return this.inventoryReceiptsService.findAllWithDetails();
+  findAll(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.inventoryReceiptsService.findAllWithDetails(startDate, endDate, type);
   }
 }

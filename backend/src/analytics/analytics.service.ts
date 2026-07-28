@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // SỬA LỖI: Export các interface để các module khác có thể sử dụng
 export interface ProductSalesStat {
@@ -411,6 +412,88 @@ export class AnalyticsService {
       throw new InternalServerErrorException(
         `Không thể tạo bản ghi bất thường: ${error.message}`,
       );
+    }
+  }
+
+  async generateAiReport(scenario: string = 'real') {
+    let rawDataStr = '';
+
+    if (scenario === 'spike') {
+      rawDataStr = `
+        Dữ liệu mô phỏng (Kịch bản: Bão đơn hàng cuối tuần):
+        - Doanh thu: 25.500.000 VNĐ (Tăng vọt 800% so với thứ 7 tuần trước).
+        - Sản phẩm bán chạy bất thường: "Trà Đào Cam Sả" bán được 350 ly (bình thường chỉ 50 ly) do trời nắng gắt.
+        - Sản phẩm ế ẩm: Các món Cà phê nóng không bán được ly nào.
+        - Kho nguyên liệu cảnh báo: "Trà Đen", "Mứt Đào" và "Ly Nhựa" đã hoàn toàn CẠN KIỆT.
+      `;
+    } else if (scenario === 'ghost') {
+      rawDataStr = `
+        Dữ liệu mô phỏng (Kịch bản: Ế ẩm cuối tháng):
+        - Doanh thu: 1.200.000 VNĐ (Giảm thê thảm, thấp nhất trong 3 tháng qua).
+        - Khách hàng: Chỉ có 5 đơn hàng cả ngày.
+        - Sản phẩm ế ẩm: 90% menu không phát sinh giao dịch.
+        - Kho nguyên liệu cảnh báo: "Sữa Tươi" còn tồn 50 lít sẽ HẾT HẠN vào ngày mai. "Trái cây tươi" đang có dấu hiệu hỏng.
+      `;
+    } else if (scenario === 'fraud') {
+      rawDataStr = `
+        Dữ liệu mô phỏng (Kịch bản: Nghi ngờ gian lận/Hủy đơn):
+        - Tỷ lệ hủy đơn: Có 25 đơn hàng bị nhân viên thu ngân hủy (Void) sau khi in bill (Tăng đột biến 300%).
+        - Sản phẩm bị hủy nhiều nhất: "Cà phê sữa" (20 ly bị hủy với lý do "Khách đổi ý").
+        - Kho nguyên liệu cảnh báo: Kho cà phê bột bị hụt 1.5 kg so với doanh số thực tế bán ra.
+      `;
+    } else {
+      // Real data aggregation
+      const todaySales = await this.getTodayDiagnostics();
+      const inventory = await this.getInventoryDiagnostics();
+      
+      rawDataStr = `
+        Dữ liệu thực tế ngày hôm nay:
+        - Các sản phẩm có biến động (Top): ${JSON.stringify(todaySales.slice(0, 3))}
+        - Các nguyên liệu đang cạn kiệt: ${JSON.stringify(inventory.filter(i => i.is_alert))}
+      `;
+    }
+
+    const prompt = `
+      Bạn là một Giám đốc vận hành F&B chuyên nghiệp của quán "SẪM COFFEE".
+      Dưới đây là dữ liệu kinh doanh của quán ngày hôm nay:
+      ---
+      ${rawDataStr}
+      ---
+      Yêu cầu:
+      Dựa vào dữ liệu trên, hãy viết một Báo Cáo Phân Tích bằng Tiếng Việt (khoảng 3-4 câu).
+      Báo cáo phải chỉ ra:
+      1. Hiện tượng bất thường (Tốt hoặc xấu).
+      2. Rủi ro tiềm ẩn (ví dụ hết nguyên liệu).
+      3. Khuyến nghị hành động rõ ràng và thực dụng (Ví dụ: Nhập thêm hàng, chạy khuyến mãi xả kho, v.v.).
+
+      Định dạng bằng Markdown đơn giản, thân thiện, dễ đọc, không cần mở bài hay kết bài dài dòng.
+    `;
+
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+      
+      this.logger.log('Đang gọi Gemini API để sinh báo cáo...');
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Lưu vào database
+      const { data, error } = await this.client.from('ai_anomalies').insert({
+        alert_category: 'AI_INSIGHT',
+        entity_type: 'system',
+        message: text,
+        recommended_action: 'Xem xét và áp dụng các khuyến nghị từ AI.',
+      }).select().single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (err: any) {
+      this.logger.error('Lỗi khi gọi Gemini AI:', err);
+      throw new InternalServerErrorException('Không thể phân tích dữ liệu bằng AI lúc này: ' + err.message);
     }
   }
 }

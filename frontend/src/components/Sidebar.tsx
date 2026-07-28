@@ -93,34 +93,62 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-hide flex flex-col gap-1">
         {isManagement && (
           <>
+            {/* 1. BÁN HÀNG & PHỤC VỤ */}
             <div className="px-3 mb-2 mt-2">
               {isExpanded ? (
-                <p className="text-xs font-bold text-dark-text-secondary/60 uppercase tracking-widest pl-2">Hoạt động</p>
+                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Bán hàng & Phục vụ</p>
               ) : (
                 <div className="w-6 h-px bg-dark-border mx-auto" />
               )}
             </div>
-            
             <NavLink href="/dashboard" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Tổng quan</NavLink>
             <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Thu ngân (POS)</NavLink>
             <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Pha chế (KDS)</NavLink>
-            <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn (Lịch sử)</NavLink>
+            <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn</NavLink>
 
+            {/* 2. QUẢN LÝ THỰC ĐƠN */}
             <div className="px-3 mb-2 mt-6">
               {isExpanded ? (
-                <p className="text-xs font-bold text-dark-text-secondary/60 uppercase tracking-widest pl-2">Quản trị</p>
+                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Thực đơn</p>
               ) : (
                 <div className="w-6 h-px bg-dark-border mx-auto" />
               )}
             </div>
-            <NavLink href="/shift-history" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Ca</NavLink>
-            <NavLink href="/products" icon={<ClipboardList size={20} />} isExpanded={isExpanded}>Thực đơn</NavLink>
+            <NavLink href="/products" icon={<ClipboardList size={20} />} isExpanded={isExpanded}>Món ăn & Đồ uống</NavLink>
             <NavLink href="/categories" icon={<Book size={20} />} isExpanded={isExpanded}>Danh mục Thực đơn</NavLink>
+
+            {/* 3. QUẢN LÝ KHO BÃI */}
+            <div className="px-3 mb-2 mt-6">
+              {isExpanded ? (
+                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Kho bãi</p>
+              ) : (
+                <div className="w-6 h-px bg-dark-border mx-auto" />
+              )}
+            </div>
             <NavLink href="/ingredients" icon={<Box size={20} />} isExpanded={isExpanded}>Kho nguyên liệu</NavLink>
             <NavLink href="/ingredient-categories" icon={<Tag size={20} />} isExpanded={isExpanded}>Loại nguyên liệu</NavLink>
-            <NavLink href="/inventory-receipts" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Nhập/Xuất</NavLink>
-            <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Nhân sự</NavLink>
+            <NavLink href="/inventory-receipts" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Phiếu kho</NavLink>
+
+            {/* 4. VẬN HÀNH & NHÂN SỰ */}
+            <div className="px-3 mb-2 mt-6">
+              {isExpanded ? (
+                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Vận hành & Nhân sự</p>
+              ) : (
+                <div className="w-6 h-px bg-dark-border mx-auto" />
+              )}
+            </div>
+            <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Quản lý Nhân sự</NavLink>
+            <NavLink href="/shift-history" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Lịch sử Ca</NavLink>
             <NavLink href="/alerts" icon={<Bell size={20} />} isExpanded={isExpanded}>Cảnh báo</NavLink>
+
+            {/* 5. HỆ THỐNG */}
+            <div className="px-3 mb-2 mt-6">
+              {isExpanded ? (
+                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Hệ thống</p>
+              ) : (
+                <div className="w-6 h-px bg-dark-border mx-auto" />
+              )}
+            </div>
             <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
           </>
         )}
@@ -129,18 +157,18 @@ export default function Sidebar() {
           <>
             <div className="px-3 mb-2 mt-2">
               {isExpanded ? (
-                <p className="text-xs font-bold text-dark-text-secondary/60 uppercase tracking-widest pl-2">Hoạt động</p>
+                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Bán hàng & Phục vụ</p>
               ) : (
                 <div className="w-6 h-px bg-dark-border mx-auto" />
               )}
             </div>
 
             {user.role === UserRole.CASHIER && (
-              <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Màn hình thu ngân</NavLink>
+              <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Thu ngân (POS)</NavLink>
             )}
 
             {user.role === UserRole.BARISTA && (
-              <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Màn hình pha chế</NavLink>
+              <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Pha chế (KDS)</NavLink>
             )}
 
             {user.role === UserRole.CASHIER && (

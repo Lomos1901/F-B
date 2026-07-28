@@ -17,8 +17,18 @@ export const inventoryReceiptService = {
   /**
    * Lấy tất cả các phiếu kho và chi tiết của chúng.
    */
-  async getAll() {
-    const res = await fetch(API_URL, { headers: getAuthHeaders() });
+  async getAll(startDate?: string, endDate?: string, type?: string) {
+    let url = API_URL;
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (type) params.append('type', type);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (!res.ok) {
       throw new Error('Không thể kết nối API lấy lịch sử phiếu kho.');
     }

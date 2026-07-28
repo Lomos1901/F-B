@@ -28,7 +28,7 @@ export class ProductsService {
       .from('products')
       .select(
         `
-        id, name, price, image_url,
+        id, name, price, image_url, is_active,
         categories ( name ),
         recipes (
           quantity,
@@ -172,6 +172,20 @@ export class ProductsService {
       throw new InternalServerErrorException(error.message);
     }
     return { message: 'Xóa sản phẩm thành công.' };
+  }
+
+  async toggleActive(id: string, is_active: boolean) {
+    const { data, error } = await this.client
+      .from('products')
+      .update({ is_active })
+      .eq('id', id)
+      .select('id, is_active')
+      .single();
+
+    if (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+    return data;
   }
 
   async uploadImage(file: Express.Multer.File) {

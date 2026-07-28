@@ -12,6 +12,7 @@ import {
   UploadedFile,
   ParseUUIDPipe,
   Put,
+  Patch,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
@@ -79,6 +80,16 @@ export class ProductsController {
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.remove(id);
+  }
+
+  @Patch(':id/toggle-active')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  toggleActive(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('is_active') is_active: boolean,
+  ) {
+    return this.productsService.toggleActive(id, is_active);
   }
 
   /**

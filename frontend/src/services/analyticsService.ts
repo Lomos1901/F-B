@@ -68,5 +68,17 @@ export const analyticsService = {
       throw new Error(error.message || 'Kích hoạt phân tích thất bại.');
     }
     return res.json();
+  },
+
+  async generateAiReport(scenario: string = 'real') {
+    const res = await fetch(`${API_URL}/generate-ai-report?scenario=${scenario}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Không thể tạo báo cáo AI.');
+    }
+    return res.json();
   }
 };

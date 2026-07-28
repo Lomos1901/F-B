@@ -45,6 +45,11 @@ export class AnalyticsController {
     return this.analyticsService.getAnomalies(limit, unreadOnly);
   }
 
+  @Post('generate-ai-report')
+  async generateAiReport(@Query('scenario', new DefaultValuePipe('real')) scenario: string) {
+    return this.analyticsService.generateAiReport(scenario);
+  }
+
   @Patch('anomalies/:id/read')
   markAsRead(@Param('id', ParseUUIDPipe) id: string) {
     return this.analyticsService.markAsRead(id);

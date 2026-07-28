@@ -13,6 +13,7 @@ interface Product {
   name: string;
   price: number;
   image_url?: string;
+  is_active?: boolean;
   categories?: { name: string };
 }
 
@@ -63,6 +64,8 @@ export default function QROrderPage() {
   }, [tableNumber]);
 
   const updateCart = (product: Product, quantity: number) => {
+    if (product.is_active === false) return; // Prevent adding inactive items
+
     setCart(prevCart => {
       if (quantity <= 0) {
         return prevCart.filter(item => item.id !== product.id);
@@ -263,14 +266,21 @@ export default function QROrderPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-5">
                 {productsByCategory[categoryName].map(product => {
                   const quantity = getCartItemQuantity(product.id);
+                  const isOutOfStock = product.is_active === false;
+
                   return (
-                    <div key={product.id} className="bg-white rounded-[24px] p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 hover:shadow-lg duration-300">
+                    <div key={product.id} className={`bg-white rounded-[24px] p-4 border border-gray-100 flex flex-col gap-3 transition-all duration-300 ${isOutOfStock ? 'opacity-60 grayscale-[0.3] cursor-not-allowed shadow-none' : 'shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-lg'}`}>
                       <div className="flex items-start gap-4">
-                        <img 
-                          src={product.image_url || '/placeholder.svg'} 
-                          alt={product.name} 
-                          className="w-24 h-24 rounded-[16px] object-cover bg-gray-50 shadow-inner"
-                        />
+                        <div className="relative">
+                          <img 
+                            src={product.image_url || '/placeholder.svg'} 
+                            alt={product.name} 
+                            className="w-24 h-24 rounded-[16px] object-cover bg-gray-50 shadow-inner"
+                          />
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-[16px]"></div>
+                          )}
+                        </div>
                         <div className="flex-1 flex flex-col min-h-[96px]">
                           <h3 className="font-bold text-[#1C1B1F] text-[15px] leading-snug mb-1.5">{product.name}</h3>
                           <p className="text-[15px] font-bold text-[#4B2C20] mt-auto">{product.price.toLocaleString('vi-VN')} đ</p>
@@ -278,7 +288,11 @@ export default function QROrderPage() {
                       </div>
                       
                       <div className="pt-2 border-t border-gray-100 mt-1">
-                        {quantity > 0 ? (
+                        {isOutOfStock ? (
+                          <div className="w-full h-[52px] flex items-center justify-center rounded-[16px] bg-gray-100 text-gray-500 font-bold text-[15px] border border-gray-200">
+                            Tạm hết hàng
+                          </div>
+                        ) : quantity > 0 ? (
                           <div className="flex items-center justify-between bg-[#FCF9F8] rounded-[16px] p-1.5 border border-gray-200">
                             <button onClick={() => updateCart(product, quantity - 1)} className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-white shadow-sm text-[#4B2C20] active:scale-95 transition-transform">
                               <Minus size={18} />
