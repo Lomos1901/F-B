@@ -7,5 +7,6 @@ import { SupabaseModule } from '../supabase/supabase.module';
   imports: [SupabaseModule],
   providers: [OrdersService],
   controllers: [OrdersController],
+  exports: [OrdersService], // Xuất OrdersService để PaymentsService dùng
 })
 export class OrdersModule {}

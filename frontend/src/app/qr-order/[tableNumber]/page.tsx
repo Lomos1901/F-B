@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { productService } from '@/src/services/productService';
 import { orderService } from '@/src/services/orderService';
-import { Plus, Minus, ShoppingCart, Send, Trash2 } from 'lucide-react';
+import { Plus, Minus, X, CheckCircle2, ShoppingBag } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-// --- Định nghĩa Interface ---
+// --- Interfaces ---
 interface Product {
   id: string;
   name: string;
@@ -24,54 +24,6 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-// --- Component Giỏ hàng ---
-const CartComponent = ({ cart, onUpdate, onOrder, loading, totalPrice }: { cart: CartItem[], onUpdate: (product: Product, quantity: number) => void, onOrder: () => void, loading: boolean, totalPrice: number }) => {
-  return (
-    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col h-full">
-      <h3 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">Giỏ hàng của bạn</h3>
-      <div className="flex-grow overflow-y-auto">
-        {cart.length === 0 ? (
-          <p className="text-gray-500 text-center mt-8">Chưa có món nào trong giỏ</p>
-        ) : (
-          <ul className="space-y-4">
-            {cart.map(item => (
-              <li key={item.id} className="flex items-center gap-4">
-                <img src={item.image_url || '/placeholder.svg'} alt={item.name} className="w-16 h-16 rounded-md object-cover"/>
-                <div className="flex-grow">
-                  <p className="font-semibold text-gray-800">{item.name}</p>
-                  <p className="text-sm text-gray-500">{item.price.toLocaleString('vi-VN')}đ</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => onUpdate(item, item.quantity - 1)} className="p-1 bg-gray-200 rounded-full text-gray-700"><Minus size={14}/></button>
-                  <span className="font-bold text-gray-800">{item.quantity}</span>
-                  <button onClick={() => onUpdate(item, item.quantity + 1)} className="p-1 bg-amber-500 rounded-full text-white"><Plus size={14}/></button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      {cart.length > 0 && (
-        <div className="mt-6 border-t pt-6">
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-lg font-semibold text-gray-700">Tổng cộng:</span>
-            <span className="text-2xl font-bold text-amber-600">{totalPrice.toLocaleString('vi-VN')}đ</span>
-          </div>
-          <button
-            onClick={onOrder}
-            disabled={loading}
-            className="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 disabled:bg-gray-400 transition-colors"
-          >
-            <Send size={20}/>
-            {loading ? 'Đang gửi...' : 'Gửi đơn hàng'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
 export default function QROrderPage() {
   const params = useParams();
   const tableNumber = params.tableNumber as string;
@@ -81,18 +33,25 @@ export default function QROrderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const productsData: Product[] = await productService.getAll();
         const grouped = productsData.reduce((acc: GroupedProducts, product) => {
-          const categoryName = product.categories?.name || 'Chưa phân loại';
+          const categoryName = product.categories?.name || 'Khác';
           if (!acc[categoryName]) acc[categoryName] = [];
           acc[categoryName].push(product);
           return acc;
         }, {});
         setProductsByCategory(grouped);
+        const categories = Object.keys(grouped);
+        if (categories.length > 0) {
+          setActiveCategory(categories[0]);
+        }
       } catch (err: any) {
         setError('Không thể tải thực đơn. Vui lòng thử lại sau.');
         toast.error('Không thể tải thực đơn. Vui lòng thử lại sau.');
@@ -116,76 +75,197 @@ export default function QROrderPage() {
     });
   };
 
-  const addToCart = (product: Product) => {
-    const currentQuantity = getCartItemQuantity(product.id);
-    updateCart(product, currentQuantity + 1);
-  };
-
   const getCartItemQuantity = (productId: string) => cart.find(item => item.id === productId)?.quantity || 0;
   const getTotalPrice = () => cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  const getTotalItems = () => cart.reduce((total, item) => total + item.quantity, 0);
 
   const handleOrder = async () => {
     if (cart.length === 0) {
       toast.warning('Vui lòng chọn món trước khi đặt hàng.');
       return;
     }
-    setLoading(true);
+    setIsOrdering(true);
     setError('');
     try {
       const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price }));
       await orderService.createForCustomer(tableNumber, orderItems);
       setOrderSuccess(true);
-      // Không cần toast ở đây vì đã có màn hình success riêng
+      setCart([]);
+      setIsCartOpen(false);
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message);
     } finally {
-      setLoading(false);
+      setIsOrdering(false);
     }
   };
 
-  if (loading && Object.keys(productsByCategory).length === 0) return <div className="flex justify-center items-center h-screen bg-gray-50 text-gray-800">Đang tải thực đơn...</div>;
-  if (error) return <div className="flex justify-center items-center h-screen bg-gray-50 text-red-500 p-4 text-center">{error}</div>;
-  if (orderSuccess) return (
-    <div className="flex flex-col justify-center items-center h-screen bg-green-50 text-center p-4">
-      <h1 className="text-2xl font-bold text-green-700 mb-4">Đặt hàng thành công!</h1>
-      <p className="text-gray-600">Nhân viên sẽ sớm chuẩn bị món cho bạn. Cảm ơn bạn đã sử dụng dịch vụ!</p>
-      <button onClick={() => setOrderSuccess(false)} className="mt-6 bg-green-600 text-white py-2 px-4 rounded-lg">Đặt món mới</button>
+  const scrollToCategory = (cat: string) => {
+    setActiveCategory(cat);
+    const el = document.getElementById(`category-${cat}`);
+    if (el) {
+      const offset = 140; 
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const renderCartContent = (isMobile: boolean) => (
+    <div className={`flex flex-col h-full ${isMobile ? 'bg-white' : 'bg-white rounded-2xl shadow-sm border border-gray-100'}`}>
+      <div className={`p-4 ${isMobile ? 'border-b border-gray-100 flex justify-between items-center' : 'border-b border-gray-100'}`}>
+        <h3 className="text-xl font-bold text-[#1C1B1F]">Giỏ hàng của bạn</h3>
+        {isMobile && (
+          <button onClick={() => setIsCartOpen(false)} className="p-2 bg-gray-100 rounded-full text-gray-600">
+            <X size={20} />
+          </button>
+        )}
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-4">
+        {cart.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+            <ShoppingBag size={48} className="mb-4 opacity-50" />
+            <p>Chưa có món nào trong giỏ</p>
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {cart.map(item => (
+              <li key={item.id} className="flex items-center gap-3">
+                <img src={item.image_url || '/placeholder.svg'} alt={item.name} className="w-16 h-16 rounded-xl object-cover" />
+                <div className="flex-1">
+                  <p className="font-bold text-[#1C1B1F] text-sm">{item.name}</p>
+                  <p className="text-[#4B2C20] font-medium text-sm">{item.price.toLocaleString('vi-VN')} đ</p>
+                </div>
+                <div className="flex items-center gap-2 bg-[#FCF9F8] rounded-full p-1 border border-gray-100">
+                  <button onClick={() => updateCart(item, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center rounded-full bg-white shadow-sm text-[#4B2C20]">
+                    <Minus size={14} />
+                  </button>
+                  <span className="font-semibold text-sm w-4 text-center">{item.quantity}</span>
+                  <button onClick={() => updateCart(item, item.quantity + 1)} className="w-7 h-7 flex items-center justify-center rounded-full bg-[#4B2C20] text-white shadow-sm">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {cart.length > 0 && (
+        <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-[#1C1B1F] font-medium">Tổng cộng:</span>
+            <span className="text-xl font-bold text-[#4B2C20]">{getTotalPrice().toLocaleString('vi-VN')} đ</span>
+          </div>
+          <button
+            onClick={handleOrder}
+            disabled={isOrdering}
+            className="w-full bg-[#4B2C20] text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 hover:bg-[#3A2218] transition-colors"
+          >
+            {isOrdering ? 'Đang gửi...' : 'Gửi đơn hàng'}
+          </button>
+        </div>
+      )}
     </div>
   );
 
+  if (loading && Object.keys(productsByCategory).length === 0) {
+    return <div className="flex justify-center items-center h-screen bg-[#FCF9F8] text-[#4B2C20]" style={{ fontFamily: 'Montserrat, sans-serif' }}>Đang tải thực đơn...</div>;
+  }
+  
+  if (orderSuccess) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-[#FCF9F8] text-center p-6" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+        <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-6 animate-[bounce_1s_ease-in-out_infinite]">
+          <CheckCircle2 size={48} />
+        </div>
+        <h1 className="text-4xl font-bold text-[#1C1B1F] mb-4">Đặt hàng thành công!</h1>
+        <p className="text-gray-600 mb-8 text-lg">Đơn hàng của bạn đang được chuẩn bị.</p>
+        <button 
+          onClick={() => setOrderSuccess(false)} 
+          className="border-2 border-[#4B2C20] text-[#4B2C20] font-bold py-3 px-8 rounded-full hover:bg-black/5 transition-colors"
+        >
+          Đặt món mới
+        </button>
+      </div>
+    );
+  }
+
+  const categories = Object.keys(productsByCategory);
+
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
-      <header className="bg-white shadow-sm p-4 sticky top-0 z-20">
-        <h1 className="text-2xl font-bold text-center text-gray-800">Sẫm Coffee - Bàn số {tableNumber}</h1>
+    <div className="bg-[#FCF9F8] min-h-screen pb-24 lg:pb-8" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+      {/* Top App Bar */}
+      <header className="bg-[#4B2C20] text-white p-4 sticky top-0 z-30 shadow-md flex flex-col items-center justify-center">
+        <h1 className="text-xl font-bold tracking-wider">SẪM COFFEE</h1>
+        <p className="text-sm opacity-90 mt-1 bg-white/20 px-3 py-0.5 rounded-full">Bàn {tableNumber}</p>
       </header>
 
-      <div className="container mx-auto p-4 lg:flex lg:gap-8">
-        {/* --- Main Content (Menu) --- */}
-        <main className="lg:w-2/3">
-          {Object.keys(productsByCategory).map(categoryName => (
-            <section key={categoryName} className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b-2 border-amber-500 pb-2">{categoryName}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Category Chips (Sticky) */}
+      <div className="flex gap-2 overflow-x-auto p-4 bg-[#FCF9F8]/95 backdrop-blur-sm sticky top-[72px] z-20 shadow-sm border-b border-gray-100 scrollbar-hide">
+        {categories.map(cat => (
+          <button
+            key={cat}
+            onClick={() => scrollToCategory(cat)}
+            className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-colors border ${
+              activeCategory === cat 
+                ? 'bg-[#4B2C20] text-white border-[#4B2C20]' 
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-black/5'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="container mx-auto p-4 lg:flex lg:gap-6 lg:max-w-7xl mt-2">
+        {/* Main Content (Menu) */}
+        <main className="lg:w-[60%] xl:w-[65%]">
+          {categories.map(categoryName => (
+            <section key={categoryName} id={`category-${categoryName}`} className="mb-8 pt-2">
+              <h2 className="text-xl font-bold text-[#1C1B1F] mb-4 pl-1">{categoryName}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {productsByCategory[categoryName].map(product => {
-                  const quantityInCart = getCartItemQuantity(product.id);
+                  const quantity = getCartItemQuantity(product.id);
                   return (
-                    <button
-                      key={product.id}
-                      onClick={() => addToCart(product)}
-                      className="bg-white rounded-lg shadow p-4 flex text-left relative transition-transform transform hover:scale-105"
-                    >
-                      {quantityInCart > 0 && (
-                        <div className="absolute top-0 right-0 -mt-2 -mr-2 bg-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg">
-                          {quantityInCart}
-                        </div>
-                      )}
-                      <img src={product.image_url || '/placeholder.svg'} alt={product.name} className="w-24 h-24 rounded-md object-cover mr-4"/>
-                      <div className="flex-grow flex flex-col">
-                        <h3 className="font-bold text-lg text-gray-800">{product.name}</h3>
-                        <p className="text-gray-600 font-semibold mt-1">{product.price.toLocaleString('vi-VN')} đ</p>
+                    <div key={product.id} className="bg-white rounded-2xl p-3 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-gray-50 flex items-center gap-4">
+                      <img 
+                        src={product.image_url || '/placeholder.svg'} 
+                        alt={product.name} 
+                        className="w-20 h-20 lg:w-24 lg:h-24 rounded-xl object-cover bg-gray-100"
+                      />
+                      <div className="flex-1 flex flex-col justify-center">
+                        <h3 className="font-bold text-[#1C1B1F] text-base leading-tight mb-1">{product.name}</h3>
+                        <p className="text-sm font-semibold text-[#4B2C20]">{product.price.toLocaleString('vi-VN')} đ</p>
                       </div>
-                    </button>
+                      <div className="flex items-center justify-end pr-1">
+                        {quantity > 0 ? (
+                          <div className="flex flex-col sm:flex-row items-center gap-2 bg-[#FCF9F8] rounded-full p-1 border border-gray-100">
+                            <button onClick={() => updateCart(product, quantity - 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm text-[#4B2C20]">
+                              <Minus size={16} />
+                            </button>
+                            <span className="font-semibold text-sm w-4 text-center">{quantity}</span>
+                            <button onClick={() => updateCart(product, quantity + 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#4B2C20] text-white shadow-sm">
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => updateCart(product, 1)} 
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-[#F3EDF7] text-[#4B2C20] hover:bg-black/5 transition-colors"
+                          >
+                            <Plus size={20} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -193,31 +273,53 @@ export default function QROrderPage() {
           ))}
         </main>
 
-        {/* --- Cart Sidebar (Desktop) --- */}
-        <aside className="hidden lg:block lg:w-1/3 sticky top-24 self-start">
-          <CartComponent cart={cart} onUpdate={updateCart} onOrder={handleOrder} loading={loading} totalPrice={getTotalPrice()} />
+        {/* Cart Sidebar (Tablet & Desktop) */}
+        <aside className="hidden lg:block lg:w-[40%] xl:w-[35%] sticky top-[140px] h-[calc(100vh-160px)]">
+          {renderCartContent(false)}
         </aside>
       </div>
 
-      {/* --- Cart Footer (Mobile) --- */}
-      {cart.length > 0 && (
-        <footer className="lg:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 border-t z-20">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-bold text-gray-800">Tổng cộng ({cart.reduce((acc, item) => acc + item.quantity, 0)} món):</p>
-              <p className="text-xl font-extrabold text-amber-600">{getTotalPrice().toLocaleString('vi-VN')} đ</p>
-            </div>
-            <button
-              onClick={handleOrder}
-              disabled={loading || cart.length === 0}
-              className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2 disabled:bg-gray-400"
-            >
-              <Send size={20}/>
-              {loading ? 'Đang gửi...' : 'Gửi đơn'}
-            </button>
+      {/* Cart Footer Bar (Mobile) */}
+      {cart.length > 0 && !isCartOpen && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 bg-[#4B2C20] rounded-3xl p-3 shadow-xl flex items-center justify-between z-40">
+          <div className="flex flex-col text-white ml-3">
+            <span className="text-xs opacity-80 font-medium">{getTotalItems()} món</span>
+            <span className="font-bold text-lg">{getTotalPrice().toLocaleString('vi-VN')} đ</span>
           </div>
-        </footer>
+          <button 
+            onClick={() => setIsCartOpen(true)} 
+            className="bg-[#FFB800] text-[#4B2C20] px-5 py-2.5 rounded-full font-bold flex items-center gap-2 hover:bg-[#e6a600] transition-colors"
+          >
+            <ShoppingBag size={18} />
+            Xem giỏ hàng
+          </button>
+        </div>
       )}
+
+      {/* Cart Bottom Sheet (Mobile) */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 lg:hidden">
+          <div className="absolute inset-0" onClick={() => setIsCartOpen(false)}></div>
+          <div className="bg-white h-[85vh] rounded-t-3xl overflow-hidden flex flex-col relative animate-[slideUp_0.3s_ease-out]">
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-1"></div>
+            {renderCartContent(true)}
+          </div>
+        </div>
+      )}
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}} />
     </div>
   );
 }

@@ -22,6 +22,7 @@ interface CreateUserPayload {
 interface UpdateUserPayload {
   fullName?: string;
   role?: UserRole;
+  password?: string;
 }
 
 export const userService = {

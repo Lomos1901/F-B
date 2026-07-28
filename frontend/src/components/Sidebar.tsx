@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { UserRole } from '@/src/enums/user-role.enum';
-import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History, Users, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, Coffee, Box, Tag, ClipboardList, Book, History, Users, Bell, ChevronLeft, ChevronRight, Settings, UserCircle } from 'lucide-react';
 import { ReactNode, useState, useEffect } from 'react';
 
 interface NavLinkProps {
@@ -119,6 +119,9 @@ export default function Sidebar() {
             <NavLink href="/inventory-receipts" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Nhập/Xuất</NavLink>
             <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Nhân sự</NavLink>
             <NavLink href="/alerts" icon={<Bell size={20} />} isExpanded={isExpanded}>Cảnh báo</NavLink>
+            {user.role === UserRole.OWNER && (
+              <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
+            )}
           </>
         )}
 
@@ -128,6 +131,15 @@ export default function Sidebar() {
         {user.role === UserRole.CASHIER && (
           <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Màn hình thu ngân</NavLink>
         )}
+        
+        <div className="px-3 mb-2 mt-6">
+          {isExpanded ? (
+            <p className="text-xs font-bold text-dark-text-secondary/60 uppercase tracking-widest pl-2">Cá nhân</p>
+          ) : (
+            <div className="w-6 h-px bg-dark-border mx-auto" />
+          )}
+        </div>
+        <NavLink href="/profile" icon={<UserCircle size={20} />} isExpanded={isExpanded}>Thông tin tài khoản</NavLink>
       </nav>
 
       {/* Footer / User Profile */}

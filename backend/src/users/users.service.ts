@@ -79,9 +79,26 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    const { password, ...dbUpdates } = updateUserDto;
+
+    // Update password in Supabase Auth if provided
+    if (password) {
+      const { error: authError } = await this.client.auth.admin.updateUserById(id, {
+        password: password
+      });
+      if (authError) {
+        this.logger.error(`Lỗi cập nhật mật khẩu cho user ${id}:`, authError);
+        throw new InternalServerErrorException('Lỗi khi cập nhật mật khẩu.');
+      }
+    }
+
+    if (Object.keys(dbUpdates).length === 0) {
+      return { message: 'Cập nhật thành công!' };
+    }
+
     const { data, error } = await this.client
       .from('users')
-      .update(updateUserDto)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -89,7 +106,6 @@ export class UsersService {
     if (error) {
       this.logger.error(`Lỗi khi cập nhật user ${id}:`, error);
       if (error.code === 'PGRST116') {
-        // Lỗi không tìm thấy dòng để cập nhật
         throw new NotFoundException('Không tìm thấy người dùng để cập nhật.');
       }
       throw new InternalServerErrorException(

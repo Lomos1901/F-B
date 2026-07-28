@@ -14,6 +14,7 @@ import { InventoryReceiptsModule } from './inventory-receipts/inventory-receipts
 import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module'; // Import AnalyticsModule
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { AnalyticsModule } from './analytics/analytics.module'; // Import Analyt
     InventoryReceiptsModule,
     UsersModule,
     DashboardModule,
-    AnalyticsModule, // Thêm AnalyticsModule vào đây
+    AnalyticsModule,
+    PaymentsModule, // Thêm AnalyticsModule vào đây
   ],
   controllers: [AppController],
   providers: [AppService],
