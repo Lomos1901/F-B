@@ -464,7 +464,7 @@ export default function KiotVietPOSPage() {
                       <td className="py-2 px-3 text-center text-gray-400 text-xs">
                         {index + 1}
                         <button onClick={() => removeFromCart(item.product.id)} className="hidden group-hover:block absolute -ml-4 mt-[-14px] text-red-500 p-1 bg-white rounded-full shadow-sm border border-red-100">
-                          <XIcon size={12} />
+                          <X size={12} />
                         </button>
                       </td>
                       <td className="py-2 px-1 font-medium text-gray-800 text-[13px] leading-tight pr-2">

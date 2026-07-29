@@ -52,7 +52,7 @@ export default function AlertsCenterPage() {
   const fetchAnomalies = async () => {
     setLoading(true);
     try {
-      const data = await analyticsService.getAnomalies(50, activeTab === 'UNREAD');
+      const data = await analyticsService.getAnomalies();
       setAnomalies(Array.isArray(data) ? data : []);
     } catch (err: any) {
       toast.error(err.message);
