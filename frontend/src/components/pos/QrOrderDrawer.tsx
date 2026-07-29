@@ -29,7 +29,7 @@ const TABS = [
 
 const getStatusConfig = (status: string) => {
   const config = {
-    PENDING: { text: 'Chờ xác nhận', color: 'text-[#4B2C20]', bg: 'bg-[#FFB800]/20' },
+    PENDING: { text: 'Chờ xác nhận', color: 'text-blue-700', bg: 'bg-blue-50' },
     PREPARING: { text: 'Đang chế biến', color: 'text-[#1E3A8A]', bg: 'bg-[#DBEAFE]' },
   };
   return config[status as keyof typeof config] || { text: status, color: 'text-gray-600', bg: 'bg-gray-200' };
@@ -158,10 +158,10 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
       <div className="bg-white w-full max-w-4xl h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 relative">
         
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-[#FCF9F8]">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-slate-50">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-[#4B2C20]">Đơn hàng từ Mã QR</h2>
-            <button onClick={() => loadOrders(true)} className={`p-2 rounded-full hover:bg-black/5 ${refreshing ? 'animate-spin text-[#FFB800]' : 'text-gray-500'}`}>
+            <h2 className="text-2xl font-bold text-slate-800">Đơn hàng từ Mã QR</h2>
+            <button onClick={() => loadOrders(true)} className={`p-2 rounded-full hover:bg-black/5 ${refreshing ? 'animate-spin text-blue-600' : 'text-gray-500'}`}>
               <RefreshCw size={20} />
             </button>
           </div>
@@ -171,7 +171,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 overflow-hidden bg-[#FCF9F8]">
+        <div className="flex flex-1 overflow-hidden bg-slate-50">
           
           {/* Left: Orders List */}
           <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200">
@@ -183,8 +183,8 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
                     activeTab === tab.id 
-                    ? 'bg-[#4B2C20] text-white border-[#4B2C20]' 
-                    : 'bg-transparent text-[#4B2C20] border-gray-300 hover:bg-black/5'
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-transparent text-slate-700 border-gray-300 hover:bg-black/5'
                   }`}
                 >
                   {tab.label}
@@ -196,12 +196,12 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
             <div className="flex-1 overflow-y-auto px-6 pb-6">
               {loading && allOrders.length === 0 ? (
                 <div className="flex justify-center items-center h-full">
-                  <Loader2 size={32} className="animate-spin text-[#FFB800]" />
+                  <Loader2 size={32} className="animate-spin text-blue-600" />
                 </div>
               ) : filteredOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <Coffee size={48} className="mb-4 text-gray-300" />
-                  <p className="font-bold text-[#4B2C20]">Không có đơn hàng</p>
+                  <p className="font-bold text-slate-800">Không có đơn hàng</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
@@ -216,10 +216,10 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                         key={order.id}
                         onClick={() => setSelectedOrderId(order.id)}
                         className={`text-left rounded-2xl p-4 transition-all duration-200 border bg-white ${
-                          isSelected ? 'ring-2 ring-[#FFB800] border-transparent scale-[1.02] shadow-md' : 'border-gray-200 hover:bg-black/5'
+                          isSelected ? 'ring-2 ring-blue-600 border-transparent scale-[1.02] shadow-md' : 'border-gray-200 hover:bg-black/5'
                         }`}
                       >
-                        <div className="text-xl font-bold text-[#4B2C20] mb-2">Bàn {order.table_number}</div>
+                        <div className="text-xl font-bold text-slate-800 mb-2">Bàn {order.table_number}</div>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3 ${conf.bg} ${conf.color}`}>
                           {conf.text}
                         </span>
@@ -229,7 +229,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                         </div>
                         <div className="border-t border-gray-100 pt-2 flex justify-between items-center mt-2">
                           <span className="text-[10px] font-bold uppercase">Tổng</span>
-                          <span className="font-bold text-[#FFB800]">{order.total_price.toLocaleString('vi-VN')}đ</span>
+                          <span className="font-bold text-blue-600">{order.total_price.toLocaleString('vi-VN')}đ</span>
                         </div>
                       </button>
                     );
@@ -245,7 +245,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
               <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto p-6">
                   <div className="text-center border-b border-dashed border-gray-300 pb-4 mb-4">
-                    <h2 className="font-bold text-xl text-[#4B2C20]">PHIẾU TẠM TÍNH</h2>
+                    <h2 className="font-bold text-xl text-slate-800">PHIẾU TẠM TÍNH</h2>
                     <div className="flex justify-between items-end mt-4 text-sm font-bold">
                       <span>Bàn: <span className="text-lg">{selectedOrder.table_number}</span></span>
                       <span className="text-xs font-medium text-gray-500">{format(new Date(selectedOrder.created_at), 'HH:mm')}</span>
@@ -256,18 +256,18 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                     {selectedOrder.order_detail.map((item, index) => (
                       <div key={index} className="flex justify-between items-start text-sm">
                         <div className="flex-1 pr-3">
-                          <p className="font-medium text-[#4B2C20]">{item.products?.name}</p>
+                          <p className="font-medium text-slate-800">{item.products?.name}</p>
                           <p className="text-xs text-gray-500 mt-0.5">{(item.products?.price || 0).toLocaleString('vi-VN')}đ x {item.quantity}</p>
                         </div>
-                        <span className="font-bold text-[#4B2C20]">{((item.products?.price || 0) * item.quantity).toLocaleString('vi-VN')}đ</span>
+                        <span className="font-bold text-slate-800">{((item.products?.price || 0) * item.quantity).toLocaleString('vi-VN')}đ</span>
                       </div>
                     ))}
                   </div>
                   
                   <div className="border-t border-dashed border-gray-300 pt-4">
-                    <div className="flex justify-between items-center font-bold text-[#4B2C20]">
+                    <div className="flex justify-between items-center font-bold text-slate-800">
                       <span>TỔNG CỘNG</span>
-                      <span className="text-xl text-[#FFB800]">{selectedOrder.total_price.toLocaleString('vi-VN')}đ</span>
+                      <span className="text-xl text-blue-600">{selectedOrder.total_price.toLocaleString('vi-VN')}đ</span>
                     </div>
                   </div>
                 </div>
@@ -277,7 +277,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                     <button 
                       onClick={() => executePayment(selectedOrder)}
                       disabled={processingPayment || isCanceling}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#FFB800] hover:bg-[#FFB800]/90 text-[#4B2C20] rounded-xl font-bold transition-colors disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
                     >
                       {processingPayment ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18}/>} 
                       <span>Xác nhận Đã thu tiền</span>
