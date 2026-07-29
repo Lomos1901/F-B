@@ -118,7 +118,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
       if (cashMethod) {
         await paymentService.createPayment(order.id, order.total_price, cashMethod.code);
       } else {
-        await orderService.updateStatus(order.id, 'PAID');
+        await orderService.updateStatus(order.id, 'PREPARING');
       }
       toast.success(`Đã xác nhận thanh toán đơn Bàn ${order.table_number}!`);
       

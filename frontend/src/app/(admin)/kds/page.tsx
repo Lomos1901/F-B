@@ -152,7 +152,7 @@ export default function KDSPage() {
               <OrderTicket
                 key={order.id}
                 order={order}
-                onAction={() => handleUpdateStatus(order.id, 'PAID', order.table_number)}
+                onAction={() => handleUpdateStatus(order.id, 'COMPLETED', order.table_number)}
                 actionText="Hoàn thành đơn này"
                 isPending={false}
                 icon={<Check size={20} />}

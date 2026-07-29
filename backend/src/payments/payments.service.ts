@@ -46,7 +46,8 @@ export class PaymentsService {
       throw new BadRequestException('Không tìm thấy đơn hàng!');
     }
     
-    if (orderData.order_status?.status_name !== 'PENDING') {
+    const statusName = (orderData as any).order_status?.status_name || (orderData as any).order_status?.[0]?.status_name;
+    if (statusName !== 'PENDING') {
       throw new BadRequestException('Đơn hàng này đã được thanh toán hoặc không còn hợp lệ!');
     }
 

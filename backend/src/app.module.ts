@@ -15,6 +15,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module'; // Import AnalyticsModule
 import { PaymentsModule } from './payments/payments.module';
 import { ShiftsModule } from './shifts/shifts.module';
+import { TablesModule } from './tables/tables.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ShiftsModule } from './shifts/shifts.module';
     AnalyticsModule,
     PaymentsModule,
     ShiftsModule, // Thêm AnalyticsModule vào đây
+    TablesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

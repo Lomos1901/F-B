@@ -28,7 +28,7 @@ export class ProductsService {
       .from('products')
       .select(
         `
-        id, name, price, image_url, is_active,
+        id, name, price, image_url, is_active, category_id,
         categories ( name ),
         recipes (
           quantity,

@@ -186,7 +186,7 @@ export default function KiotVietPOSPage() {
       if (paymentMethodCode) {
         await paymentService.createPayment(newOrderId, cartTotal, paymentMethodCode);
       } else {
-        await orderService.updateStatus(newOrderId, 'PAID');
+        await orderService.updateStatus(newOrderId, 'PREPARING');
       }
 
       toast.success("Thanh toán thành công! Đã gửi hóa đơn xuống Bếp.");
