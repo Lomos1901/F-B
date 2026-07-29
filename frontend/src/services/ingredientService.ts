@@ -27,6 +27,12 @@ export const ingredientService = {
     return res.json();
   },
 
+  async getById(id: string) {
+    const res = await fetch(`${API_URL}/${id}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Lỗi khi tải thông tin nguyên liệu');
+    return res.json();
+  },
+
   async getArchived() {
     const res = await fetch(`${API_URL}/archived`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Lỗi khi tải danh sách nguyên liệu đã lưu trữ');

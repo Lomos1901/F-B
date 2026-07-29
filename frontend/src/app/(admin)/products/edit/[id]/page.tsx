@@ -128,72 +128,126 @@ export default function EditProductPage() {
     }
   };
 
-  if (fetchingData) return <div className="p-8 text-dark-text-secondary">Đang tải dữ liệu sản phẩm...</div>;
+  if (fetchingData) return <div className="p-8 text-slate-500">Đang tải dữ liệu sản phẩm...</div>;
 
   return (
-    <main className="p-4 sm:p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center mb-8">
-          <Link href="/products" className="p-2 rounded-full hover:bg-dark-surface mr-4">
-            <ArrowLeft size={20} />
+    <main className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-8 font-sans text-slate-800">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/products" className="p-2 rounded-full text-slate-600 hover:bg-slate-200/60 transition-colors">
+              <ArrowLeft size={20} />
+            </Link>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Chỉnh sửa Món nước</h1>
+          </div>
+          <Link href="/products" className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors">
+            <ArrowLeft size={16} />
+            Quay lại
           </Link>
-          <h1 className="text-3xl font-bold text-dark-text-primary">Chỉnh sửa Món nước</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-dark-surface border border-dark-border shadow-lg rounded-lg">
-          <div className="p-8 space-y-8">
-            <div className="space-y-5">
-              <h3 className="text-sm font-bold text-dark-text-secondary border-b border-dark-border pb-2 uppercase tracking-wider">1. Thông tin thương mại</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-dark-text-secondary mb-1">Tên món (*)</label>
-                  <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full p-2.5 bg-dark-bg border-dark-border rounded-md" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-dark-text-secondary mb-1">Danh mục (*)</label>
-                  <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full p-2.5 bg-dark-bg border-dark-border rounded-md" required>
-                    <option value="">-- Chọn danh mục --</option>
-                    {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-dark-text-secondary mb-1">Giá bán (*)</label>
-                  <input type="number" value={productPrice} onChange={(e) => setProductPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-2.5 bg-dark-bg border-dark-border rounded-md" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-dark-text-secondary mb-1">Hình ảnh</label>
-                  <div className="mt-1 flex items-center gap-4">
-                    {imageUrl ? <img src={imageUrl} alt="Preview" className="w-16 h-16 rounded-md object-cover"/> : <div className="w-16 h-16 rounded-md bg-dark-bg flex items-center justify-center"><ImageIcon className="text-dark-text-secondary"/></div>}
-                    <input type="file" onChange={handleFileChange} disabled={uploading} className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-amber/10 file:text-brand-amber hover:file:bg-brand-amber/20"/>
-                    {uploading && <Loader2 className="animate-spin" />}
-                  </div>
-                </div>
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-8">
+          <div>
+            <h3 className="text-slate-400 text-[11px] uppercase font-semibold tracking-wider mb-4 pb-2 border-b border-slate-100">1. Thông tin thương mại</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tên món (*)</label>
+                <input
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  required
+                />
               </div>
-            </div>
 
-            <div className="space-y-5 pt-4 border-t border-dark-border">
-              <h3 className="text-sm font-bold text-dark-text-secondary border-b border-dark-border pb-2 uppercase tracking-wider">2. Định lượng pha chế</h3>
-              <div className="space-y-3">
-                {recipeRows.map((row, index) => (
-                  <div key={index} className="grid grid-cols-[1fr,120px,auto,auto] gap-3 items-center">
-                    <select value={row.ingredient_id} onChange={(e) => handleRowChange(index, 'ingredient_id', e.target.value)} className="w-full p-2.5 bg-dark-bg border-dark-border rounded-md">
-                      <option value="">-- Chọn nguyên liệu --</option>
-                      {ingredients.map((ing) => (<option key={ing.id} value={ing.id}>{ing.name}</option>))}
-                    </select>
-                    <input type="number" value={row.ui_quantity || ''} onChange={(e) => handleRowChange(index, 'ui_quantity', e.target.value)} className="w-full p-2.5 bg-dark-bg border-dark-border rounded-md" />
-                    <span className="text-sm text-dark-text-secondary">{getDisplayUnit(row.ingredient_id)}</span>
-                    <button type="button" onClick={() => removeRow(index)} className="p-2 text-red-500 hover:bg-dark-bg rounded-full"><Trash2 size={16}/></button>
-                  </div>
-                ))}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Danh mục (*)</label>
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all"
+                  required
+                >
+                  <option value="">-- Chọn danh mục --</option>
+                  {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                </select>
               </div>
-              <button type="button" onClick={addRow} className="flex items-center gap-2 text-sm font-semibold text-brand-amber hover:text-brand-amber-dark">
-                <Plus size={16} /> Thêm nguyên liệu
-              </button>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Giá bán (*)</label>
+                <input
+                  type="number"
+                  value={productPrice}
+                  onChange={(e) => setProductPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Hình ảnh</label>
+                <div className="mt-1 flex items-center gap-4">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-slate-200"/>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+                      <ImageIcon className="text-slate-400"/>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                    className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
+                  />
+                  {uploading && <Loader2 className="animate-spin text-blue-600" />}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-dark-bg border-t border-dark-border px-8 py-4 flex justify-end">
-            <button type="submit" disabled={loading || uploading} className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 disabled:opacity-50 transition-all">
+          <div className="pt-4 border-t border-slate-100">
+            <h3 className="text-slate-400 text-[11px] uppercase font-semibold tracking-wider mb-4 pb-2 border-b border-slate-100">2. Định lượng pha chế</h3>
+            <div className="space-y-3">
+              {recipeRows.map((row, index) => (
+                <div key={index} className="grid grid-cols-[1fr,120px,auto,auto] gap-3 items-center">
+                  <select
+                    value={row.ingredient_id}
+                    onChange={(e) => handleRowChange(index, 'ingredient_id', e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all"
+                  >
+                    <option value="">-- Chọn nguyên liệu --</option>
+                    {ingredients.map((ing) => (<option key={ing.id} value={ing.id}>{ing.name}</option>))}
+                  </select>
+                  <input
+                    type="number"
+                    value={row.ui_quantity || ''}
+                    onChange={(e) => handleRowChange(index, 'ui_quantity', e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  />
+                  <span className="text-sm text-slate-500">{getDisplayUnit(row.ingredient_id)}</span>
+                  <button type="button" onClick={() => removeRow(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                    <Trash2 size={16}/>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addRow}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full font-medium text-sm transition-colors"
+            >
+              <Plus size={16} /> Thêm nguyên liệu
+            </button>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <button
+              type="submit"
+              disabled={loading || uploading}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
               <Save size={18} /> {loading ? 'Đang lưu...' : 'Lưu Thay đổi'}
             </button>
           </div>

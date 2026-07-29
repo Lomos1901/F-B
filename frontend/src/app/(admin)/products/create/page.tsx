@@ -109,60 +109,125 @@ export default function CreateProductPage() {
   };
 
   return (
-    <main className="min-h-screen bg-dark-bg p-4 sm:p-6 md:p-8 font-sans text-dark-text-primary">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-brand-amber">Thêm món mới</h1>
-          <Link href="/products" className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-dark-surface text-dark-text-secondary border border-dark-border hover:bg-dark-border transition-all">
+    <main className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-8 font-sans text-slate-800">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/products" className="p-2 rounded-full text-slate-600 hover:bg-slate-200/60 transition-colors">
+              <ArrowLeft size={20} />
+            </Link>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Thêm món mới</h1>
+          </div>
+          <Link href="/products" className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors">
             <ArrowLeft size={16} />
             Quay lại
           </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-8">
           {/* Thông tin chung */}
-          <div className="p-6 bg-dark-surface border border-dark-border rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Thông tin chung</h2>
+          <div>
+            <h2 className="text-slate-400 text-[11px] uppercase font-semibold tracking-wider mb-4 pb-2 border-b border-slate-100">Thông tin chung</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" placeholder="Tên món (*)" value={productName} onChange={e => setProductName(e.target.value)} className="p-2.5 bg-dark-bg border-dark-border rounded-md" required />
-              <input type="number" placeholder="Giá bán (*)" value={productPrice} onChange={e => setProductPrice(Number(e.target.value))} className="p-2.5 bg-dark-bg border-dark-border rounded-md" required />
-              <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="p-2.5 bg-dark-bg border-dark-border rounded-md" required>
-                <option value="">Chọn danh mục (*)</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <div className="flex items-center gap-4">
-                <input type="file" id="image-upload" onChange={handleFileChange} className="hidden" />
-                <label htmlFor="image-upload" className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-md font-semibold">
-                  <Upload size={16} /> {uploading ? 'Đang tải...' : 'Tải ảnh'}
-                </label>
-                {imageUrl && <img src={imageUrl} alt="Preview" className="w-12 h-12 rounded-md object-cover" />}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tên món (*)</label>
+                <input
+                  type="text"
+                  placeholder="Tên món (*)"
+                  value={productName}
+                  onChange={e => setProductName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Giá bán (*)</label>
+                <input
+                  type="number"
+                  placeholder="Giá bán (*)"
+                  value={productPrice}
+                  onChange={e => setProductPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Danh mục (*)</label>
+                <select
+                  value={categoryId}
+                  onChange={e => setCategoryId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all"
+                  required
+                >
+                  <option value="">Chọn danh mục (*)</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Hình ảnh</label>
+                <div className="flex items-center gap-4">
+                  <input type="file" id="image-upload" onChange={handleFileChange} className="hidden" />
+                  <label htmlFor="image-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-xl font-medium text-sm transition-colors">
+                    <Upload size={16} /> {uploading ? 'Đang tải...' : 'Tải ảnh'}
+                  </label>
+                  {imageUrl && <img src={imageUrl} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-slate-200" />}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Công thức */}
-          <div className="p-6 bg-dark-surface border border-dark-border rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Công thức pha chế</h2>
+          <div className="pt-4 border-t border-slate-100">
+            <h2 className="text-slate-400 text-[11px] uppercase font-semibold tracking-wider mb-4 pb-2 border-b border-slate-100">Công thức pha chế</h2>
             <div className="space-y-4">
               {recipeRows.map((row, index) => (
                 <div key={index} className="grid grid-cols-12 gap-4 items-center">
-                  <select value={row.ingredient_id} onChange={e => handleRowChange(index, 'ingredient_id', e.target.value)} className="col-span-6 p-2.5 bg-dark-bg border-dark-border rounded-md">
-                    <option value="">Chọn nguyên liệu</option>
-                    {ingredients.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-                  </select>
-                  <input type="number" placeholder="Lượng" value={row.ui_quantity} onChange={e => handleRowChange(index, 'ui_quantity', Number(e.target.value))} className="col-span-3 p-2.5 bg-dark-bg border-dark-border rounded-md" />
-                  <span className="col-span-2 text-dark-text-secondary">{getDisplayUnit(row.ingredient_id)}</span>
-                  <button type="button" onClick={() => removeRow(index)} className="col-span-1 p-2 text-red-500 hover:bg-dark-bg rounded-full"><Trash2 size={16}/></button>
+                  <div className="col-span-6">
+                    <select
+                      value={row.ingredient_id}
+                      onChange={e => handleRowChange(index, 'ingredient_id', e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all"
+                    >
+                      <option value="">Chọn nguyên liệu</option>
+                      {ingredients.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-span-3">
+                    <input
+                      type="number"
+                      placeholder="Lượng"
+                      value={row.ui_quantity || ''}
+                      onChange={e => handleRowChange(index, 'ui_quantity', Number(e.target.value))}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+                  <span className="col-span-2 text-sm text-slate-500">{getDisplayUnit(row.ingredient_id)}</span>
+                  <div className="col-span-1 flex justify-end">
+                    <button type="button" onClick={() => removeRow(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                      <Trash2 size={16}/>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-            <button type="button" onClick={addRow} className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-amber hover:bg-dark-border rounded-lg">
+            <button
+              type="button"
+              onClick={addRow}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full font-medium text-sm transition-colors"
+            >
               <Plus size={16} /> Thêm dòng
             </button>
           </div>
 
-          <div className="flex justify-end">
-            <button type="submit" disabled={loading || uploading} className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 disabled:bg-gray-500">
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button
+              type="submit"
+              disabled={loading || uploading}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
               <Save size={18} /> {loading ? 'Đang lưu...' : 'Lưu sản phẩm'}
             </button>
           </div>

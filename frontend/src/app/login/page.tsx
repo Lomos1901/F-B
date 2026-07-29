@@ -30,22 +30,22 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <div className="p-3 bg-dark-surface rounded-full border border-dark-border mb-4">
-            <Coffee className="text-brand-amber" size={32} />
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div className="p-3.5 bg-blue-50 rounded-2xl border border-blue-100 mb-4 shadow-sm">
+            <Coffee className="text-blue-600" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-dark-text-primary">Sẫm Coffee</h1>
-          <p className="text-dark-text-secondary">Đăng nhập hệ thống quản trị</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Sẫm Coffee</h1>
+          <p className="text-slate-500 mt-1 text-sm">Đăng nhập hệ thống quản trị</p>
         </div>
 
-        <div className="bg-dark-surface p-8 rounded-lg border border-dark-border shadow-2xl shadow-black/20">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label htmlFor="email" className="text-sm font-medium text-dark-text-secondary">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   id="email"
                   type="email"
@@ -53,14 +53,14 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="admin@samcoffee.vn"
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber focus:border-brand-amber"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
             </div>
             <div>
-              <label htmlFor="password"  className="text-sm font-medium text-dark-text-secondary">Mật khẩu</label>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Mật khẩu</label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   id="password"
                   type="password"
@@ -68,21 +68,21 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber focus:border-brand-amber"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
             </div>
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-brand-amber text-black font-bold rounded-md hover:bg-brand-amber-dark disabled:opacity-50 transition-colors">
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
               {loading ? 'Đang xử lý...' : 'Đăng nhập'}
               {!loading && <LogIn size={18} />}
             </button>
           </form>
           {/* --- THÊM LIÊN KẾT ĐĂNG KÝ --- */}
           <div className="text-center mt-6">
-            <p className="text-sm text-dark-text-secondary">
+            <p className="text-sm text-slate-500">
               Chưa có tài khoản?{' '}
-              <Link href="/register" className="font-semibold text-brand-amber hover:underline">
+              <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
                 Đăng ký
               </Link>
             </p>

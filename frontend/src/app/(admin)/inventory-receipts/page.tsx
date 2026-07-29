@@ -29,20 +29,20 @@ interface Receipt {
 const ReceiptTypeBadge = ({ type }: { type: Receipt['receipt_type'] }) => {
   if (type === 'IMPORT') {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 font-bold text-xs rounded-full">
+      <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold text-xs rounded-full">
         <ArrowDownToLine size={14} /> Nhập hàng
       </div>
     );
   }
   if (type === 'SALE_DEDUCTION') {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 font-bold text-xs rounded-full">
+      <div className="flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 border border-red-200/60 font-bold text-xs rounded-full">
         <ArrowUpFromLine size={14} /> Xuất bán
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-700 font-bold text-xs rounded-full">
+    <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200/60 font-bold text-xs rounded-full">
       <RefreshCcw size={14} /> Kiểm kho
     </div>
   );
@@ -54,19 +54,19 @@ const SmartQuantity = ({ detail }: { detail: ReceiptDetail }) => {
 
   const absQuantity = Math.abs(quantity);
   const sign = quantity > 0 ? '+' : quantity < 0 ? '-' : '';
-  const colorClass = quantity > 0 ? 'text-green-600 bg-green-50' : quantity < 0 ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50';
+  const colorClass = quantity > 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200/50' : quantity < 0 ? 'text-red-700 bg-red-50 border border-red-200/50' : 'text-slate-600 bg-slate-100 border border-slate-200/50';
 
   if (absQuantity < 1 && recipe_unit && conversion_factor) {
     const recipeQuantity = absQuantity * conversion_factor;
     return (
-      <span className={`font-mono font-bold px-2 py-1 rounded-lg text-sm ${colorClass}`}>
+      <span className={`font-mono font-bold px-2.5 py-1 rounded-lg text-sm ${colorClass}`}>
         {sign}{recipeQuantity.toLocaleString('vi-VN')} {recipe_unit}
       </span>
     );
   }
 
   return (
-    <span className={`font-mono font-bold px-2 py-1 rounded-lg text-sm ${colorClass}`}>
+    <span className={`font-mono font-bold px-2.5 py-1 rounded-lg text-sm ${colorClass}`}>
       {sign}{absQuantity.toLocaleString('vi-VN')} {base_unit}
     </span>
   );
@@ -100,30 +100,30 @@ export default function InventoryReceiptsPage() {
 
   if (loading && receipts.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#FCF9F8]">
-        <Loader2 className="animate-spin text-[#FFB800]" size={48} />
+      <div className="flex h-full items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#FCF9F8] text-[#4B2C20]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-      <div className="px-6 py-6 border-b border-gray-200 bg-white flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 sticky top-0 z-10 shadow-sm">
+    <div className="flex flex-col h-full bg-slate-50 text-slate-800">
+      <div className="px-6 py-6 border-b border-slate-200 bg-white flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 sticky top-0 z-10 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="text-[#FFB800]" size={28} />
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <FileText className="text-blue-600" size={28} />
             Lịch sử Phiếu Kho
           </h1>
-          <p className="text-gray-500 mt-1">Theo dõi biến động xuất/nhập/kiểm kê nguyên liệu.</p>
+          <p className="text-slate-500 mt-1">Theo dõi biến động xuất/nhập/kiểm kê nguyên liệu.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200">
-            <FileText className="text-gray-400" size={18} />
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+            <FileText className="text-slate-400" size={18} />
             <select 
               value={typeFilter} 
               onChange={e => setTypeFilter(e.target.value)}
-              className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="ALL">Tất cả loại phiếu</option>
               <option value="IMPORT">Nhập hàng</option>
@@ -132,60 +132,60 @@ export default function InventoryReceiptsPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200">
-            <Calendar className="text-gray-400" size={18} />
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+            <Calendar className="text-slate-400" size={18} />
             <input 
               type="date" 
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
             />
-            <span className="text-gray-400">-</span>
+            <span className="text-slate-400">-</span>
             <input 
               type="date" 
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
             />
           </div>
         </div>
       </div>
 
-      <div className="p-6 overflow-y-auto">
+      <div className="p-6 overflow-y-auto flex-1">
         <div className="space-y-4 max-w-4xl mx-auto">
           {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl font-bold border border-red-100 text-center mb-4">
+            <div className="p-4 bg-red-50 text-red-600 rounded-xl font-bold border border-red-200 text-center mb-4">
               {error}
             </div>
           )}
           {receipts.map((receipt) => (
-            <div key={receipt.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className="p-4 bg-gray-50/50 flex flex-col sm:flex-row justify-between sm:items-center border-b border-gray-100 gap-3">
+            <div key={receipt.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-4 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 gap-3">
                 <div className="flex items-center gap-4">
                   <ReceiptTypeBadge type={receipt.receipt_type} />
-                  <div className="flex items-center text-sm text-gray-500 gap-1.5 font-medium">
+                  <div className="flex items-center text-sm text-slate-500 gap-1.5 font-medium">
                     <Calendar size={14} />
                     {format(new Date(receipt.created_at), 'HH:mm - dd/MM/yyyy', { locale: vi })}
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
-                  Thực hiện bởi: <span className="font-bold text-[#4B2C20]">{receipt.users?.full_name || 'Hệ thống tự động'}</span>
+                <div className="text-sm text-slate-500">
+                  Thực hiện bởi: <span className="font-bold text-slate-800">{receipt.users?.full_name || 'Hệ thống tự động'}</span>
                 </div>
               </div>
               
               <div className="p-4">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="text-xs uppercase text-gray-400 border-b border-gray-100">
-                      <th className="pb-2 font-bold w-1/2">Tên nguyên liệu</th>
-                      <th className="pb-2 font-bold text-right">Biến động</th>
+                    <tr className="text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-200 font-semibold">
+                      <th className="pb-2 font-semibold w-1/2">Tên nguyên liệu</th>
+                      <th className="pb-2 font-semibold text-right">Biến động</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-slate-100">
                     {receipt.receipt_details.map((detail, index) => (
-                      <tr key={index} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-3 font-semibold text-[#4B2C20] flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#FFB800]"></div>
+                      <tr key={index} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 font-semibold text-slate-800 flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
                           {detail.ingredients.name}
                         </td>
                         <td className="py-3 text-right">
@@ -200,9 +200,9 @@ export default function InventoryReceiptsPage() {
           ))}
 
           {receipts.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-              <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-              <p className="text-gray-500 font-medium">Chưa có dữ liệu phiếu kho nào.</p>
+            <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <FileText className="mx-auto text-slate-300 mb-3" size={48} />
+              <p className="text-slate-500 font-medium">Chưa có dữ liệu phiếu kho nào.</p>
             </div>
           )}
         </div>

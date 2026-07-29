@@ -43,6 +43,12 @@ export class IngredientsController {
     return this.ingredientsService.findArchived();
   }
 
+  @Get(':id')
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.ingredientsService.findOne(id);
+  }
+
   @Get(':id/check-usage')
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   checkUsage(@Param('id', ParseUUIDPipe) id: string) {

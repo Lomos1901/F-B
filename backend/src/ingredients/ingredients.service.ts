@@ -51,6 +51,21 @@ export class IngredientsService {
     return { status: 'Thành công', record_count: data.length, data: data };
   }
 
+  async findOne(id: string) {
+    const { data, error } = await this.client
+      .from('ingredients')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      this.logger.error(`Lỗi khi tìm nguyên liệu ${id}:`, error);
+      throw new InternalServerErrorException(error.message);
+    }
+    if (!data) throw new NotFoundException('Không tìm thấy nguyên liệu');
+    return data;
+  }
+
   async findArchived() {
     const { data, error } = await this.client
       .from('ingredients')

@@ -42,7 +42,7 @@ interface DashboardData {
 const KpiCard = ({ title, value, icon, formatAsCurrency = false, trendLabel = null }: any) => (
   <div className="relative overflow-hidden bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-sm group hover:shadow-md transition-all duration-300 hover:-translate-y-1">
     <div className="flex justify-between items-start mb-6">
-      <div className="p-3 rounded-xl bg-dark-bg border border-dark-border/50 group-hover:scale-110 group-hover:bg-brand-amber/10 transition-all duration-300">
+      <div className="p-3 rounded-xl bg-dark-bg border border-dark-border/50 group-hover:scale-110 group-hover:bg-blue-50 transition-all duration-300">
         {icon}
       </div>
       {trendLabel && (
@@ -58,14 +58,14 @@ const KpiCard = ({ title, value, icon, formatAsCurrency = false, trendLabel = nu
       </p>
     </div>
     {/* Decorative background glow */}
-    <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-brand-amber/5 rounded-full blur-3xl group-hover:bg-brand-amber/10 transition-colors pointer-events-none" />
+    <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors pointer-events-none" />
   </div>
 );
 
 const AlertIcon = ({ category }: { category: string }) => {
   switch (category) {
     case 'LOW_STOCK':
-      return <div className="p-1.5 rounded-full bg-yellow-500/10 text-yellow-500"><AlertTriangle size={16} /></div>;
+      return <div className="p-1.5 rounded-full bg-amber-500/10 text-amber-500"><AlertTriangle size={16} /></div>;
     case 'UNUSUAL_SALES':
       return <div className="p-1.5 rounded-full bg-blue-500/10 text-blue-500"><TrendingUp size={16} /></div>;
     default:
@@ -102,7 +102,7 @@ export default function DashboardPage() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-amber/20 border-t-brand-amber rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
           <p className="text-sm font-semibold text-dark-text-secondary animate-pulse">Đang đồng bộ dữ liệu...</p>
         </div>
       </div>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-dark-text-secondary mt-1">Theo dõi hoạt động kinh doanh Sẫm Coffee</p>
         </div>
         <div className="flex items-center gap-2 bg-dark-surface px-4 py-2 rounded-xl border border-dark-border shadow-sm">
-          <Calendar size={18} className="text-brand-amber" />
+          <Calendar size={18} className="text-blue-600" />
           <span className="text-sm font-bold text-dark-text-primary">
             {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </span>
@@ -142,9 +142,9 @@ export default function DashboardPage() {
       {/* KPIs Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <KpiCard title="Doanh thu hôm nay" value={kpis.total_revenue} icon={<DollarSign size={24} className="text-emerald-500"/>} formatAsCurrency trendLabel="HÔM NAY" />
-        <KpiCard title="Số đơn hôm nay" value={kpis.order_count} icon={<ShoppingCart size={24} className="text-blue-500"/>} trendLabel="HÔM NAY" />
-        <KpiCard title="Doanh thu / đơn" value={kpis.avg_revenue_per_order} icon={<BarChart size={24} className="text-indigo-500"/>} formatAsCurrency trendLabel="HÔM NAY" />
-        <KpiCard title="Đang chế biến" value={pendingOrdersCount} icon={<Coffee size={24} className="text-amber-500"/>} trendLabel="TRỰC TIẾP" />
+        <KpiCard title="Số đơn hôm nay" value={kpis.order_count} icon={<ShoppingCart size={24} className="text-blue-600"/>} trendLabel="HÔM NAY" />
+        <KpiCard title="Doanh thu / đơn" value={kpis.avg_revenue_per_order} icon={<BarChart size={24} className="text-blue-600"/>} formatAsCurrency trendLabel="HÔM NAY" />
+        <KpiCard title="Đang chế biến" value={pendingOrdersCount} icon={<Coffee size={24} className="text-blue-600"/>} trendLabel="TRỰC TIẾP" />
       </div>
 
       {/* Main Content */}
@@ -160,18 +160,17 @@ export default function DashboardPage() {
               </div>
               
               <div className="flex items-center bg-dark-bg p-1 rounded-xl border border-dark-border/50">
-                <button onClick={() => setDays(7)} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${days === 7 ? 'bg-dark-surface text-brand-amber shadow-sm border border-dark-border/50' : 'text-dark-text-secondary hover:text-dark-text-primary'}`}>
+                <button onClick={() => setDays(7)} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${days === 7 ? 'bg-blue-600 text-white shadow-sm' : 'text-dark-text-secondary hover:text-dark-text-primary'}`}>
                   7 Ngày
                 </button>
-                <button onClick={() => setDays(30)} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${days === 30 ? 'bg-dark-surface text-brand-amber shadow-sm border border-dark-border/50' : 'text-dark-text-secondary hover:text-dark-text-primary'}`}>
+                <button onClick={() => setDays(30)} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${days === 30 ? 'bg-blue-600 text-white shadow-sm' : 'text-dark-text-secondary hover:text-dark-text-primary'}`}>
                   30 Ngày
                 </button>
-                {loading && <Loader2 className="animate-spin text-brand-amber ml-2 mr-1" size={16} />}
+                {loading && <Loader2 className="animate-spin text-blue-600 ml-2 mr-1" size={16} />}
               </div>
             </div>
             
             <div className="h-[320px] w-full relative">
-              {/* Giả sử DashboardChart có khả năng hiển thị loading hoặc mờ đi */}
               <div className={`transition-opacity duration-300 w-full h-full ${loading ? 'opacity-50' : 'opacity-100'}`}>
                 <DashboardChart data={revenueChartData} />
               </div>
@@ -185,7 +184,7 @@ export default function DashboardPage() {
           {/* Top Products */}
           <div className="bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-lg bg-amber-500/10 text-brand-amber">
+              <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
                 <TrendingUp size={20}/>
               </div>
               <h2 className="text-lg font-bold text-dark-text-primary">Món bán chạy</h2>
@@ -196,15 +195,15 @@ export default function DashboardPage() {
                 topSellingProducts.map((product, index) => (
                   <li key={index} className="flex items-center gap-4 group">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 border ${
-                      index === 0 ? 'bg-yellow-400/20 text-yellow-600 border-yellow-400/30' : 
-                      index === 1 ? 'bg-slate-300/20 text-slate-500 border-slate-300/30' : 
-                      index === 2 ? 'bg-amber-700/10 text-amber-700 border-amber-700/20' : 
+                      index === 0 ? 'bg-blue-100 text-blue-700 border-blue-200' : 
+                      index === 1 ? 'bg-slate-100 text-slate-600 border-slate-200' : 
+                      index === 2 ? 'bg-blue-50 text-blue-600 border-blue-100' : 
                       'bg-dark-bg text-dark-text-secondary border-dark-border'
                     }`}>
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-dark-text-primary truncate group-hover:text-brand-amber transition-colors">{product.product_name}</p>
+                      <p className="text-sm font-bold text-dark-text-primary truncate group-hover:text-blue-600 transition-colors">{product.product_name}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black text-dark-text-primary">{product.total_quantity}</p>
@@ -240,13 +239,13 @@ export default function DashboardPage() {
             <div className="space-y-4 flex-1">
               {anomalies && anomalies.length > 0 ? (
                 anomalies.slice(0, 4).map((item) => (
-                  <div key={item.id} className="group relative pl-4 border-l-2 border-transparent hover:border-brand-amber transition-all cursor-pointer">
+                  <div key={item.id} className="group relative pl-4 border-l-2 border-transparent hover:border-blue-600 transition-all cursor-pointer">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-0.5">
                         <AlertIcon category={item.alert_category} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-dark-text-primary leading-snug group-hover:text-brand-amber transition-colors">{item.message}</p>
+                        <p className="text-sm font-bold text-dark-text-primary leading-snug group-hover:text-blue-600 transition-colors">{item.message}</p>
                         <p className="text-xs text-dark-text-secondary mt-1 font-medium">
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: vi })}
                         </p>
@@ -262,7 +261,7 @@ export default function DashboardPage() {
               )}
             </div>
             
-            <Link href="/alerts" className="mt-6 pt-4 border-t border-dark-border block text-center text-sm font-bold text-brand-amber hover:text-brand-amber-dark transition-colors">
+            <Link href="/alerts" className="mt-6 pt-4 border-t border-dark-border block text-center text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
               Mở Trung tâm Cảnh báo
             </Link>
           </div>

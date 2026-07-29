@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ingredientService } from '@/src/services/ingredientService';
 import { ingredientCategoryService } from '@/src/services/ingredientCategoryService';
@@ -12,8 +12,11 @@ interface IngredientCategory {
   name: string;
 }
 
-export default function CreateIngredientPage() {
+export default function EditIngredientPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+  
   const [categories, setCategories] = useState<IngredientCategory[]>([]);
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -21,20 +24,35 @@ export default function CreateIngredientPage() {
   const [recipeUnit, setRecipeUnit] = useState('');
   const [conversionFactor, setConversionFactor] = useState<number | ''>('');
   const [costPerUnit, setCostPerUnit] = useState<number | ''>('');
+  
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const fetchData = async () => {
       try {
-        const data = await ingredientCategoryService.getAll();
-        setCategories(data);
-      } catch (err) {
-        setError('Không thể tải danh mục nguyên liệu.');
+        const [cats, ingredient] = await Promise.all([
+          ingredientCategoryService.getAll(),
+          ingredientService.getById(id)
+        ]);
+        setCategories(cats);
+        setName(ingredient.name);
+        setCategoryId(ingredient.category_id || '');
+        setBaseUnit(ingredient.base_unit);
+        setRecipeUnit(ingredient.recipe_unit);
+        setConversionFactor(ingredient.conversion_factor);
+        setCostPerUnit(ingredient.cost_per_unit);
+      } catch (err: any) {
+        setError(err.message || 'Không thể tải thông tin nguyên liệu.');
+      } finally {
+        setFetching(false);
       }
     };
-    loadCategories();
-  }, []);
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +69,12 @@ export default function CreateIngredientPage() {
       recipe_unit: recipeUnit,
       conversion_factor: Number(conversionFactor),
       cost_per_unit: Number(costPerUnit),
+      category_id: categoryId || null,
     };
-    if (categoryId) payload.category_id = categoryId;
 
     try {
-      await ingredientService.create(payload);
-      alert('Tạo nguyên liệu mới thành công!');
+      await ingredientService.update(id, payload);
+      alert('Cập nhật nguyên liệu thành công!');
       router.push('/ingredients');
     } catch (err: any) {
       setError(err.message);
@@ -65,6 +83,14 @@ export default function CreateIngredientPage() {
     }
   };
 
+  if (fetching) {
+    return (
+      <main className="p-4 sm:p-6 md:p-8 flex justify-center items-center h-full">
+        <p className="text-slate-500 font-medium">Đang tải...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto">
@@ -72,7 +98,7 @@ export default function CreateIngredientPage() {
           <Link href="/ingredients" className="p-2 rounded-full hover:bg-slate-200 text-slate-600 hover:text-slate-800 transition-colors mr-4">
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="text-3xl font-bold text-slate-800">Thêm Nguyên liệu mới</h1>
+          <h1 className="text-3xl font-bold text-slate-800">Chỉnh sửa Nguyên liệu</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
@@ -120,7 +146,7 @@ export default function CreateIngredientPage() {
 
           <div className="flex justify-end pt-4">
             <button type="submit" disabled={loading} className="px-6 py-3 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm">
-              {loading ? 'Đang lưu...' : 'Lưu Nguyên liệu'}
+              {loading ? 'Đang lưu...' : 'Cập nhật Nguyên liệu'}
             </button>
           </div>
         </form>

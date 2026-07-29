@@ -36,22 +36,20 @@ export default function AdminLayout({
 
   if (loading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-dark-bg text-dark-text-primary">
-        Đang tải dữ liệu người dùng...
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-600">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm font-medium">Đang tải dữ liệu...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    // SỬA LỖI LAYOUT:
-    // 1. Đổi min-h-screen thành h-screen để chiều cao không vượt quá màn hình.
-    // 2. Thêm overflow-hidden để ngăn cuộn ở cấp độ cao nhất.
-    <div className="flex h-screen bg-dark-bg text-dark-text-primary overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden">
       <Sidebar />
-      {/* 3. Cho phép chỉ khu vực main được cuộn */}
       <main className="flex-1 overflow-y-auto">
-        {/* 4. Thêm một div con để chứa padding, đảm bảo thanh cuộn không bị ảnh hưởng bởi padding */}
-        <div className="p-4 sm:p-6 md:p-8">
+        <div className="p-4 sm:p-6">
           {children}
         </div>
       </main>

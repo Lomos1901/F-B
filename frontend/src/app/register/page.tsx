@@ -39,73 +39,102 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="p-3 bg-dark-surface rounded-full border border-dark-border mb-4">
-            <Coffee className="text-brand-amber" size={32} />
+          <div className="p-3.5 bg-blue-50 rounded-2xl border border-blue-100 mb-4 shadow-sm">
+            <Coffee className="text-blue-600" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-dark-text-primary">Tạo tài khoản</h1>
-          <p className="text-dark-text-secondary">Thêm nhân viên mới vào hệ thống</p>
+          <h1 className="text-3xl font-bold text-slate-800">Tạo tài khoản</h1>
+          <p className="text-slate-500 text-sm mt-1">Thêm nhân viên mới vào hệ thống</p>
         </div>
 
-        <div className="bg-dark-surface p-8 rounded-lg border border-dark-border shadow-2xl shadow-black/20">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
           <form onSubmit={handleRegister} className="space-y-6">
             {/* Họ và tên */}
             <div>
-              <label htmlFor="fullName" className="text-sm font-medium text-dark-text-secondary">Họ và tên</label>
+              <label htmlFor="fullName" className="text-sm font-medium text-slate-700">Họ và tên</label>
               <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
-                <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Nguyễn Văn A"
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  placeholder="Nguyễn Văn A"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="text-sm font-medium text-dark-text-secondary">Email</label>
+              <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
-                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="nhanvien@samcoffee.vn"
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="nhanvien@samcoffee.vn"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                />
               </div>
             </div>
 
             {/* Mật khẩu */}
             <div>
-              <label htmlFor="password"  className="text-sm font-medium text-dark-text-secondary">Mật khẩu</label>
+              <label htmlFor="password" className="text-sm font-medium text-slate-700">Mật khẩu</label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
-                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="•••••••• (ít nhất 6 ký tự)"
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md focus:ring-2 focus:ring-brand-amber" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="•••••••• (ít nhất 6 ký tự)"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                />
               </div>
             </div>
 
             {/* Vai trò */}
             <div>
-              <label htmlFor="role" className="text-sm font-medium text-dark-text-secondary">Vai trò</label>
+              <label htmlFor="role" className="text-sm font-medium text-slate-700">Vai trò</label>
               <div className="relative mt-1">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-secondary" size={18} />
-                <select id="role" value={role} onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-md appearance-none focus:ring-2 focus:ring-brand-amber">
+                <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as UserRole)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 text-slate-800 rounded-xl appearance-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                >
                   <option value={UserRole.BARISTA}>Nhân viên Pha chế (Barista)</option>
                   <option value={UserRole.CASHIER}>Nhân viên Thu ngân (Cashier)</option>
                 </select>
               </div>
             </div>
 
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-xl border border-red-100">{error}</p>}
 
-            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-brand-amber text-black font-bold rounded-md hover:bg-brand-amber-dark disabled:opacity-50 transition-colors">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
               {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
               {!loading && <UserPlus size={18} />}
             </button>
           </form>
 
           <div className="text-center mt-6">
-            <p className="text-sm text-dark-text-secondary">
+            <p className="text-sm text-slate-500">
               Đã có tài khoản?{' '}
-              <Link href="/login" className="font-semibold text-brand-amber hover:underline">
+              <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
                 Đăng nhập
               </Link>
             </p>

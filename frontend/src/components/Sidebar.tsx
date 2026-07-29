@@ -23,16 +23,13 @@ const NavLink = ({ href, icon, children, isExpanded }: NavLinkProps) => {
       href={href}
       title={isExpanded ? undefined : children as string}
       className={`
-        relative flex items-center px-3 py-3 mx-2 my-1 rounded-xl font-medium transition-all duration-200 group
+        relative flex items-center px-3 py-2.5 mx-3 my-0.5 rounded-full font-medium transition-all duration-200 group text-[14px]
         ${isActive(href)
-          ? 'bg-brand-amber/10 text-brand-amber'
-          : 'text-dark-text-secondary hover:bg-dark-bg hover:text-dark-text-primary'
+          ? 'bg-blue-100 text-blue-700'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         }
       `}
     >
-      {isActive(href) && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-brand-amber rounded-r-full" />
-      )}
       <div className={`flex items-center justify-center flex-shrink-0 ${isExpanded ? 'mr-3' : 'mx-auto'}`}>
         {icon}
       </div>
@@ -64,18 +61,18 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        print:hidden relative flex flex-col transition-all duration-300 ease-in-out bg-dark-surface border-r border-dark-border z-20 shadow-sm
-        ${isExpanded ? 'w-64' : 'w-20'}
+        print:hidden relative flex flex-col transition-all duration-300 ease-in-out bg-white border-r border-slate-200 z-20
+        ${isExpanded ? 'w-[260px]' : 'w-[72px]'}
       `}
     >
-      {/* Header */}
-      <div className="h-20 flex items-center justify-between px-4 border-b border-dark-border relative">
+      {/* Header / Logo */}
+      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 relative">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-gradient-to-tr from-brand-amber to-yellow-400 flex items-center justify-center shadow-md">
-            <Coffee className="text-white" size={22} strokeWidth={2.5} />
+          <div className="w-9 h-9 flex-shrink-0 rounded-xl bg-blue-600 flex items-center justify-center">
+            <Coffee className="text-white" size={20} strokeWidth={2.5} />
           </div>
           {isExpanded && (
-            <h2 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight whitespace-nowrap">
+            <h2 className="text-[17px] font-extrabold text-slate-800 tracking-tight whitespace-nowrap">
               SẪM COFFEE
             </h2>
           )}
@@ -83,22 +80,22 @@ export default function Sidebar() {
         
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute -right-3.5 top-7 bg-white border border-dark-border rounded-full p-1 shadow-sm hover:shadow-md hover:bg-gray-50 text-dark-text-secondary transition-all z-30 focus:outline-none"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white border border-slate-200 rounded-full p-1 shadow-sm hover:shadow-md hover:bg-slate-50 text-slate-400 transition-all z-30 focus:outline-none"
         >
-          {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          {isExpanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
         </button>
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-hide flex flex-col gap-1">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-hide flex flex-col">
         {isManagement && (
           <>
             {/* 1. BÁN HÀNG & PHỤC VỤ */}
-            <div className="px-3 mb-2 mt-2">
+            <div className="px-5 mb-1.5 mt-1">
               {isExpanded ? (
-                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Bán hàng & Phục vụ</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bán hàng & Phục vụ</p>
               ) : (
-                <div className="w-6 h-px bg-dark-border mx-auto" />
+                <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
             <NavLink href="/dashboard" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Tổng quan</NavLink>
@@ -107,22 +104,22 @@ export default function Sidebar() {
             <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn</NavLink>
 
             {/* 2. QUẢN LÝ THỰC ĐƠN */}
-            <div className="px-3 mb-2 mt-6">
+            <div className="px-5 mb-1.5 mt-5">
               {isExpanded ? (
-                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Thực đơn</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Thực đơn</p>
               ) : (
-                <div className="w-6 h-px bg-dark-border mx-auto" />
+                <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
             <NavLink href="/products" icon={<ClipboardList size={20} />} isExpanded={isExpanded}>Món ăn & Đồ uống</NavLink>
             <NavLink href="/categories" icon={<Book size={20} />} isExpanded={isExpanded}>Danh mục Thực đơn</NavLink>
 
             {/* 3. QUẢN LÝ KHO BÃI */}
-            <div className="px-3 mb-2 mt-6">
+            <div className="px-5 mb-1.5 mt-5">
               {isExpanded ? (
-                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Kho bãi</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kho bãi</p>
               ) : (
-                <div className="w-6 h-px bg-dark-border mx-auto" />
+                <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
             <NavLink href="/ingredients" icon={<Box size={20} />} isExpanded={isExpanded}>Kho nguyên liệu</NavLink>
@@ -130,11 +127,11 @@ export default function Sidebar() {
             <NavLink href="/inventory-receipts" icon={<History size={20} />} isExpanded={isExpanded}>Lịch sử Phiếu kho</NavLink>
 
             {/* 4. VẬN HÀNH & NHÂN SỰ */}
-            <div className="px-3 mb-2 mt-6">
+            <div className="px-5 mb-1.5 mt-5">
               {isExpanded ? (
-                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Vận hành & Nhân sự</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Vận hành & Nhân sự</p>
               ) : (
-                <div className="w-6 h-px bg-dark-border mx-auto" />
+                <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
             <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Quản lý Nhân sự</NavLink>
@@ -143,11 +140,11 @@ export default function Sidebar() {
             <NavLink href="/alerts" icon={<Bell size={20} />} isExpanded={isExpanded}>Cảnh báo</NavLink>
 
             {/* 5. HỆ THỐNG */}
-            <div className="px-3 mb-2 mt-6">
+            <div className="px-5 mb-1.5 mt-5">
               {isExpanded ? (
-                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Hệ thống</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Hệ thống</p>
               ) : (
-                <div className="w-6 h-px bg-dark-border mx-auto" />
+                <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
             <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
@@ -156,11 +153,11 @@ export default function Sidebar() {
         
         {(!isManagement) && (
           <>
-            <div className="px-3 mb-2 mt-2">
+            <div className="px-5 mb-1.5 mt-1">
               {isExpanded ? (
-                <p className="text-[11px] font-bold text-dark-text-secondary/70 uppercase tracking-wider pl-2">Bán hàng & Phục vụ</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bán hàng & Phục vụ</p>
               ) : (
-                <div className="w-6 h-px bg-dark-border mx-auto" />
+                <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
 
@@ -182,26 +179,26 @@ export default function Sidebar() {
           </>
         )}
         
-        <div className="px-3 mb-2 mt-6">
+        <div className="px-5 mb-1.5 mt-5">
           {isExpanded ? (
-            <p className="text-xs font-bold text-dark-text-secondary/60 uppercase tracking-widest pl-2">Cá nhân</p>
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cá nhân</p>
           ) : (
-            <div className="w-6 h-px bg-dark-border mx-auto" />
+            <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
           )}
         </div>
         <NavLink href="/profile" icon={<UserCircle size={20} />} isExpanded={isExpanded}>Thông tin tài khoản</NavLink>
       </nav>
 
       {/* Footer / User Profile */}
-      <div className="p-4 border-t border-dark-border bg-dark-bg/50">
-        <div className={`flex items-center ${isExpanded ? 'gap-3' : 'justify-center'} mb-4`}>
-          <div className="w-10 h-10 flex-shrink-0 rounded-full bg-slate-200 flex items-center justify-center text-dark-text-primary font-bold shadow-inner">
+      <div className="p-3 border-t border-slate-100">
+        <div className={`flex items-center ${isExpanded ? 'gap-3' : 'justify-center'} mb-3 px-1`}>
+          <div className="w-9 h-9 flex-shrink-0 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
             {user.full_name?.charAt(0).toUpperCase() || 'U'}
           </div>
           {isExpanded && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-dark-text-primary truncate">{user.full_name}</p>
-              <p className="text-xs font-medium text-brand-amber capitalize truncate">{user.role.toLowerCase()}</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{user.full_name}</p>
+              <p className="text-xs font-medium text-blue-600 capitalize truncate">{user.role.toLowerCase()}</p>
             </div>
           )}
         </div>
@@ -209,7 +206,7 @@ export default function Sidebar() {
         <button 
           onClick={logout} 
           title={isExpanded ? undefined : 'Đăng xuất'}
-          className={`w-full flex items-center justify-center py-2.5 rounded-xl font-medium text-red-500 hover:bg-red-50 transition-colors group ${isExpanded ? 'gap-2' : ''}`}
+          className={`w-full flex items-center justify-center py-2 rounded-full font-medium text-red-500 hover:bg-red-50 transition-colors group text-sm ${isExpanded ? 'gap-2' : ''}`}
         >
           <LogOut size={18} className="group-hover:scale-110 transition-transform" />
           {isExpanded && <span>Đăng xuất</span>}

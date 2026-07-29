@@ -73,8 +73,8 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#FCF9F8]">
-        <Loader2 className="animate-spin text-[#FFB800]" size={48} />
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
       </div>
     );
   }
@@ -82,29 +82,29 @@ export default function SettingsPage() {
   if (!user || user.role !== 'OWNER') return null;
 
   return (
-    <div className="min-h-screen bg-[#FCF9F8] text-[#4B2C20] p-6 sm:p-10" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+    <div className="min-h-screen bg-slate-50 text-slate-800 p-6 sm:p-10">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Cài Đặt Quán</h1>
+        <h1 className="text-3xl font-bold text-slate-800 mb-8">Cài Đặt Quán</h1>
         
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <Building2 className="text-[#FFB800]" />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6 border-b border-slate-200 bg-slate-50/50">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Building2 className="text-blue-600" />
               Cấu hình Ngân Hàng nhận tiền
             </h2>
-            <p className="text-sm text-gray-500 mt-1">Thông tin này sẽ được dùng để tạo mã QR Chuyển khoản (VietQR) cho khách quét tại quầy POS.</p>
+            <p className="text-sm text-slate-500 mt-1">Thông tin này sẽ được dùng để tạo mã QR Chuyển khoản (VietQR) cho khách quét tại quầy POS.</p>
           </div>
 
           <div className="p-6 space-y-6">
             {/* Chọn Ngân Hàng */}
             <div>
-              <label className="block text-sm font-bold text-[#4B2C20] mb-2 flex items-center gap-2">
+              <label className="block text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
                 Ngân hàng
               </label>
               <select 
                 value={bankBin}
                 onChange={(e) => setBankBin(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FFB800] focus:border-transparent transition-all bg-white"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
               >
                 {BANKS.map(bank => (
                   <option key={bank.bin} value={bank.bin}>{bank.name}</option>
@@ -114,8 +114,8 @@ export default function SettingsPage() {
 
             {/* Số tài khoản */}
             <div>
-              <label className="block text-sm font-bold text-[#4B2C20] mb-2 flex items-center gap-2">
-                <CreditCard size={18} className="text-gray-400" />
+              <label className="block text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                <CreditCard size={18} className="text-slate-400" />
                 Số tài khoản
               </label>
               <input 
@@ -123,14 +123,14 @@ export default function SettingsPage() {
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9a-zA-Z]/g, ''))}
                 placeholder="Ví dụ: 123456789"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FFB800] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </div>
 
             {/* Tên chủ tài khoản */}
             <div>
-              <label className="block text-sm font-bold text-[#4B2C20] mb-2 flex items-center gap-2">
-                <User size={18} className="text-gray-400" />
+              <label className="block text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                <User size={18} className="text-slate-400" />
                 Tên chủ tài khoản
               </label>
               <input 
@@ -138,28 +138,28 @@ export default function SettingsPage() {
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value.toUpperCase())}
                 placeholder="Ví dụ: NGUYEN VAN A"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FFB800] focus:border-transparent transition-all uppercase"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all uppercase"
               />
             </div>
 
             {/* Demo QR */}
             {accountNumber && accountName && (
-              <div className="mt-8 p-6 bg-gray-50 rounded-2xl flex flex-col items-center justify-center border border-dashed border-gray-300">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Mã QR Xem trước</p>
+              <div className="mt-8 p-6 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-dashed border-slate-300">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Mã QR Xem trước</p>
                 <img 
                   src={`https://img.vietqr.io/image/${bankBin}-${accountNumber}-compact2.png?amount=50000&addInfo=Thanh toan don hang&accountName=${encodeURIComponent(accountName)}`}
                   alt="Demo QR"
-                  className="w-48 h-48 object-contain bg-white p-2 rounded-xl shadow-sm"
+                  className="w-48 h-48 object-contain bg-white p-2 rounded-xl border border-slate-200 shadow-sm"
                 />
               </div>
             )}
           </div>
 
-          <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+          <div className="p-6 border-t border-slate-200 bg-slate-50/50 flex justify-end">
             <button 
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-3 bg-[#4B2C20] hover:bg-[#3A2218] text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors disabled:opacity-50 shadow-sm"
             >
               {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
               Lưu cấu hình
