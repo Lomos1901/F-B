@@ -64,7 +64,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        relative flex flex-col transition-all duration-300 ease-in-out bg-dark-surface border-r border-dark-border z-20 shadow-sm
+        print:hidden relative flex flex-col transition-all duration-300 ease-in-out bg-dark-surface border-r border-dark-border z-20 shadow-sm
         ${isExpanded ? 'w-64' : 'w-20'}
       `}
     >

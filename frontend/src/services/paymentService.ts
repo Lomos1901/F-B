@@ -19,6 +19,14 @@ export const paymentService = {
     return res.json();
   },
 
+  async getBankInfo() {
+    const res = await fetch(`${API_URL}/bank-info`, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      throw new Error('Lỗi khi tải thông tin ngân hàng');
+    }
+    return res.json();
+  },
+
   async createPayment(orderId: string, amount: number, paymentMethodCode: string) {
     const res = await fetch(`${API_URL}`, {
       method: 'POST',

@@ -1,9 +1,10 @@
 'use client';
 
 import { useAuth } from '@/src/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Sidebar from '@/src/components/Sidebar';
+import { UserRole } from '@/src/enums/user-role.enum';
 
 export default function AdminLayout({
   children,
@@ -12,12 +13,26 @@ export default function AdminLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        const isBarista = user.role === UserRole.BARISTA;
+        const isCashier = user.role === UserRole.CASHIER;
+
+        const managementRoutes = ['/dashboard', '/users', '/receipts', '/products', '/categories', '/ingredients', '/ingredient-categories', '/inventory-receipts'];
+
+        if (isBarista && !pathname.startsWith('/kds')) {
+          router.replace('/kds');
+        } else if (isCashier && managementRoutes.some(route => pathname.startsWith(route))) {
+          router.replace('/pos');
+        }
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname]);
 
   if (loading || !user) {
     return (

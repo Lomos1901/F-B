@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { productService } from '@/src/services/productService';
 import { orderService } from '@/src/services/orderService';
-import { Plus, Minus, X, CheckCircle2, ShoppingBag, Coffee } from 'lucide-react';
+import { paymentService } from '@/src/services/paymentService';
+import { Plus, Minus, X, CheckCircle2, ShoppingBag, Coffee, QrCode } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // --- Interfaces ---
@@ -15,6 +16,7 @@ interface Product {
   image_url?: string;
   is_active?: boolean;
   categories?: { name: string };
+  category?: { name: string };
 }
 
 interface GroupedProducts {
@@ -28,6 +30,7 @@ interface CartItem extends Product {
 export default function QROrderPage() {
   const params = useParams();
   const tableNumber = params.tableNumber as string;
+  const router = useRouter();
 
   const [productsByCategory, setProductsByCategory] = useState<GroupedProducts>({});
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -38,29 +41,51 @@ export default function QROrderPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
 
+  // Payment states
+  const [paymentMethods, setPaymentMethods] = useState<{id: string, name: string, code: string}[]>([]);
+  const [selectedPaymentCode, setSelectedPaymentCode] = useState<string>('CASH');
+  const [bankInfo, setBankInfo] = useState<{bank_bin: string, account_number: string, account_name: string} | null>(null);
+  const [showBankQR, setShowBankQR] = useState(false);
+  const [finalOrderTotal, setFinalOrderTotal] = useState(0);
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchInitialData = async () => {
       try {
-        const productsData: Product[] = await productService.getAll();
+        const [productsRes, methodsRes, bankRes] = await Promise.all([
+          productService.getAll(),
+          paymentService.getPaymentMethods().catch(() => []),
+          paymentService.getBankInfo().catch(() => null)
+        ]);
+
+        const productsData: Product[] = Array.isArray(productsRes) ? productsRes : (productsRes.data || []);
+        
         const grouped = productsData.reduce((acc: GroupedProducts, product) => {
-          const categoryName = product.categories?.name || 'Khác';
+          const categoryName = (product.categories?.name || product.category?.name) || 'Khác';
           if (!acc[categoryName]) acc[categoryName] = [];
           acc[categoryName].push(product);
           return acc;
         }, {});
+        
         setProductsByCategory(grouped);
         const categories = Object.keys(grouped);
         if (categories.length > 0) {
           setActiveCategory(categories[0]);
         }
+
+        if (Array.isArray(methodsRes) && methodsRes.length > 0) {
+          setPaymentMethods(methodsRes);
+          setSelectedPaymentCode(methodsRes[0].code);
+        }
+        if (bankRes) setBankInfo(bankRes);
+
       } catch (err: any) {
-        setError('Không thể tải thực đơn. Vui lòng thử lại sau.');
-        toast.error('Không thể tải thực đơn. Vui lòng thử lại sau.');
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        toast.error('Không thể tải dữ liệu. Vui lòng thử lại sau.');
       } finally {
         setLoading(false);
       }
     };
-    if (tableNumber) fetchProducts();
+    if (tableNumber) fetchInitialData();
   }, [tableNumber]);
 
   const updateCart = (product: Product, quantity: number) => {
@@ -92,7 +117,15 @@ export default function QROrderPage() {
     try {
       const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price }));
       await orderService.createForCustomer(tableNumber, orderItems);
-      setOrderSuccess(true);
+      
+      const total = getTotalPrice();
+      setFinalOrderTotal(total);
+
+      if (selectedPaymentCode !== 'CASH' && bankInfo) {
+        setShowBankQR(true);
+      } else {
+        setOrderSuccess(true);
+      }
       setCart([]);
       setIsCartOpen(false);
     } catch (err: any) {
@@ -163,16 +196,34 @@ export default function QROrderPage() {
 
       {cart.length > 0 && (
         <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="mb-3">
+            <span className="text-xs text-gray-500 font-semibold mb-2 block uppercase tracking-wider">Chọn cách thanh toán</span>
+            <div className="grid grid-cols-2 gap-2">
+              {paymentMethods.map(method => (
+                <button
+                  key={method.id}
+                  onClick={() => setSelectedPaymentCode(method.code)}
+                  className={`py-2 px-3 text-sm font-bold rounded-xl border transition-all ${
+                    selectedPaymentCode === method.code 
+                      ? 'bg-[#4B2C20]/10 border-[#4B2C20] text-[#4B2C20]' 
+                      : 'bg-white border-gray-200 text-gray-600'
+                  }`}
+                >
+                  {method.name}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex justify-between items-center mb-4">
             <span className="text-[#1C1B1F] font-medium">Tổng cộng:</span>
             <span className="text-xl font-bold text-[#4B2C20]">{getTotalPrice().toLocaleString('vi-VN')} đ</span>
           </div>
           <button
             onClick={handleOrder}
-            disabled={isOrdering}
+            disabled={isOrdering || paymentMethods.length === 0}
             className="w-full bg-[#4B2C20] text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 hover:bg-[#3A2218] transition-colors"
           >
-            {isOrdering ? 'Đang gửi...' : 'Gửi đơn hàng'}
+            {isOrdering ? 'Đang xử lý...' : (selectedPaymentCode === 'CASH' ? 'Đặt món & Trả tiền mặt' : 'Đặt món & Chuyển khoản')}
           </button>
         </div>
       )}
@@ -183,6 +234,42 @@ export default function QROrderPage() {
     return <div className="flex justify-center items-center h-screen bg-[#FCF9F8] text-[#4B2C20]" style={{ fontFamily: 'Montserrat, sans-serif' }}>Đang tải thực đơn...</div>;
   }
   
+  if (showBankQR && bankInfo) {
+    return (
+      <div className="flex flex-col h-screen bg-[#FCF9F8] font-sans items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-sm text-center max-w-sm w-full border border-gray-100">
+          <QrCode size={48} className="mx-auto mb-4 text-[#FFB800]" />
+          <h2 className="text-2xl font-bold text-[#1C1B1F] mb-2">Chuyển khoản</h2>
+          <p className="text-gray-500 mb-6 text-sm">Quét mã QR dưới đây để thanh toán. Bếp sẽ bắt đầu làm món sau khi thu ngân nhận được tiền.</p>
+          
+          <div className="bg-gray-50 p-4 rounded-2xl mb-4 inline-block border border-gray-100">
+            <img 
+              src={`https://img.vietqr.io/image/${bankInfo.bank_bin}-${bankInfo.account_number}-compact2.jpg?amount=${finalOrderTotal}&addInfo=Thanh toan don ban ${tableNumber}&accountName=${encodeURIComponent(bankInfo.account_name)}`}
+              alt="VietQR"
+              className="w-56 h-56 object-contain rounded-xl shadow-sm"
+            />
+          </div>
+
+          <div className="mb-8">
+            <p className="text-sm font-semibold">{bankInfo.account_name}</p>
+            <p className="text-xs text-gray-500 mb-1">{bankInfo.account_number} - {bankInfo.bank_bin}</p>
+            <p className="text-xl font-bold text-[#FFB800]">{finalOrderTotal.toLocaleString('vi-VN')} đ</p>
+          </div>
+
+          <button 
+            onClick={() => {
+              setShowBankQR(false);
+              router.refresh();
+            }}
+            className="bg-[#4B2C20] text-white font-bold py-3 px-8 rounded-full hover:bg-[#3A2218] transition-colors w-full"
+          >
+            Đã chuyển xong
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (orderSuccess) {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-[#FCF9F8] text-center p-6" style={{ fontFamily: 'Montserrat, sans-serif' }}>
@@ -190,12 +277,15 @@ export default function QROrderPage() {
           <CheckCircle2 size={48} />
         </div>
         <h1 className="text-4xl font-bold text-[#1C1B1F] mb-4">Đặt hàng thành công!</h1>
-        <p className="text-gray-600 mb-8 text-lg">Đơn hàng của bạn đang được chuẩn bị.</p>
+        <p className="text-gray-600 mb-8 text-lg">Vui lòng thanh toán tiền mặt tại quầy (hoặc đưa cho nhân viên) để bếp bắt đầu làm món nhé.</p>
         <button 
-          onClick={() => setOrderSuccess(false)} 
+          onClick={() => {
+            setOrderSuccess(false);
+            router.refresh();
+          }} 
           className="border-2 border-[#4B2C20] text-[#4B2C20] font-bold py-3 px-8 rounded-full hover:bg-black/5 transition-colors"
         >
-          Đặt món mới
+          Trở về thực đơn
         </button>
       </div>
     );
