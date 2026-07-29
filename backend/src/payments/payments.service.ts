@@ -34,6 +34,22 @@ export class PaymentsService {
   async createPayment(createPaymentDto: CreatePaymentDto, cashierId?: string) {
     const { order_id, amount, payment_method_code, note } = createPaymentDto;
 
+    // 0. BẢO MẬT: Kiểm tra xem đơn hàng có phải đang ở trạng thái PENDING không
+    // Ngăn chặn spam gọi API thanh toán nhiều lần gây trừ kho lặp lại
+    const { data: orderData, error: checkOrderError } = await this.client
+      .from('orders')
+      .select('order_status(status_name)')
+      .eq('id', order_id)
+      .single();
+    
+    if (checkOrderError || !orderData) {
+      throw new BadRequestException('Không tìm thấy đơn hàng!');
+    }
+    
+    if (orderData.order_status?.status_name !== 'PENDING') {
+      throw new BadRequestException('Đơn hàng này đã được thanh toán hoặc không còn hợp lệ!');
+    }
+
     // 1. Lấy ID của phương thức thanh toán
     const { data: methodData, error: methodError } = await this.client
       .from('payment_methods')
@@ -75,9 +91,9 @@ export class PaymentsService {
       throw new InternalServerErrorException('Không thể lưu giao dịch thanh toán');
     }
 
-    // 4. Cập nhật trạng thái đơn hàng sang PAID
+    // 4. Cập nhật trạng thái đơn hàng sang PREPARING (Thay vì PAID để KDS có thể thấy đơn)
     try {
-      await this.ordersService.updateStatus(order_id, { status: 'PAID' });
+      await this.ordersService.updateStatus(order_id, { status: 'PREPARING' });
     } catch (err) {
       this.logger.error(`Thanh toán thành công nhưng cập nhật trạng thái đơn ${order_id} lỗi`, err);
       // Vẫn trả về thành công nhưng có thể cảnh báo log

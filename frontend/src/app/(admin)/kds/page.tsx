@@ -62,20 +62,14 @@ const OrderTicket = ({ order, onAction, actionText, isPending, icon }: { order: 
 };
 
 export default function KDSPage() {
-  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [preparingOrders, setPreparingOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'PENDING' | 'PREPARING'>('PENDING');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadOrders = async () => {
     try {
-      const [pending, preparing] = await Promise.all([
-        orderService.getOrdersByStatus('PENDING'),
-        orderService.getOrdersByStatus('PREPARING'),
-      ]);
-      setPendingOrders(pending);
+      const preparing = await orderService.getOrdersByStatus('PREPARING');
       setPreparingOrders(preparing);
     } catch (err: any) {
       setError(err.message);
@@ -99,8 +93,7 @@ export default function KDSPage() {
   const handleUpdateStatus = async (orderId: string, status: string, tableNumber: string) => {
     try {
       await orderService.updateStatus(orderId, status);
-      const statusText = status === 'PREPARING' ? 'bắt đầu làm' : 'đã hoàn thành';
-      toast.success(`Đã ${statusText} đơn hàng của bàn ${tableNumber}.`);
+      toast.success(`Đã hoàn thành đơn hàng của bàn ${tableNumber}.`);
       loadOrders();
     } catch (err: any) {
       toast.error(`Lỗi khi cập nhật trạng thái: ${err.message}`);
@@ -115,7 +108,7 @@ export default function KDSPage() {
     );
   }
 
-  if (error && pendingOrders.length === 0 && preparingOrders.length === 0) {
+  if (error && preparingOrders.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen bg-[#FCF9F8]">
         <div className="p-8 text-center text-red-600 bg-red-50 rounded-2xl max-w-md">
@@ -131,88 +124,41 @@ export default function KDSPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FCF9F8]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-      <header className="px-4 py-3 bg-[#FCF9F8] flex items-center justify-between border-b border-black/5 z-20 sticky top-0">
-        <h1 className="text-2xl font-bold text-[#4B2C20]">Pha chế</h1>
+      <header className="px-6 py-4 bg-[#FCF9F8] flex items-center justify-between border-b border-black/5 z-20 sticky top-0">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-[#4B2C20]">Màn hình Pha chế (KDS)</h1>
+          <span className="bg-[#FFB800]/20 text-[#4B2C20] px-4 py-1.5 rounded-full text-sm font-bold border border-[#FFB800]/30">
+            {preparingOrders.length} Đơn đang chờ
+          </span>
+        </div>
         <button 
           onClick={handleManualRefresh} 
-          className={`p-2 rounded-full hover:bg-black/5 text-[#4B2C20] transition-all ${isRefreshing ? 'opacity-50' : ''}`}
+          className={`p-2.5 rounded-full hover:bg-black/5 active:bg-black/10 text-[#4B2C20] transition-all border border-transparent hover:border-black/10 ${isRefreshing ? 'opacity-50' : ''}`}
           disabled={isRefreshing}
+          title="Làm mới dữ liệu"
         >
            <RefreshCcw size={24} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
       </header>
-      
-      {/* Mobile Segmented Button */}
-      <div className="sm:hidden px-4 py-3 shrink-0">
-        <div className="flex bg-[#F3EDF7] rounded-full p-1 border border-black/5">
-          <button 
-             className={`flex-1 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'PENDING' ? 'bg-[#FFB800]/20 text-[#4B2C20] shadow-sm' : 'text-[#4B2C20]/70'}`}
-             onClick={() => setActiveTab('PENDING')}
-          >
-            Chờ xác nhận ({pendingOrders.length})
-          </button>
-          <button 
-             className={`flex-1 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'PREPARING' ? 'bg-[#FFB800]/20 text-[#4B2C20] shadow-sm' : 'text-[#4B2C20]/70'}`}
-             onClick={() => setActiveTab('PREPARING')}
-          >
-            Đang làm ({preparingOrders.length})
-          </button>
-        </div>
-      </div>
 
-      <main className="flex-1">
-        <div className="flex sm:grid sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8">
-          
-          {/* Pending Column */}
-          <div className={`flex flex-col ${activeTab === 'PENDING' ? 'w-full' : 'hidden'} sm:flex`}>
-             <div className="hidden sm:flex items-center gap-2 mb-4 sticky top-0 bg-[#FCF9F8] z-10 py-1">
-               <h2 className="text-xl font-bold text-[#4B2C20]">Chờ xác nhận</h2>
-               <span className="bg-[#FFB800]/20 text-[#4B2C20] px-3 py-1 rounded-full text-sm font-medium border border-[#FFB800]/30">{pendingOrders.length}</span>
-             </div>
-             
-             <div className="space-y-4 pb-4">
-                {pendingOrders.length === 0 ? (
-                  <EmptyState />
-                ) : (
-                  pendingOrders.map(order => (
-                    <OrderTicket
-                      key={order.id}
-                      order={order}
-                      onAction={() => handleUpdateStatus(order.id, 'PREPARING', order.table_number)}
-                      actionText="Bắt đầu pha chế"
-                      isPending={true}
-                      icon={<CookingPot size={20} />}
-                    />
-                  ))
-                )}
-             </div>
-          </div>
-
-          {/* Preparing Column */}
-          <div className={`flex flex-col ${activeTab === 'PREPARING' ? 'w-full' : 'hidden'} sm:flex`}>
-             <div className="hidden sm:flex items-center gap-2 mb-4 sticky top-0 bg-[#FCF9F8] z-10 py-1">
-               <h2 className="text-xl font-bold text-[#4B2C20]">Đang làm</h2>
-               <span className="bg-emerald-500/20 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium border border-emerald-500/30">{preparingOrders.length}</span>
-             </div>
-             
-             <div className="space-y-4 pb-4">
-                {preparingOrders.length === 0 ? (
-                  <EmptyState />
-                ) : (
-                  preparingOrders.map(order => (
-                    <OrderTicket
-                      key={order.id}
-                      order={order}
-                      onAction={() => handleUpdateStatus(order.id, 'COMPLETED', order.table_number)}
-                      actionText="Hoàn thành"
-                      isPending={false}
-                      icon={<Check size={20} />}
-                    />
-                  ))
-                )}
-             </div>
-          </div>
-
+      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          {preparingOrders.length === 0 ? (
+            <div className="col-span-full pt-20">
+              <EmptyState />
+            </div>
+          ) : (
+            preparingOrders.map(order => (
+              <OrderTicket
+                key={order.id}
+                order={order}
+                onAction={() => handleUpdateStatus(order.id, 'PAID', order.table_number)}
+                actionText="Hoàn thành đơn này"
+                isPending={false}
+                icon={<Check size={20} />}
+              />
+            ))
+          )}
         </div>
       </main>
     </div>

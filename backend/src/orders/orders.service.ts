@@ -60,6 +60,20 @@ export class OrdersService {
     }
     const shiftId = currentShift.id;
 
+    // --- ANTI-SPAM LOGIC ---
+    // Kiểm tra xem bàn này có đang có đơn PENDING nào chưa thanh toán không
+    const { data: existingPendingOrders } = await this.client
+      .from('orders')
+      .select('id')
+      .eq('table_number', table_number)
+      .eq('status_id', pendingStatusId)
+      .limit(1);
+
+    if (existingPendingOrders && existingPendingOrders.length > 0) {
+      throw new BadRequestException(`Bàn ${table_number} đang có đơn hàng chưa thanh toán. Vui lòng thanh toán đơn trước đó tại quầy trước khi gọi thêm món mới!`);
+    }
+    // -----------------------
+
     const { data: orderData, error: orderError } = await this.client
       .from('orders')
       .insert({
@@ -69,39 +83,47 @@ export class OrdersService {
         created_by: createdByUserId,
         shift_id: shiftId
       })
-      .select('id')
+      .select()
       .single();
+
     if (orderError) {
-      this.logger.error('Lỗi khi tạo record order chính:', orderError);
-      throw new InternalServerErrorException('Lỗi hệ thống khi tạo đơn hàng.');
+      this.logger.error('Lỗi khi tạo đơn hàng:', orderError);
+      throw new InternalServerErrorException(
+        `Không thể tạo đơn hàng: ${orderError.message}`,
+      );
     }
+
     const newOrderId = orderData.id;
-    const orderDetailPayload = items.map((item) => ({
+
+    const orderDetailsPayload = items.map((item) => ({
       order_id: newOrderId,
       product_id: item.product_id,
       quantity: item.quantity,
     }));
-    const { data: orderDetailData, error: detailError } = await this.client
+
+    const { data: insertedDetails, error: detailError } = await this.client
       .from('order_detail')
-      .insert(orderDetailPayload)
-      .select('id');
+      .insert(orderDetailsPayload)
+      .select();
     if (detailError) {
-      await this.client.from('orders').delete().eq('id', newOrderId);
       this.logger.error('Lỗi khi tạo order_detail:', detailError);
+      await this.client.from('orders').delete().eq('id', newOrderId);
       throw new InternalServerErrorException(
-        'Lỗi hệ thống khi ghi chi tiết đơn hàng.',
+        `Không thể tạo chi tiết đơn hàng: ${detailError.message}`,
       );
     }
-    const preparationTasksPayload = orderDetailData.map((detail) => ({
+
+    const preparationTasksPayload = insertedDetails.map((detail) => ({
       order_detail_id: detail.id,
       task_status_id: todoTaskStatusId,
-      barista_id: null,
     }));
+
     const { error: taskError } = await this.client
       .from('preparation_tasks')
       .insert(preparationTasksPayload);
     if (taskError)
       this.logger.error('Lỗi khi tạo preparation_tasks:', taskError);
+
     return {
       message: `Đơn hàng cho bàn ${table_number} đã được ghi nhận.`,
       orderId: newOrderId,
@@ -124,9 +146,10 @@ export class OrdersService {
       );
     }
 
-    if (newStatusName === 'PAID') {
+    // NÂNG CẤP: Trừ kho ngay khi đơn hàng chuyển sang PREPARING (Đã thanh toán)
+    if (newStatusName === 'PREPARING') {
       try {
-        this.logger.log(`Đơn hàng ${id} đã thanh toán. Bắt đầu trừ kho...`);
+        this.logger.log(`Đơn hàng ${id} bắt đầu pha chế (Đã thanh toán). Bắt đầu trừ kho...`);
         await this.deductStockForOrder(id);
       } catch (deductionError) {
         this.logger.error(
