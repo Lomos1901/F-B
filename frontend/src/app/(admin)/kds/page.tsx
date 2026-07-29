@@ -31,20 +31,20 @@ const OrderTicket = ({ order, onAction, actionText, isPending, icon }: { order: 
 
   const borderColor = isPending ? 'border-l-amber-500' : 'border-l-blue-500';
   const buttonClass = isPending 
-    ? 'bg-[#FFB800]/10 text-[#4B2C20] hover:bg-[#FFB800]/20 focus:ring-[#4B2C20]' 
+    ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 focus:ring-blue-600' 
     : 'bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 focus:ring-emerald-700';
 
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 border-l-[4px] ${borderColor} flex flex-col shadow-sm`}>
-      <div className="p-4 flex justify-between items-center border-b border-black/5">
-        <h3 className="text-xl font-bold text-[#4B2C20]">Bàn {order.table_number}</h3>
-        <span className="text-xs font-medium text-[#4B2C20] bg-[#F3EDF7] px-3 py-1.5 rounded-full">{timeAgo}</span>
+    <div className={`bg-white rounded-2xl border border-slate-200 border-l-[4px] ${borderColor} flex flex-col shadow-sm`}>
+      <div className="p-4 flex justify-between items-center border-b border-slate-100">
+        <h3 className="text-xl font-bold text-slate-800">Bàn {order.table_number}</h3>
+        <span className="text-xs font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full">{timeAgo}</span>
       </div>
       <div className="p-4 flex-grow space-y-3">
         {order.order_detail.map((item, index) => (
           <div key={index} className="flex justify-between items-center text-sm">
-            <span className="text-gray-700 font-medium">{item.products?.name || 'Sản phẩm không xác định'}</span>
-            <span className="font-bold text-[#4B2C20] bg-[#F3EDF7] rounded-full px-2.5 py-0.5">x{item.quantity}</span>
+            <span className="text-slate-700 font-medium">{item.products?.name || 'Sản phẩm không xác định'}</span>
+            <span className="font-bold text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">x{item.quantity}</span>
           </div>
         ))}
       </div>
@@ -102,15 +102,15 @@ export default function KDSPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-[#FCF9F8]">
-        <Loader2 size={48} className="animate-spin text-[#FFB800]" />
+      <div className="flex justify-center items-center h-screen bg-slate-50">
+        <Loader2 size={48} className="animate-spin text-blue-600" />
       </div>
     );
   }
 
   if (error && preparingOrders.length === 0) {
     return (
-      <div className="flex justify-center items-center h-screen bg-[#FCF9F8]">
+      <div className="flex justify-center items-center h-screen bg-slate-50">
         <div className="p-8 text-center text-red-600 bg-red-50 rounded-2xl max-w-md">
           <p className="font-semibold mb-2">Lỗi tải dữ liệu</p>
           <p className="text-sm">{error}</p>
@@ -123,17 +123,17 @@ export default function KDSPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FCF9F8]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-      <header className="px-6 py-4 bg-[#FCF9F8] flex items-center justify-between border-b border-black/5 z-20 sticky top-0">
+    <div className="min-h-screen flex flex-col bg-slate-50" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+      <header className="px-6 py-4 bg-white flex items-center justify-between border-b border-slate-200 z-20 sticky top-0 shadow-sm">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-[#4B2C20]">Màn hình Pha chế (KDS)</h1>
-          <span className="bg-[#FFB800]/20 text-[#4B2C20] px-4 py-1.5 rounded-full text-sm font-bold border border-[#FFB800]/30">
+          <h1 className="text-2xl font-bold text-slate-800">Màn hình Pha chế (KDS)</h1>
+          <span className="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-bold border border-blue-200">
             {preparingOrders.length} Đơn đang chờ
           </span>
         </div>
         <button 
           onClick={handleManualRefresh} 
-          className={`p-2.5 rounded-full hover:bg-black/5 active:bg-black/10 text-[#4B2C20] transition-all border border-transparent hover:border-black/10 ${isRefreshing ? 'opacity-50' : ''}`}
+          className={`p-2.5 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-600 transition-all border border-transparent hover:border-slate-200 ${isRefreshing ? 'opacity-50' : ''}`}
           disabled={isRefreshing}
           title="Làm mới dữ liệu"
         >

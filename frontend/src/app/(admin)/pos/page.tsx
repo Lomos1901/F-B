@@ -237,24 +237,24 @@ export default function KiotVietPOSPage() {
   }, [products, activeCategoryId, searchTerm]);
 
   if (hasActiveShift === null || loadingMenu) {
-    return <div className="flex justify-center items-center h-screen bg-[#F4F1ED]"><Loader2 className="animate-spin text-[#4B2C20]" size={40} /></div>;
+    return <div className="flex justify-center items-center h-screen bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
   }
 
   if (hasActiveShift === false) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-[#F4F1ED] p-4 font-sans text-[#4B2C20]">
-        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center border border-[#E5E5E5]">
-          <Clock size={48} className="mx-auto mb-4 text-[#FFB800]" />
+      <div className="flex flex-col justify-center items-center h-screen bg-slate-50 p-4 font-sans text-slate-800">
+        <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-md text-center border border-slate-200">
+          <Clock size={48} className="mx-auto mb-4 text-blue-600" />
           <h2 className="text-2xl font-bold mb-2">Mở Ca Làm Việc</h2>
-          <p className="text-sm text-gray-500 mb-6">Nhập số tiền mặt có trong két để bắt đầu bán hàng.</p>
+          <p className="text-sm text-slate-500 mb-6">Nhập số tiền mặt có trong két để bắt đầu bán hàng.</p>
           <form onSubmit={handleOpenShift}>
             <input 
               type="number" value={startingCash} onChange={(e) => setStartingCash(e.target.value)}
               placeholder="0 đ"
-              className="w-full p-3 mb-6 bg-gray-50 border border-gray-300 text-xl font-bold text-center rounded-lg outline-none focus:border-[#4B2C20] focus:ring-1 focus:ring-[#4B2C20]"
+              className="w-full p-3 mb-6 bg-slate-50 border border-slate-200 text-xl font-bold text-center rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required min="0" autoFocus
             />
-            <button type="submit" disabled={openingShift} className="w-full py-3 bg-[#4B2C20] text-white font-bold rounded-lg hover:bg-[#3A2218] transition-colors flex justify-center items-center gap-2">
+            <button type="submit" disabled={openingShift} className="w-full py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-colors flex justify-center items-center gap-2">
               {openingShift ? <Loader2 className="animate-spin"/> : 'XÁC NHẬN MỞ CA'}
             </button>
           </form>
@@ -265,12 +265,12 @@ export default function KiotVietPOSPage() {
 
   return (
     <>
-    <div className="flex flex-col h-screen overflow-hidden bg-[#F0F2F5] font-sans text-gray-800 print:hidden">
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-100 font-sans text-slate-800 print:hidden">
       
-      {/* 1. TOP NAVBAR (Compact, Utilitarian) */}
-      <header className="h-14 bg-[#4B2C20] text-white flex items-center justify-between px-4 shrink-0 shadow-sm z-10">
+      {/* 1. TOP NAVBAR */}
+      <header className="h-14 bg-blue-600 text-white flex items-center justify-between px-4 shrink-0 shadow-sm z-10">
         <div className="flex items-center gap-6">
-          <h1 className="text-lg font-bold tracking-wider text-[#FFB800]">SẪM POS</h1>
+          <h1 className="text-lg font-bold tracking-wider">SẪM POS</h1>
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
@@ -282,16 +282,16 @@ export default function KiotVietPOSPage() {
           </div>
         </div>
 
-        <div className="flex bg-black/20 rounded-lg p-1 mx-4">
+        <div className="flex bg-white/15 rounded-lg p-1 mx-4">
           <button 
             onClick={() => setActiveTab('MENU')}
-            className={`px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${activeTab === 'MENU' ? 'bg-white text-[#4B2C20] shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+            className={`px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${activeTab === 'MENU' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
           >
             <UtensilsCrossed size={16} /> Thực Đơn
           </button>
           <button 
             onClick={() => { setActiveTab('TABLES'); fetchTables(); }}
-            className={`px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${activeTab === 'TABLES' ? 'bg-white text-[#4B2C20] shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+            className={`px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${activeTab === 'TABLES' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
           >
             <LayoutGrid size={16} /> Phòng / Bàn
           </button>
@@ -320,7 +320,7 @@ export default function KiotVietPOSPage() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* LEFT: PRODUCTS / TABLES */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#F4F1ED]">
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
           
           {activeTab === 'MENU' ? (
             <>
@@ -329,7 +329,7 @@ export default function KiotVietPOSPage() {
                 <button
                   onClick={() => setActiveCategoryId('ALL')}
                   className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                    activeCategoryId === 'ALL' ? 'border-[#4B2C20] text-[#4B2C20] bg-[#4B2C20]/5' : 'border-transparent text-gray-600 hover:bg-gray-50'
+                    activeCategoryId === 'ALL' ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   Tất cả
@@ -339,7 +339,7 @@ export default function KiotVietPOSPage() {
                     key={cat.id}
                     onClick={() => setActiveCategoryId(cat.id)}
                     className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                      activeCategoryId === cat.id ? 'border-[#4B2C20] text-[#4B2C20] bg-[#4B2C20]/5' : 'border-transparent text-gray-600 hover:bg-gray-50'
+                      activeCategoryId === cat.id ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     {cat.name}
@@ -350,14 +350,14 @@ export default function KiotVietPOSPage() {
               {/* Products Grid */}
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 {loadingMenu ? (
-                  <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-[#FFB800] w-8 h-8"/></div>
+                  <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 w-8 h-8"/></div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-max">
                     {filteredProducts.map(prod => (
                       <button
                         key={prod.id}
                         onClick={() => addToCart(prod)}
-                        className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-[#4B2C20]/30 transition-all active:scale-95 flex flex-col h-[140px]"
+                        className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-blue-300 transition-all active:scale-95 flex flex-col h-[140px]"
                       >
                         <div className="h-20 bg-gray-100 flex-shrink-0 w-full overflow-hidden">
                           {prod.image_url ? (
@@ -369,7 +369,7 @@ export default function KiotVietPOSPage() {
                           )}
                         </div>
                         <div className="p-2 flex flex-col justify-between flex-1 text-left">
-                          <p className="text-[#4B2C20] font-bold text-xs">{prod.price.toLocaleString('vi-VN')} đ</p>
+                          <p className="text-blue-600 font-bold text-xs">{prod.price.toLocaleString('vi-VN')} đ</p>
                           <h3 className="text-[11px] font-semibold text-gray-800 leading-tight line-clamp-2">{prod.name}</h3>
                         </div>
                       </button>
@@ -379,7 +379,7 @@ export default function KiotVietPOSPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 overflow-y-auto p-6 bg-[#F4F1ED]">
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
               {Array.from(new Set(tables.map(t => t.zone))).map(zone => (
                 <div key={zone} className="mb-8">
                   <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-300">{zone}</h3>
@@ -391,10 +391,10 @@ export default function KiotVietPOSPage() {
                           setSelectedTableName(table.name);
                           if (table.status === 'AVAILABLE') setActiveTab('MENU');
                         }}
-                        className={`relative flex flex-col p-3 rounded-xl border shadow-sm transition-all h-28 ${
-                          selectedTableName === table.name ? 'ring-2 ring-offset-2 ring-[#4B2C20]' : ''
+                         className={`relative flex flex-col p-3 rounded-xl border shadow-sm transition-all h-28 ${
+                          selectedTableName === table.name ? 'ring-2 ring-offset-2 ring-blue-600' : ''
                         } ${
-                          table.status === 'AVAILABLE' ? 'bg-white border-gray-200 hover:border-[#4B2C20]/50' : 
+                          table.status === 'AVAILABLE' ? 'bg-white border-slate-200 hover:border-blue-400' : 
                           table.status === 'OCCUPIED' ? 'bg-red-50 border-red-200 text-red-900' : 
                           'bg-yellow-50 border-yellow-200 text-yellow-900 animate-pulse'
                         }`}
@@ -432,7 +432,7 @@ export default function KiotVietPOSPage() {
           
           {/* Cart Header */}
           <div className="h-12 border-b border-gray-200 flex items-center justify-between px-3 bg-gray-50/50">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#4B2C20] cursor-pointer hover:bg-black/5 px-2 py-1 rounded transition-colors" onClick={() => setActiveTab('TABLES')}>
+            <div className="flex items-center gap-2 text-sm font-semibold text-blue-700 cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors" onClick={() => setActiveTab('TABLES')}>
               <User size={16} /> {selectedTableName} <ChevronDown size={14} className="opacity-70" />
             </div>
             {cart.length > 0 && (
@@ -486,7 +486,7 @@ export default function KiotVietPOSPage() {
                           </button>
                         </div>
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-[#4B2C20] text-[13px]">
+                      <td className="py-2 px-3 text-right font-bold text-blue-600 text-[13px]">
                         {(item.product.price * item.quantity).toLocaleString('vi-VN')}
                       </td>
                     </tr>
@@ -505,7 +505,7 @@ export default function KiotVietPOSPage() {
             
             <div className="flex justify-between items-center mb-3">
               <span className="text-sm font-bold text-gray-800">KHÁCH CẦN TRẢ</span>
-              <span className="text-xl font-bold text-[#FFB800]">{cartTotal.toLocaleString('vi-VN')}</span>
+              <span className="text-xl font-bold text-blue-600">{cartTotal.toLocaleString('vi-VN')}</span>
             </div>
 
             <div className="mb-4">
@@ -515,9 +515,9 @@ export default function KiotVietPOSPage() {
                   <button
                     key={method.id}
                     onClick={() => setPaymentMethodCode(method.code)}
-                    className={`py-2 px-3 text-sm font-bold rounded-md border transition-all ${
+                    className={`py-2 px-3 text-sm font-bold rounded-lg border transition-all ${
                       paymentMethodCode === method.code 
-                        ? 'bg-[#4B2C20]/10 border-[#4B2C20] text-[#4B2C20]' 
+                        ? 'bg-blue-50 border-blue-600 text-blue-700' 
                         : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
@@ -530,9 +530,9 @@ export default function KiotVietPOSPage() {
             <button 
               onClick={handleCheckoutClick}
               disabled={cart.length === 0 || isProcessingOrder}
-              className="w-full h-14 bg-[#4B2C20] hover:bg-[#3A2218] disabled:bg-gray-300 text-[#FFB800] disabled:text-gray-500 font-bold text-lg rounded-md flex justify-center items-center gap-2 transition-colors shadow-sm"
+              className="w-full h-14 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white disabled:text-gray-500 font-bold text-lg rounded-xl flex justify-center items-center gap-2 transition-colors shadow-sm"
             >
-              {isProcessingOrder ? <Loader2 className="animate-spin text-[#FFB800]" /> : (
+              {isProcessingOrder ? <Loader2 className="animate-spin text-white" /> : (
                 <>THANH TOÁN <span className="text-sm font-normal text-white/70">(F9)</span></>
               )}
             </button>
@@ -551,8 +551,8 @@ export default function KiotVietPOSPage() {
       {/* QR Code Modal for Bank Transfer */}
       {showQrModal && bankInfo && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 text-center shadow-2xl w-[360px] animate-in zoom-in-95 duration-200">
-            <h3 className="font-bold text-xl text-[#4B2C20] mb-2">Chuyển khoản</h3>
+          <div className="bg-white rounded-2xl p-6 text-center shadow-2xl w-[360px] animate-in zoom-in-95 duration-200">
+            <h3 className="font-bold text-xl text-slate-800 mb-2">Chuyển khoản</h3>
             <p className="text-gray-500 text-sm mb-4">Vui lòng yêu cầu khách quét mã QR dưới đây</p>
             
             <div className="bg-gray-50 p-4 rounded-lg mb-4 flex justify-center">
@@ -566,7 +566,7 @@ export default function KiotVietPOSPage() {
             <div className="mb-6 space-y-1">
               <p className="text-sm font-semibold">{bankInfo.account_name}</p>
               <p className="text-xs text-gray-500">{bankInfo.account_number} - Ngân hàng {bankInfo.bank_bin}</p>
-              <p className="text-lg font-bold text-[#FFB800] mt-2">{cartTotal.toLocaleString('vi-VN')} đ</p>
+              <p className="text-lg font-bold text-blue-600 mt-2">{cartTotal.toLocaleString('vi-VN')} đ</p>
             </div>
 
             <div className="flex gap-3">
@@ -579,7 +579,7 @@ export default function KiotVietPOSPage() {
               <button 
                 onClick={executeCheckout} 
                 disabled={isProcessingOrder}
-                className="flex-1 py-3 bg-[#4B2C20] text-white rounded-lg font-bold hover:bg-[#3A2218] transition-colors disabled:bg-gray-400"
+                className="flex-1 py-3 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-colors disabled:bg-gray-400"
               >
                 {isProcessingOrder ? 'Đang xử lý...' : 'Đã nhận tiền'}
               </button>
