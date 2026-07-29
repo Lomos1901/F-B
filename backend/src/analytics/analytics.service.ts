@@ -47,13 +47,20 @@ export class AnalyticsService {
       );
     if (!allProducts) return [];
 
-    const { data: paidStatus, error: statusError } = await this.client
+    const { data: preparingStatus } = await this.client
       .from('order_status')
       .select('id')
-      .eq('status_name', 'PAID')
+      .eq('status_name', 'PREPARING')
       .single();
-    if (statusError || !paidStatus)
-      throw new InternalServerErrorException('Không tìm thấy status PAID.');
+    const { data: completedStatus } = await this.client
+      .from('order_status')
+      .select('id')
+      .eq('status_name', 'COMPLETED')
+      .single();
+    
+    const paidStatusIds = [preparingStatus?.id, completedStatus?.id].filter(Boolean);
+    if (paidStatusIds.length === 0)
+      throw new InternalServerErrorException('Không tìm thấy status PREPARING/COMPLETED.');
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -63,7 +70,7 @@ export class AnalyticsService {
     const { data: todayOrders, error: ordersError } = await this.client
       .from('orders')
       .select('id')
-      .eq('status_id', paidStatus.id)
+      .in('status_id', paidStatusIds)
       .gte('updated_at', todayStart.toISOString())
       .lte('updated_at', todayEnd.toISOString());
 

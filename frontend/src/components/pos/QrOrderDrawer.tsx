@@ -289,7 +289,20 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                     </button>
                   )}
                   <div className="grid grid-cols-2 gap-3">
-                    <button className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50">
+                    <button 
+                      onClick={() => {
+                        if (onPrintReceipt && selectedOrder) {
+                          onPrintReceipt({
+                            cart: selectedOrder.order_detail.map(d => ({ product: d.products, quantity: d.quantity })),
+                            total: selectedOrder.total_price,
+                            orderId: selectedOrder.id,
+                            table: selectedOrder.table_number,
+                            time: new Date().toLocaleString('vi-VN')
+                          });
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50"
+                    >
                       <Printer size={18} /> In bill
                     </button>
                     <button 

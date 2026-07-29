@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { productService } from '@/src/services/productService';
 import { categoryService } from '@/src/services/categoryService';
 import { orderService } from '@/src/services/orderService';
 import { paymentService } from '@/src/services/paymentService';
 import { shiftService } from '@/src/services/shiftService';
 import { tableService, TableInfo } from '@/src/services/tableService';
-import { Loader2, Bell, Search, Minus, Plus, Trash2, CheckCircle, Clock, User, LogOut, ChevronDown, Coffee, LayoutGrid, UtensilsCrossed } from 'lucide-react';
+import { useAuth } from '@/src/context/AuthContext';
+import { Loader2, Bell, Search, Minus, Plus, Trash2, X, Clock, User, ChevronDown, Coffee, LayoutGrid, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'react-toastify';
 import QrOrderDrawer from '@/src/components/pos/QrOrderDrawer';
 
@@ -31,6 +32,9 @@ interface CartItem {
 }
 
 export default function KiotVietPOSPage() {
+  const { user } = useAuth();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   // === 1. SHIFT & GLOBAL STATE ===
   const [hasActiveShift, setHasActiveShift] = useState<boolean | null>(null);
   const [openingShift, setOpeningShift] = useState(false);
@@ -87,6 +91,22 @@ export default function KiotVietPOSPage() {
     const interval = setInterval(fetchTables, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  // === 7. KEYBOARD SHORTCUTS ===
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F3') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'F9') {
+        e.preventDefault();
+        handleCheckoutClick();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
 
   useEffect(() => {
     shiftService.getCurrentShift()
@@ -254,6 +274,7 @@ export default function KiotVietPOSPage() {
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
+              ref={searchInputRef}
               type="text" placeholder="F3 Tìm hàng hóa..." 
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
               className="w-[300px] h-9 bg-white/10 border border-white/20 rounded-md pl-9 pr-3 text-sm text-white placeholder-gray-300 outline-none focus:bg-white focus:text-gray-900 focus:placeholder-gray-500 transition-colors"
@@ -290,7 +311,7 @@ export default function KiotVietPOSPage() {
           </button>
           <div className="w-px h-6 bg-white/20 mx-1"></div>
           <button className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-md transition-colors text-sm">
-            <User size={16} /> Thu Ngân 1 <ChevronDown size={14} className="opacity-70" />
+            <User size={16} /> {user?.full_name || 'Thu Ngân'} <ChevronDown size={14} className="opacity-70" />
           </button>
         </div>
       </header>
@@ -639,15 +660,5 @@ export default function KiotVietPOSPage() {
       </>
     )}
     </>
-  );
-}
-
-// Icon helper missing from lucide-react standard imports in this file
-function XIcon(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={props.size||24} height={props.size||24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <line x1="18" y1="6" x2="6" y2="18"></line>
-      <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
   );
 }

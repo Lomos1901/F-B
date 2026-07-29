@@ -177,7 +177,8 @@ export class OrdersService {
     endDate.setHours(23, 59, 59, 999);
     const endOfDay = endDate.toISOString();
 
-    const statusId = await this._getStatusId('PAID', 'order_status');
+    const preparingStatusId = await this._getStatusId('PREPARING', 'order_status');
+    const completedStatusId = await this._getStatusId('COMPLETED', 'order_status');
 
     const { data, error } = await this.client
       .from('orders')
@@ -187,7 +188,7 @@ export class OrdersService {
         payments ( id, amount, payment_methods (name) ),
         order_detail ( quantity, products ( name, price ) )
       `)
-      .eq('status_id', statusId)
+      .in('status_id', [preparingStatusId, completedStatusId])
       .gte('created_at', startOfDay)
       .lte('created_at', endOfDay)
       .order('created_at', { ascending: false });

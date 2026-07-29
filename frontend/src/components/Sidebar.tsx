@@ -138,6 +138,7 @@ export default function Sidebar() {
               )}
             </div>
             <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Quản lý Nhân sự</NavLink>
+            <NavLink href="/shifts" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Ca làm việc</NavLink>
             <NavLink href="/shift-history" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Lịch sử Ca</NavLink>
             <NavLink href="/alerts" icon={<Bell size={20} />} isExpanded={isExpanded}>Cảnh báo</NavLink>
 
@@ -175,7 +176,7 @@ export default function Sidebar() {
               <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn</NavLink>
             )}
 
-            {(user.role === UserRole.CASHIER || user.role === UserRole.OWNER || user.role === UserRole.MANAGER) && (
+            {user.role === UserRole.CASHIER && (
               <NavLink href="/shifts" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Ca làm việc</NavLink>
             )}
           </>
