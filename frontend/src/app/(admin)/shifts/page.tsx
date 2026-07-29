@@ -26,6 +26,7 @@ export default function ShiftsPage() {
   const [notes, setNotes] = useState<string>('');
   const [processing, setProcessing] = useState(false);
   const [closedShiftResult, setClosedShiftResult] = useState<any>(null);
+  const [confirmCloseModal, setConfirmCloseModal] = useState(false);
 
   const loadCurrentShift = async () => {
     setLoading(true);
@@ -59,8 +60,11 @@ export default function ShiftsPage() {
 
   const handleCloseShift = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!window.confirm('Bạn có chắc chắn muốn chốt ca không? Hành động này sẽ khóa ca và bàn giao tiền.')) return;
-    
+    setConfirmCloseModal(true);
+  };
+
+  const executeCloseShift = async () => {
+    setConfirmCloseModal(false);
     setProcessing(true);
     try {
       const result = await shiftService.closeShift(currentShift.id, Number(endingCash), notes);
@@ -281,6 +285,34 @@ export default function ShiftsPage() {
           {/* Hidden receipt */}
           <div className="hidden">
             <ShiftReceipt ref={printRef} shift={closedShiftResult} />
+          </div>
+        </div>
+      )}
+      {/* Modal Chốt Ca */}
+      {confirmCloseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl p-6 text-center shadow-2xl max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LockKeyhole size={32} className="text-red-600" />
+            </div>
+            <h3 className="font-bold text-xl text-slate-800 mb-2">Chốt ca làm việc?</h3>
+            <p className="text-slate-500 mb-6">Bạn có chắc chắn muốn chốt ca không? Hành động này sẽ khóa ca và bàn giao tiền cho người sau.</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmCloseModal(false)}
+                disabled={processing}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+              >
+                Hủy
+              </button>
+              <button 
+                onClick={executeCloseShift}
+                disabled={processing}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex justify-center items-center gap-2"
+              >
+                {processing ? <Loader2 className="animate-spin" size={18} /> : 'Đồng ý chốt'}
+              </button>
+            </div>
           </div>
         </div>
       )}
