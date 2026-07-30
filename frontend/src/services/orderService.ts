@@ -20,12 +20,12 @@ export const orderService = {
   /**
    * API cho khách hàng tạo đơn hàng.
    */
-  async createForCustomer(tableNumber: string, items: any[]) {
+  async createForCustomer(tableNumber: string, items: any[], note?: string) {
     const res = await fetch(`${API_URL}/create-for-customer`, {
       method: 'POST',
       // API này là public, không cần Auth Header
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table_number: tableNumber, items }),
+      body: JSON.stringify({ table_number: tableNumber, items, note }),
     });
     if (!res.ok) {
       const error = await res.json();

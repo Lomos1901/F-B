@@ -116,7 +116,8 @@ export default function QROrderPage() {
     setError('');
     try {
       const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price }));
-      await orderService.createForCustomer(tableNumber, orderItems);
+      const noteStr = `Khách báo: ${selectedPaymentCode === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}`;
+      await orderService.createForCustomer(tableNumber, orderItems, noteStr);
       
       const total = getTotalPrice();
       setFinalOrderTotal(total);
@@ -351,32 +352,32 @@ export default function QROrderPage() {
           {categories.map(categoryName => (
             <section key={categoryName} id={`category-${categoryName}`} className="mb-10 pt-4 scroll-mt-[130px]">
               <h2 className="text-xl font-bold text-slate-800 mb-5 pl-3 border-l-4 border-blue-600">{categoryName}</h2>
-              {/* 1 col mobile, 2 col sm, 3 col md/lg */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+              {/* 2 col mobile, 3 col sm, 4 col md/lg */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {productsByCategory[categoryName].map(product => {
                   const quantity = getCartItemQuantity(product.id);
                   const isOutOfStock = product.is_active === false;
 
                   return (
-                    <div key={product.id} className={`bg-white rounded-2xl p-4 border border-slate-200 flex flex-col gap-3 transition-all duration-300 ${isOutOfStock ? 'opacity-60 grayscale-[0.3] cursor-not-allowed shadow-none' : 'shadow-sm hover:-translate-y-1 hover:shadow-md'}`}>
-                      <div className="flex items-start gap-4">
-                        <div className="relative">
+                    <div key={product.id} className={`bg-white rounded-2xl p-2 sm:p-3 border border-slate-200 flex flex-col gap-2 transition-all duration-300 ${isOutOfStock ? 'opacity-60 grayscale-[0.3] cursor-not-allowed shadow-none' : 'shadow-sm hover:-translate-y-1 hover:shadow-md'}`}>
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="relative w-full aspect-square">
                           <img 
                             src={product.image_url || '/placeholder.svg'} 
                             alt={product.name} 
-                            className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-100"
+                            className="w-full h-full rounded-xl object-cover bg-slate-50 border border-slate-100"
                           />
                           {isOutOfStock && (
                             <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-xl"></div>
                           )}
                         </div>
-                        <div className="flex-1 flex flex-col min-h-[96px]">
-                          <h3 className="font-bold text-slate-800 text-[15px] leading-snug mb-1.5">{product.name}</h3>
-                          <p className="text-[15px] font-bold text-blue-600 mt-auto">{product.price.toLocaleString('vi-VN')} đ</p>
+                        <div className="flex flex-col w-full text-center">
+                          <h3 className="font-bold text-slate-800 text-[13px] sm:text-[14px] leading-tight line-clamp-2 h-9 mt-1">{product.name}</h3>
+                          <p className="text-[14px] sm:text-[15px] font-bold text-blue-600 mt-1">{product.price.toLocaleString('vi-VN')} đ</p>
                         </div>
                       </div>
                       
-                      <div className="pt-2 border-t border-slate-100 mt-1">
+                      <div className="pt-2 border-t border-slate-100 mt-auto">
                         {isOutOfStock ? (
                           <div className="w-full h-[48px] flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 font-bold text-sm border border-slate-200">
                             Tạm hết hàng

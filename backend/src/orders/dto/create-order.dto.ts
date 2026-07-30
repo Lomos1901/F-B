@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsString,
   ValidateNested,
+  IsOptional,
 } from 'class-validator';
 
 class OrderItemDto {
@@ -24,6 +25,10 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   table_number: string;
+
+  @IsString()
+  @IsOptional()
+  note?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

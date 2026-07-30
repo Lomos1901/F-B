@@ -44,7 +44,7 @@ export class OrdersService {
   }
 
   async create(createOrderDto: CreateOrderDto, createdByUserId?: string) {
-    const { table_number, items } = createOrderDto;
+    const { table_number, items, note } = createOrderDto;
     const totalPrice = items.reduce(
       (sum, item) => sum + item.price_at_order * item.quantity,
       0,
@@ -81,7 +81,8 @@ export class OrdersService {
         total_price: totalPrice,
         status_id: pendingStatusId,
         created_by: createdByUserId,
-        shift_id: shiftId
+        shift_id: shiftId,
+        note: note
       })
       .select()
       .single();
@@ -99,6 +100,7 @@ export class OrdersService {
       order_id: newOrderId,
       product_id: item.product_id,
       quantity: item.quantity,
+      unit_price: item.price_at_order,
     }));
 
     const { data: insertedDetails, error: detailError } = await this.client
@@ -207,7 +209,7 @@ export class OrdersService {
       .from('orders')
       .select(
         `
-        id, table_number, total_price, created_at,
+        id, table_number, total_price, created_at, note,
         order_status ( status_name ),
         order_detail (
           quantity,

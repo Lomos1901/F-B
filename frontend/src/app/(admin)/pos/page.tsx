@@ -268,59 +268,61 @@ export default function KiotVietPOSPage() {
     <div className="flex flex-col h-screen overflow-hidden bg-slate-100 font-sans text-slate-800 print:hidden">
       
       {/* 1. TOP NAVBAR */}
-      <header className="h-14 bg-blue-600 text-white flex items-center justify-between px-4 shrink-0 shadow-sm z-10">
-        <div className="flex items-center gap-6">
-          <h1 className="text-lg font-bold tracking-wider">SẪM POS</h1>
-          <div className="relative">
+      <header className="h-auto md:h-14 py-2 md:py-0 bg-blue-600 text-white flex flex-col md:flex-row items-center justify-between px-2 md:px-4 shrink-0 shadow-sm z-10 gap-2 md:gap-0">
+        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+          <h1 className="text-lg font-bold tracking-wider hidden sm:block">SẪM POS</h1>
+          <div className="relative flex-1 md:flex-none">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
               ref={searchInputRef}
-              type="text" placeholder="F3 Tìm hàng hóa..." 
+              type="text" placeholder="Tìm hàng hóa..." 
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[300px] h-9 bg-white/10 border border-white/20 rounded-md pl-9 pr-3 text-sm text-white placeholder-gray-300 outline-none focus:bg-white focus:text-gray-900 focus:placeholder-gray-500 transition-colors"
+              className="w-full md:w-[300px] h-9 bg-white/10 border border-white/20 rounded-md pl-9 pr-3 text-sm text-white placeholder-gray-300 outline-none focus:bg-white focus:text-gray-900 focus:placeholder-gray-500 transition-colors"
             />
           </div>
         </div>
 
-        <div className="flex bg-white/15 rounded-lg p-1 mx-4">
-          <button 
-            onClick={() => setActiveTab('MENU')}
-            className={`px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${activeTab === 'MENU' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-          >
-            <UtensilsCrossed size={16} /> Thực Đơn
-          </button>
-          <button 
-            onClick={() => { setActiveTab('TABLES'); fetchTables(); }}
-            className={`px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${activeTab === 'TABLES' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-          >
-            <LayoutGrid size={16} /> Phòng / Bàn
-          </button>
-        </div>
+        <div className="flex items-center justify-between w-full md:w-auto gap-2 md:gap-4 overflow-x-auto scrollbar-hide">
+          <div className="flex bg-white/15 rounded-lg p-1 shrink-0">
+            <button 
+              onClick={() => setActiveTab('MENU')}
+              className={`px-3 md:px-4 py-1.5 rounded-md flex items-center gap-1 md:gap-2 text-xs md:text-sm font-semibold transition-colors ${activeTab === 'MENU' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+            >
+              <UtensilsCrossed size={16} /> <span className="hidden sm:inline">Thực Đơn</span>
+            </button>
+            <button 
+              onClick={() => { setActiveTab('TABLES'); fetchTables(); }}
+              className={`px-3 md:px-4 py-1.5 rounded-md flex items-center gap-1 md:gap-2 text-xs md:text-sm font-semibold transition-colors ${activeTab === 'TABLES' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+            >
+              <LayoutGrid size={16} /> <span className="hidden sm:inline">Phòng/Bàn</span>
+            </button>
+          </div>
 
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsQrDrawerOpen(true)}
-            className="relative flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-md transition-colors text-sm font-medium border border-white/20"
-          >
-            <Bell size={16} /> Đơn từ bàn QR
-            {pendingQrCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold shadow-md animate-pulse">
-                {pendingQrCount}
-              </span>
-            )}
-          </button>
-          <div className="w-px h-6 bg-white/20 mx-1"></div>
-          <button className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-md transition-colors text-sm">
-            <User size={16} /> {user?.full_name || 'Thu Ngân'} <ChevronDown size={14} className="opacity-70" />
-          </button>
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            <button 
+              onClick={() => setIsQrDrawerOpen(true)}
+              className="relative flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-md transition-colors text-xs md:text-sm font-medium border border-white/20"
+            >
+              <Bell size={16} /> <span className="hidden sm:inline">Đơn QR</span>
+              {pendingQrCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold shadow-md animate-pulse">
+                  {pendingQrCount}
+                </span>
+              )}
+            </button>
+            <div className="w-px h-6 bg-white/20 hidden md:block"></div>
+            <button className="flex items-center gap-1 hover:bg-white/10 px-2 py-1.5 rounded-md transition-colors text-xs md:text-sm">
+              <User size={16} /> <span className="hidden sm:inline">{user?.full_name || 'Thu Ngân'}</span> <ChevronDown size={14} className="opacity-70" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* 2. MAIN WORKSPACE */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden bg-slate-200 lg:bg-transparent">
         
         {/* LEFT: PRODUCTS / TABLES */}
-        <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-50 min-h-[50vh] lg:min-h-0">
           
           {activeTab === 'MENU' ? (
             <>
@@ -428,7 +430,7 @@ export default function KiotVietPOSPage() {
         </div>
 
         {/* RIGHT: CART / RECEIPT (KiotViet style) */}
-        <div className="w-[380px] bg-white flex flex-col border-l border-gray-300 shadow-[-2px_0_10px_rgba(0,0,0,0.05)] z-10 shrink-0">
+        <div className="w-full lg:w-[380px] bg-white flex flex-col border-t lg:border-t-0 lg:border-l border-gray-300 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:shadow-[-2px_0_10px_rgba(0,0,0,0.05)] z-10 shrink-0 min-h-[50vh] lg:min-h-0">
           
           {/* Cart Header */}
           <div className="h-12 border-b border-gray-200 flex items-center justify-between px-3 bg-gray-50/50">

@@ -17,6 +17,7 @@ interface Order {
   table_number: string;
   total_price: number;
   created_at: string;
+  note?: string;
   order_status?: { status_name: string };
   order_detail: OrderItem[];
 }
@@ -111,15 +112,10 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
     }
   };
 
-  const executePayment = async (order: Order) => {
+  const executePayment = async (order: Order, paymentMethodCode: string) => {
     setProcessingPayment(true);
     try {
-      const cashMethod = paymentMethods.find(m => m.code === 'CASH');
-      if (cashMethod) {
-        await paymentService.createPayment(order.id, order.total_price, cashMethod.code);
-      } else {
-        await orderService.updateStatus(order.id, 'PREPARING');
-      }
+      await paymentService.createPayment(order.id, order.total_price, paymentMethodCode);
       toast.success(`Đã xác nhận thanh toán đơn Bàn ${order.table_number}!`);
       
       if (onPrintReceipt) {
@@ -227,6 +223,11 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                           <Clock size={12} className="mr-1" />
                           {waitTime === 0 ? 'Vừa gọi' : `${waitTime} phút`}
                         </div>
+                        {order.note && (
+                          <div className="text-[10px] font-bold text-amber-600 mb-2 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 inline-block truncate max-w-full">
+                            {order.note}
+                          </div>
+                        )}
                         <div className="border-t border-gray-100 pt-2 flex justify-between items-center mt-2">
                           <span className="text-[10px] font-bold uppercase">Tổng</span>
                           <span className="font-bold text-blue-600">{order.total_price.toLocaleString('vi-VN')}đ</span>
@@ -274,14 +275,19 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
 
                 <div className="p-4 border-t border-gray-100 bg-white flex flex-col gap-3">
                   {selectedOrder.order_status?.status_name === 'PENDING' && (
-                    <button 
-                      onClick={() => executePayment(selectedOrder)}
-                      disabled={processingPayment || isCanceling}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
-                    >
-                      {processingPayment ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18}/>} 
-                      <span>Xác nhận Đã thu tiền</span>
-                    </button>
+                    <div className="flex gap-2 w-full">
+                      {paymentMethods.map(method => (
+                        <button 
+                          key={method.id}
+                          onClick={() => executePayment(selectedOrder, method.code)}
+                          disabled={processingPayment || isCanceling}
+                          className="flex-1 flex flex-col items-center justify-center py-2 px-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50 text-[11px] sm:text-[13px]"
+                        >
+                          {processingPayment ? <Loader2 size={16} className="animate-spin mb-1"/> : <CheckCircle size={16} className="mb-1"/>} 
+                          <span>Thu {method.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   )}
                   {selectedOrder.order_status?.status_name === 'PREPARING' && (
                     <button disabled className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 text-gray-500 rounded-xl font-bold">
