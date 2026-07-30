@@ -28,9 +28,7 @@ export class AnalyticsController {
     return this.analyticsService.getTodayDiagnostics();
   }
 
-  /**
-   * API MỚI: Lấy dữ liệu chẩn đoán cho kho hàng.
-   */
+  /** Lấy dữ liệu chẩn đoán cho kho hàng. */
   @Get('inventory-diagnostics')
   getInventoryDiagnostics() {
     return this.analyticsService.getInventoryDiagnostics();
@@ -46,8 +44,8 @@ export class AnalyticsController {
   }
 
   @Post('generate-ai-report')
-  async generateAiReport(@Query('scenario', new DefaultValuePipe('real')) scenario: string) {
-    return this.analyticsService.generateAiReport(scenario);
+  async generateAiReport() {
+    return this.analyticsService.generateAiReport();
   }
 
   @Patch('anomalies/:id/read')
@@ -56,11 +54,10 @@ export class AnalyticsController {
   }
 
   @Post('run-analysis')
-  runDailyAnalysis(
-    // Giữ lại tham số force từ lần trước
+  async runDailyAnalysis(
     @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean,
   ) {
-    this.analyticsService.runDailyAnalysis(force);
+    await this.analyticsService.runDailyAnalysis(force);
     return {
       message:
         'Đã kích hoạt quy trình phân tích dữ liệu. Kết quả sẽ được ghi nhận vào hệ thống.',

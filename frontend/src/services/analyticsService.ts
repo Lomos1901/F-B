@@ -12,11 +12,11 @@ const getAuthHeaders = () => {
 };
 
 export const analyticsService = {
-  /**
-   * SỬA LỖI: Khôi phục lại logic trả về dữ liệu.
-   */
-  async getAnomalies() {
-    const res = await fetch(`${API_URL}/anomalies`, { headers: getAuthHeaders() });
+  /** Lấy danh sách cảnh báo bất thường. */
+  async getAnomalies(unreadOnly: boolean = false) {
+    const params = new URLSearchParams();
+    if (unreadOnly) params.append('unread', 'true');
+    const res = await fetch(`${API_URL}/anomalies?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.message || 'Không thể lấy danh sách cảnh báo.');
@@ -70,8 +70,8 @@ export const analyticsService = {
     return res.json();
   },
 
-  async generateAiReport(scenario: string = 'real') {
-    const res = await fetch(`${API_URL}/generate-ai-report?scenario=${scenario}`, {
+  async generateAiReport() {
+    const res = await fetch(`${API_URL}/generate-ai-report`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });

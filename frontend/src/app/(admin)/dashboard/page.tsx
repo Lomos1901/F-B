@@ -65,9 +65,17 @@ const KpiCard = ({ title, value, icon, formatAsCurrency = false, trendLabel = nu
 const AlertIcon = ({ category }: { category: string }) => {
   switch (category) {
     case 'LOW_STOCK':
+    case 'INVENTORY_FORECAST':
       return <div className="p-1.5 rounded-full bg-amber-500/10 text-amber-500"><AlertTriangle size={16} /></div>;
     case 'UNUSUAL_SALES':
+    case 'SALES_SPIKE':
       return <div className="p-1.5 rounded-full bg-blue-500/10 text-blue-500"><TrendingUp size={16} /></div>;
+    case 'INVENTORY_DISCREPANCY':
+      return <div className="p-1.5 rounded-full bg-red-500/10 text-red-500"><AlertTriangle size={16} /></div>;
+    case 'GHOST_PRODUCT':
+      return <div className="p-1.5 rounded-full bg-purple-500/10 text-purple-500"><BarChart size={16} /></div>;
+    case 'AI_INSIGHT':
+      return <div className="p-1.5 rounded-full bg-emerald-500/10 text-emerald-500"><TrendingUp size={16} /></div>;
     default:
       return <div className="p-1.5 rounded-full bg-slate-500/10 text-slate-500"><Bell size={16} /></div>;
   }

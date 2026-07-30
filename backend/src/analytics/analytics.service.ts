@@ -7,8 +7,8 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Cron } from '@nestjs/schedule';
 
-// SỬA LỖI: Export các interface để các module khác có thể sử dụng
 export interface ProductSalesStat {
   product_id: string;
   mean_daily_sales: number;
@@ -34,9 +34,7 @@ export class AnalyticsService {
     this.client = this.supabaseService.getAdminClient();
   }
 
-  /**
-   * KHÔI PHỤC HÀM
-   */
+  /** Chẩn đoán doanh số sản phẩm hôm nay, phát hiện bất thường bằng Z-Score. */
   async getTodayDiagnostics() {
     const { data: allProducts, error: productsError } = await this.client
       .from('products')
@@ -62,10 +60,10 @@ export class AnalyticsService {
     if (paidStatusIds.length === 0)
       throw new InternalServerErrorException('Không tìm thấy status PREPARING/COMPLETED.');
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // Sử dụng timezone Việt Nam (GMT+7) để tránh lệch ngày khi chuyển sang UTC
+    const todayVN = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const todayStart = new Date(`${todayVN}T00:00:00+07:00`);
+    const todayEnd = new Date(`${todayVN}T23:59:59.999+07:00`);
 
     const { data: todayOrders, error: ordersError } = await this.client
       .from('orders')
@@ -131,9 +129,7 @@ export class AnalyticsService {
     });
   }
 
-  /**
-   * KHÔI PHỤC HÀM
-   */
+  /** Chẩn đoán tồn kho: dự báo ngày còn lại cho mỗi nguyên liệu. */
   async getInventoryDiagnostics(): Promise<InventoryDiagnosticItem[]> {
     const FORECAST_THRESHOLD_DAYS = 3;
     const results: InventoryDiagnosticItem[] = [];
@@ -188,9 +184,7 @@ export class AnalyticsService {
     return results;
   }
 
-  /**
-   * KHÔI PHỤC HÀM VÀ THÊM LOGGING
-   */
+  /** Lấy danh sách cảnh báo bất thường từ database. */
   async getAnomalies(limit: number = 50, unreadOnly: boolean = false) {
     this.logger.log(
       `[Service/getAnomalies] Bắt đầu với limit=${limit}, unreadOnly=${unreadOnly}`,
@@ -217,9 +211,7 @@ export class AnalyticsService {
     return data || [];
   }
 
-  /**
-   * KHÔI PHỤC HÀM
-   */
+  /** Đánh dấu cảnh báo đã được xem/xử lý. */
   async markAsRead(id: string) {
     const { data, error } = await this.client
       .from('ai_anomalies')
@@ -234,15 +226,15 @@ export class AnalyticsService {
     return data;
   }
 
-  /**
-   * SỬA LỖI: Thêm tham số 'force' vào hàm
-   */
+  /** Chạy toàn bộ quy trình phân tích AI hàng ngày. Tự động chạy lúc 22:00 mỗi ngày. */
+  @Cron('0 22 * * *', { timeZone: 'Asia/Ho_Chi_Minh' })
   async runDailyAnalysis(force: boolean = false) {
     this.logger.log(
       `Bắt đầu quy trình phân tích dữ liệu hàng ngày... (Force mode: ${force})`,
     );
     await this.analyzeProductSalesAnomalies(force);
     await this.analyzeInventoryForecasts(force);
+    await this.analyzeInventoryDiscrepancies(force);
     this.logger.log('Hoàn tất quy trình phân tích.');
     return { message: 'Phân tích dữ liệu hàng ngày đã hoàn tất.' };
   }
@@ -271,7 +263,8 @@ export class AnalyticsService {
             payload,
           );
         }
-        if (item.today_quantity === 0 && item.mean_daily_sales > 3) {
+        const currentHour = parseInt(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: 'numeric', hour12: false }));
+        if (item.today_quantity === 0 && item.mean_daily_sales > 3 && currentHour >= 15) {
           const message = `Sản phẩm '${item.product_name}' không bán được ly nào hôm nay (so với trung bình ${item.mean_daily_sales} ly/ngày).`;
           const payload = {
             expected_value: item.mean_daily_sales,
@@ -367,6 +360,124 @@ export class AnalyticsService {
     this.logger.log('[Inventory] Hoàn tất phân tích dự báo tồn kho.');
   }
 
+  /**
+   * Phát hiện chênh lệch tồn kho bất thường.
+   * So sánh tốc độ tiêu thụ gần đây (7 ngày) với lịch sử (30 ngày)
+   * và kiểm tra các phiếu kiểm kho có điều chỉnh lớn.
+   */
+  private async analyzeInventoryDiscrepancies(force: boolean) {
+    this.logger.log('[Discrepancy] Bắt đầu phân tích chênh lệch tồn kho...');
+    try {
+      const { data: ingredients, error } = await this.client
+        .from('ingredients')
+        .select('id, name, stock_quantity, conversion_factor');
+      if (error) {
+        this.logger.error('[Discrepancy] Lỗi khi lấy nguyên liệu:', error);
+        return;
+      }
+
+      for (const ingredient of ingredients) {
+        if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0)
+          continue;
+
+        // So sánh tốc độ tiêu thụ gần đây vs lịch sử
+        const { data: recentData } = await this.client.rpc(
+          'get_ingredient_consumption_rate',
+          { p_ingredient_id: ingredient.id, p_days: 7 },
+        );
+        const { data: historicalData } = await this.client.rpc(
+          'get_ingredient_consumption_rate',
+          { p_ingredient_id: ingredient.id, p_days: 30 },
+        );
+
+        const recentRate = recentData?.[0]?.avg_daily_consumption ?? 0;
+        const historicalRate = historicalData?.[0]?.avg_daily_consumption ?? 0;
+
+        // Phát hiện tiêu thụ tăng đột biến (>80% so với lịch sử)
+        if (historicalRate > 0 && recentRate > historicalRate * 1.8) {
+          const message = `Nguyên liệu '${ingredient.name}' đang tiêu thụ nhanh bất thường: ${recentRate.toFixed(2)} đơn vị/ngày (lịch sử: ${historicalRate.toFixed(2)} đơn vị/ngày). Có thể do lãng phí hoặc sai công thức.`;
+          const payload = {
+            expected_value: historicalRate,
+            actual_value: recentRate,
+            anomaly_score: (recentRate - historicalRate) / (historicalRate || 1),
+          };
+          await this.createAnomalyRecord(
+            'ingredients',
+            ingredient.name,
+            'INVENTORY_DISCREPANCY',
+            message,
+            'Kiểm tra lại công thức pha chế và quy trình sử dụng nguyên liệu.',
+            force,
+            payload,
+          );
+        }
+
+        // Phát hiện tiêu thụ giảm bất thường (<30% so với lịch sử)
+        if (historicalRate > 1 && recentRate < historicalRate * 0.3) {
+          const message = `Nguyên liệu '${ingredient.name}' gần như không được sử dụng: ${recentRate.toFixed(2)} đơn vị/ngày (lịch sử: ${historicalRate.toFixed(2)} đơn vị/ngày). Có thể sản phẩm liên quan đang bị tạm ngừng bán.`;
+          const payload = {
+            expected_value: historicalRate,
+            actual_value: recentRate,
+            anomaly_score: (historicalRate - recentRate) / (historicalRate || 1),
+          };
+          await this.createAnomalyRecord(
+            'ingredients',
+            ingredient.name,
+            'INVENTORY_DISCREPANCY',
+            message,
+            'Kiểm tra lại menu và các sản phẩm sử dụng nguyên liệu này.',
+            force,
+            payload,
+          );
+        }
+      }
+
+      // Kiểm tra phiếu kiểm kho có điều chỉnh lớn trong 7 ngày gần đây
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: adjustments, error: adjError } = await this.client
+        .from('inventory_receipts')
+        .select(`
+          id, created_at,
+          receipt_details (
+            quantity,
+            ingredients ( id, name )
+          )
+        `)
+        .eq('receipt_type', 'STOCKTAKE_ADJUSTMENT')
+        .gte('created_at', sevenDaysAgo);
+
+      if (!adjError && adjustments) {
+        for (const receipt of adjustments) {
+          for (const detail of (receipt as any).receipt_details || []) {
+            const absQty = Math.abs(detail.quantity);
+            // Cảnh báo nếu điều chỉnh âm lớn (mất hàng)
+            if (detail.quantity < 0 && absQty > 2) {
+              const ingredientName = detail.ingredients?.name || 'Không rõ';
+              const message = `Phát hiện chênh lệch kho: '${ingredientName}' bị hụt ${absQty} đơn vị trong lần kiểm kho gần nhất. Có thể do hao hụt, hỏng hóc hoặc thất thoát.`;
+              const payload = {
+                expected_value: 0,
+                actual_value: detail.quantity,
+                anomaly_score: absQty / 10,
+              };
+              await this.createAnomalyRecord(
+                'ingredients',
+                ingredientName,
+                'INVENTORY_DISCREPANCY',
+                message,
+                'Kiểm tra quy trình bảo quản và sử dụng nguyên liệu. Xem xét camera giám sát nếu có.',
+                force,
+                payload,
+              );
+            }
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error('[Discrepancy] Lỗi trong quá trình phân tích:', error);
+    }
+    this.logger.log('[Discrepancy] Hoàn tất phân tích chênh lệch tồn kho.');
+  }
+
   private async createAnomalyRecord(
     entityType: string,
     entityName: string,
@@ -422,70 +533,68 @@ export class AnalyticsService {
     }
   }
 
-  async generateAiReport(scenario: string = 'real') {
-    let rawDataStr = '';
+  /**
+   * Tạo báo cáo phân tích AI bằng Google Gemini dựa trên dữ liệu thực tế.
+   */
+  async generateAiReport() {
+    // Thu thập toàn bộ dữ liệu thực tế
+    const todaySales = await this.getTodayDiagnostics();
+    const inventory = await this.getInventoryDiagnostics();
+    const recentAnomalies = await this.getAnomalies(10, false);
 
-    if (scenario === 'spike') {
-      rawDataStr = `
-        Dữ liệu mô phỏng (Kịch bản: Bão đơn hàng cuối tuần):
-        - Doanh thu: 25.500.000 VNĐ (Tăng vọt 800% so với thứ 7 tuần trước).
-        - Sản phẩm bán chạy bất thường: "Trà Đào Cam Sả" bán được 350 ly (bình thường chỉ 50 ly) do trời nắng gắt.
-        - Sản phẩm ế ẩm: Các món Cà phê nóng không bán được ly nào.
-        - Kho nguyên liệu cảnh báo: "Trà Đen", "Mứt Đào" và "Ly Nhựa" đã hoàn toàn CẠN KIỆT.
-      `;
-    } else if (scenario === 'ghost') {
-      rawDataStr = `
-        Dữ liệu mô phỏng (Kịch bản: Ế ẩm cuối tháng):
-        - Doanh thu: 1.200.000 VNĐ (Giảm thê thảm, thấp nhất trong 3 tháng qua).
-        - Khách hàng: Chỉ có 5 đơn hàng cả ngày.
-        - Sản phẩm ế ẩm: 90% menu không phát sinh giao dịch.
-        - Kho nguyên liệu cảnh báo: "Sữa Tươi" còn tồn 50 lít sẽ HẾT HẠN vào ngày mai. "Trái cây tươi" đang có dấu hiệu hỏng.
-      `;
-    } else if (scenario === 'fraud') {
-      rawDataStr = `
-        Dữ liệu mô phỏng (Kịch bản: Nghi ngờ gian lận/Hủy đơn):
-        - Tỷ lệ hủy đơn: Có 25 đơn hàng bị nhân viên thu ngân hủy (Void) sau khi in bill (Tăng đột biến 300%).
-        - Sản phẩm bị hủy nhiều nhất: "Cà phê sữa" (20 ly bị hủy với lý do "Khách đổi ý").
-        - Kho nguyên liệu cảnh báo: Kho cà phê bột bị hụt 1.5 kg so với doanh số thực tế bán ra.
-      `;
-    } else {
-      // Real data aggregation
-      const todaySales = await this.getTodayDiagnostics();
-      const inventory = await this.getInventoryDiagnostics();
-      
-      rawDataStr = `
-        Dữ liệu thực tế ngày hôm nay:
-        - Các sản phẩm có biến động (Top): ${JSON.stringify(todaySales.slice(0, 3))}
-        - Các nguyên liệu đang cạn kiệt: ${JSON.stringify(inventory.filter(i => i.is_alert))}
-      `;
-    }
+    const salesAnomalies = todaySales.filter(s => s.is_anomaly);
+    const ghostProducts = todaySales.filter(s => s.today_quantity === 0 && s.mean_daily_sales > 3);
+    const lowStockItems = inventory.filter(i => i.is_alert);
+    const topSellers = [...todaySales].sort((a, b) => b.today_quantity - a.today_quantity).slice(0, 5);
+
+    const rawDataStr = `
+      === DỮ LIỆU THỰC TẾ NGÀY HÔM NAY ===
+
+      1. TỔNG QUAN DOANH SỐ:
+      - Tổng sản phẩm đang theo dõi: ${todaySales.length}
+      - Sản phẩm có doanh số bất thường (tăng đột biến): ${salesAnomalies.length} sản phẩm
+      ${salesAnomalies.map(s => `  + "${s.product_name}": bán ${s.today_quantity} (trung bình ${s.mean_daily_sales})`).join('\n')}
+      - Sản phẩm không bán được (ế ẩm): ${ghostProducts.length} sản phẩm
+      ${ghostProducts.map(s => `  + "${s.product_name}": 0 ly (trung bình ${s.mean_daily_sales} ly/ngày)`).join('\n')}
+      - Top 5 sản phẩm bán chạy nhất hôm nay:
+      ${topSellers.map((s, i) => `  ${i + 1}. "${s.product_name}": ${s.today_quantity} ly`).join('\n')}
+
+      2. TÌNH TRẠNG KHO NGUYÊN LIỆU:
+      - Tổng nguyên liệu đang theo dõi: ${inventory.length}
+      - Nguyên liệu sắp hết (cần nhập gấp): ${lowStockItems.length}
+      ${lowStockItems.map(i => `  + "${i.ingredient_name}": còn ${i.stock_quantity} ${i.unit}, dự báo hết sau ${typeof i.days_remaining === 'number' ? Math.floor(i.days_remaining) : i.days_remaining} ngày`).join('\n')}
+
+      3. CẢNH BÁO GẦN ĐÂY (${recentAnomalies.length} cảnh báo mới nhất):
+      ${recentAnomalies.slice(0, 5).map(a => `  - [${a.alert_category}] ${a.message}`).join('\n')}
+    `;
 
     const prompt = `
       Bạn là một Giám đốc vận hành F&B chuyên nghiệp của quán "SẪM COFFEE".
-      Dưới đây là dữ liệu kinh doanh của quán ngày hôm nay:
+      Dưới đây là dữ liệu kinh doanh THỰC TẾ của quán ngày hôm nay:
       ---
       ${rawDataStr}
       ---
       Yêu cầu:
-      Dựa vào dữ liệu trên, hãy viết một Báo Cáo Phân Tích bằng Tiếng Việt (khoảng 3-4 câu).
-      Báo cáo phải chỉ ra:
-      1. Hiện tượng bất thường (Tốt hoặc xấu).
-      2. Rủi ro tiềm ẩn (ví dụ hết nguyên liệu).
-      3. Khuyến nghị hành động rõ ràng và thực dụng (Ví dụ: Nhập thêm hàng, chạy khuyến mãi xả kho, v.v.).
+      Dựa vào dữ liệu trên, hãy viết một Báo Cáo Phân Tích chi tiết bằng Tiếng Việt.
+      Báo cáo phải bao gồm:
+      1. **Tóm tắt tình hình**: Đánh giá tổng quan hoạt động kinh doanh hôm nay (tốt/xấu/bình thường).
+      2. **Hiện tượng bất thường**: Chỉ ra các anomaly đáng chú ý (nếu có).
+      3. **Rủi cấu tiềm ẩn**: Cảnh báo về nguyên liệu sắp hết, sản phẩm ế ẩm, v.v.
+      4. **Khuyến nghị hành động**: Đưa ra 2-3 hành động cụ thể, thực tế mà quản lý nên làm NGAY.
 
-      Định dạng bằng Markdown đơn giản, thân thiện, dễ đọc, không cần mở bài hay kết bài dài dòng.
+      Định dạng bằng Markdown, sử dụng heading, bullet points, và emoji cho dễ đọc.
+      Giữ báo cáo ngắn gọn, đi thẳng vào vấn đề, không dài quá 300 từ.
     `;
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-      
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
       this.logger.log('Đang gọi Gemini API để sinh báo cáo...');
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
-      // Lưu vào database
       const { data, error } = await this.client.from('ai_anomalies').insert({
         alert_category: 'AI_INSIGHT',
         entity_type: 'system',

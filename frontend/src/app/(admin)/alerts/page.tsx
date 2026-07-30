@@ -25,6 +25,8 @@ const AlertIcon = ({ category }: { category: string }) => {
       return <BarChart2 className="text-purple-500" size={24} />;
     case 'INVENTORY_FORECAST':
       return <Info className="text-blue-500" size={24} />;
+    case 'INVENTORY_DISCREPANCY':
+      return <AlertTriangle className="text-amber-500" size={24} />;
     case 'AI_INSIGHT':
       return <Sparkles className="text-blue-600" size={24} />;
     default:
@@ -37,6 +39,7 @@ const getCategoryLabel = (category: string) => {
     case 'SALES_SPIKE': return 'Doanh thu đột biến';
     case 'GHOST_PRODUCT': return 'Sản phẩm ế ẩm';
     case 'INVENTORY_FORECAST': return 'Cảnh báo tồn kho';
+    case 'INVENTORY_DISCREPANCY': return 'Chênh lệch tồn kho';
     case 'AI_INSIGHT': return 'Trợ lý AI Phân tích';
     default: return 'Cảnh báo hệ thống';
   }
@@ -47,12 +50,11 @@ export default function AlertsCenterPage() {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD'>('ALL');
-  const [selectedScenario, setSelectedScenario] = useState<string>('real');
 
   const fetchAnomalies = async () => {
     setLoading(true);
     try {
-      const data = await analyticsService.getAnomalies();
+      const data = await analyticsService.getAnomalies(activeTab === 'UNREAD');
       setAnomalies(Array.isArray(data) ? data : []);
     } catch (err: any) {
       toast.error(err.message);
@@ -79,7 +81,7 @@ export default function AlertsCenterPage() {
   const handleGenerateAIReport = async () => {
     setIsGenerating(true);
     try {
-      await analyticsService.generateAiReport(selectedScenario);
+      await analyticsService.generateAiReport();
       toast.success('AI đã phân tích xong dữ liệu!');
       
       setActiveTab('ALL');
@@ -112,16 +114,6 @@ export default function AlertsCenterPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <select 
-            value={selectedScenario} 
-            onChange={(e) => setSelectedScenario(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white font-medium text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          >
-            <option value="real">⚡ Dữ liệu Thực tế (Realtime)</option>
-            <option value="spike">🌪️ Kịch bản: Bão đơn hàng (Tăng vọt)</option>
-            <option value="ghost">📉 Kịch bản: Ế ẩm cuối tháng</option>
-            <option value="fraud">⚠️ Kịch bản: Báo động nhân viên gian lận</option>
-          </select>
           <button 
             onClick={handleGenerateAIReport}
             disabled={isGenerating}
