@@ -586,15 +586,54 @@ export class AnalyticsService {
       Giữ báo cáo ngắn gọn, đi thẳng vào vấn đề, không dài quá 300 từ.
     `;
 
+    let text = '';
+    let attempt = 0;
+    const maxRetries = 3;
+
+    while (attempt < maxRetries) {
+      try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+        // Sử dụng gemini-flash-latest (model cũ đang chạy tốt) làm ưu tiên, fallback sang các model khác
+        let defaultModel = 'gemini-flash-latest';
+        if (attempt === 1) defaultModel = 'gemini-1.5-pro-latest';
+        if (attempt === 2) defaultModel = 'gemini-pro';
+        
+        const modelName = process.env.GEMINI_MODEL || defaultModel;
+        const model = genAI.getGenerativeModel({ model: modelName });
+
+        this.logger.log(`Đang gọi Gemini API để sinh báo cáo... (Lần thử: ${attempt + 1}/${maxRetries}, Model: ${modelName})`);
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        text = response.text();
+        break;
+      } catch (err: any) {
+        attempt++;
+        this.logger.warn(`Lỗi khi gọi Gemini AI (Lần ${attempt}/${maxRetries}): ${err.message}`);
+        
+        if (attempt >= maxRetries) {
+          this.logger.error('Đã vượt quá số lần thử lại cho Gemini AI.', err);
+          throw new InternalServerErrorException('Không thể phân tích dữ liệu bằng AI lúc này: ' + err.message);
+        }
+        
+        // Đọc thời gian retry từ thông báo lỗi (vd: Please retry in 57.4s)
+        let delayMs = attempt * 5000;
+        const isRateLimit = err.status === 429 || err.message?.includes('429') || err.message?.includes('quota');
+        
+        if (isRateLimit) {
+          const match = err.message?.match(/Please retry in (\d+(?:\.\d+)?)s/);
+          if (match && match[1]) {
+            delayMs = Math.ceil(parseFloat(match[1])) * 1000 + 2000; // Thêm 2s buffer
+          } else {
+            delayMs = 18000;
+          }
+        }
+        
+        this.logger.log(`Chờ ${delayMs / 1000}s trước khi thử lại...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
     try {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-      this.logger.log('Đang gọi Gemini API để sinh báo cáo...');
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
       const { data, error } = await this.client.from('ai_anomalies').insert({
         alert_category: 'AI_INSIGHT',
         entity_type: 'system',
@@ -608,8 +647,8 @@ export class AnalyticsService {
 
       return data;
     } catch (err: any) {
-      this.logger.error('Lỗi khi gọi Gemini AI:', err);
-      throw new InternalServerErrorException('Không thể phân tích dữ liệu bằng AI lúc này: ' + err.message);
+      this.logger.error('Lỗi khi lưu báo cáo AI vào DB:', err);
+      throw new InternalServerErrorException('Không thể lưu báo cáo AI: ' + err.message);
     }
   }
 }
