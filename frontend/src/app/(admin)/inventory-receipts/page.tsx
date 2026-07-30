@@ -15,6 +15,8 @@ interface IngredientInfo {
 
 interface ReceiptDetail {
   quantity: number;
+  product_id?: string;
+  products?: { name: string };
   ingredients: IngredientInfo;
 }
 
@@ -22,6 +24,7 @@ interface Receipt {
   id: string;
   receipt_type: 'IMPORT' | 'SALE_DEDUCTION' | 'STOCKTAKE_ADJUSTMENT';
   created_at: string;
+  order_id?: string;
   users?: { full_name: string };
   receipt_details: ReceiptDetail[];
 }
@@ -170,31 +173,65 @@ export default function InventoryReceiptsPage() {
                 </div>
                 <div className="text-sm text-slate-500">
                   Thực hiện bởi: <span className="font-bold text-slate-800">{receipt.users?.full_name || 'Hệ thống tự động'}</span>
+                  {receipt.order_id && <div className="mt-1 text-blue-600 font-semibold cursor-pointer">Mã đơn: #{receipt.order_id.split('-')[0].toUpperCase()}</div>}
                 </div>
               </div>
               
               <div className="p-4">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-200 font-semibold">
-                      <th className="pb-2 font-semibold w-1/2">Tên nguyên liệu</th>
-                      <th className="pb-2 font-semibold text-right">Biến động</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {receipt.receipt_details.map((detail, index) => (
-                      <tr key={index} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 font-semibold text-slate-800 flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
-                          {detail.ingredients.name}
-                        </td>
-                        <td className="py-3 text-right">
-                          <SmartQuantity detail={detail} />
-                        </td>
-                      </tr>
+                {receipt.receipt_type === 'SALE_DEDUCTION' ? (
+                  <div className="space-y-4">
+                    {/* Nhóm chi tiết theo sản phẩm */}
+                    {Object.values(receipt.receipt_details.reduce((acc, detail) => {
+                      const key = detail.product_id || 'unknown';
+                      if (!acc[key]) acc[key] = { name: detail.products?.name || 'Nguyên liệu lẻ (không thuộc món)', items: [] };
+                      acc[key].items.push(detail);
+                      return acc;
+                    }, {} as Record<string, {name: string, items: ReceiptDetail[]}>)).map((group, gIndex) => (
+                      <div key={gIndex} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <div className="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                          <span className="text-lg">☕</span> {group.name}
+                        </div>
+                        <table className="w-full text-left border-collapse">
+                          <tbody className="divide-y divide-slate-200/50">
+                            {group.items.map((detail, index) => (
+                              <tr key={index}>
+                                <td className="py-2 pl-6 font-medium text-slate-600 text-sm flex items-center gap-2">
+                                  <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                                  {detail.ingredients.name}
+                                </td>
+                                <td className="py-2 text-right">
+                                  <SmartQuantity detail={detail} />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-200 font-semibold">
+                        <th className="pb-2 font-semibold w-1/2">Tên nguyên liệu</th>
+                        <th className="pb-2 font-semibold text-right">Biến động</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {receipt.receipt_details.map((detail, index) => (
+                        <tr key={index} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-3 font-semibold text-slate-800 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                            {detail.ingredients.name}
+                          </td>
+                          <td className="py-3 text-right">
+                            <SmartQuantity detail={detail} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           ))}

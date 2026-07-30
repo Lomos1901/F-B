@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { productService } from '@/src/services/productService';
-import { Plus, Edit, Trash2, Eye, Coffee, Loader2, Power, PowerOff } from 'lucide-react';
+import { categoryService } from '@/src/services/categoryService';
+import { Plus, Edit, Trash2, Eye, Coffee, Loader2, Power, PowerOff, LayoutGrid } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // --- Định nghĩa Interface ---
@@ -12,12 +13,18 @@ interface Recipe {
   ingredients?: { name: string; recipe_unit: string };
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface Product {
   id: string;
   name: string;
   price: number;
   image_url?: string;
   is_active: boolean;
+  category_id?: string;
   categories?: { name: string };
   recipes?: Recipe[];
 }
@@ -68,14 +75,20 @@ const RecipeModal = ({ product, onClose }: { product: Product | null, onClose: (
 // --- COMPONENT TRANG CHÍNH ---
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const data = await productService.getAll();
-      setProducts(data);
+      const [productData, categoryData] = await Promise.all([
+        productService.getAll(),
+        categoryService.getAll(),
+      ]);
+      setProducts(productData);
+      setCategories(categoryData);
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message);
@@ -85,8 +98,24 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
+
+  const filteredProducts = useMemo(() => {
+    if (!selectedCategoryId) return products;
+    return products.filter(p => p.category_id === selectedCategoryId);
+  }, [products, selectedCategoryId]);
+
+  // Đếm số sản phẩm theo từng danh mục
+  const countByCategory = useMemo(() => {
+    const map: Record<string, number> = {};
+    products.forEach(p => {
+      if (p.category_id) {
+        map[p.category_id] = (map[p.category_id] || 0) + 1;
+      }
+    });
+    return map;
+  }, [products]);
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Lịch sử bán hàng liên quan có thể bị ảnh hưởng.')) {
@@ -136,9 +165,53 @@ export default function ProductsPage() {
         </Link>
       </div>
 
-      <div className="p-6 overflow-y-auto">
+      {/* === THANH LỌC DANH MỤC === */}
+      <div className="px-6 pt-5 pb-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <button
+            onClick={() => setSelectedCategoryId(null)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
+              selectedCategoryId === null
+                ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+            }`}
+          >
+            <LayoutGrid size={15} />
+            Tất cả
+            <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${
+              selectedCategoryId === null ? 'bg-white/20' : 'bg-slate-100'
+            }`}>
+              {products.length}
+            </span>
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategoryId(cat.id)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
+                selectedCategoryId === cat.id
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+              }`}
+            >
+              {cat.name}
+              <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${
+                selectedCategoryId === cat.id ? 'bg-white/20' : 'bg-slate-100'
+              }`}>
+                {countByCategory[cat.id] || 0}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6 pt-3 overflow-y-auto">
         {error && products.length === 0 ? (
           <div className="p-8 text-red-500 font-bold text-center bg-red-50 border border-red-100 rounded-2xl">{error}</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="p-8 text-slate-400 font-medium text-center bg-white border border-slate-200 rounded-2xl">
+            Không có sản phẩm nào trong danh mục này.
+          </div>
         ) : (
           <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
@@ -153,7 +226,7 @@ export default function ProductsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product.id} className={`hover:bg-slate-50 transition-colors ${!product.is_active ? 'opacity-60 bg-slate-50/50' : ''}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">

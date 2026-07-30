@@ -26,10 +26,12 @@ export class InventoryReceiptsService {
       .from('inventory_receipts')
       .select(
         `
-        id, receipt_type, created_at,
+        id, receipt_type, created_at, order_id,
         users ( full_name ),
         receipt_details (
           quantity,
+          product_id,
+          products ( name ),
           ingredients ( name, base_unit, recipe_unit, conversion_factor )
         )
       `,
