@@ -5,8 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { productService } from '@/src/services/productService';
 import { orderService } from '@/src/services/orderService';
 import { paymentService } from '@/src/services/paymentService';
-import { Plus, Minus, X, CheckCircle2, ShoppingBag, Coffee, QrCode } from 'lucide-react';
+import { Plus, Minus, X, CheckCircle2, ShoppingBag, Coffee, QrCode, Users } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { createClient } from '@supabase/supabase-js';
+
+// Khởi tạo Supabase Client cho Realtime
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // --- Interfaces ---
 interface Product {
@@ -48,6 +54,24 @@ export default function QROrderPage() {
   const [bankInfo, setBankInfo] = useState<{bank_bin: string, account_number: string, account_name: string} | null>(null);
   const [showBankQR, setShowBankQR] = useState(false);
   const [finalOrderTotal, setFinalOrderTotal] = useState(0);
+  const [activeUsers, setActiveUsers] = useState(1);
+
+  // Lấy Giỏ hàng dùng chung ban đầu
+  const fetchSharedCart = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('group_carts')
+        .select('cart_data')
+        .eq('table_number', tableNumber)
+        .single();
+      
+      if (data && data.cart_data) {
+        setCart(data.cart_data);
+      }
+    } catch (e) {
+      console.log('No existing shared cart');
+    }
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -86,26 +110,70 @@ export default function QROrderPage() {
         setLoading(false);
       }
     };
-    if (tableNumber) fetchInitialData();
+    
+    if (tableNumber) {
+      fetchInitialData();
+      fetchSharedCart();
+    }
   }, [tableNumber]);
+
+  // Thiết lập Subsciption Realtime
+  useEffect(() => {
+    if (!tableNumber) return;
+
+    // Kênh realtime cho giỏ hàng
+    const cartChannel = supabase
+      .channel(`table-${tableNumber}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'group_carts', filter: `table_number=eq.${tableNumber}` },
+        (payload) => {
+          if (payload.new && payload.new.cart_data) {
+            setCart(payload.new.cart_data);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(cartChannel);
+    };
+  }, [tableNumber]);
+
+  const syncCartToDB = async (newCart: CartItem[]) => {
+    await supabase.from('group_carts').upsert({
+      table_number: tableNumber,
+      cart_data: newCart,
+      updated_at: new Date()
+    });
+  };
 
   const updateCart = (product: Product, quantity: number) => {
     if (product.is_active === false) return; // Prevent adding inactive items
 
     setCart(prevCart => {
+      let newCart = [];
       if (quantity <= 0) {
-        return prevCart.filter(item => item.id !== product.id);
+        newCart = prevCart.filter(item => item.id !== product.id);
+      } else {
+        const existingItem = prevCart.find(item => item.id === product.id);
+        if (existingItem) {
+          newCart = prevCart.map(item => item.id === product.id ? { ...item, quantity } : item);
+        } else {
+          newCart = [...prevCart, { ...product, quantity }];
+        }
       }
-      const existingItem = prevCart.find(item => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map(item => item.id === product.id ? { ...item, quantity } : item);
-      }
-      return [...prevCart, { ...product, quantity }];
+      syncCartToDB(newCart); // Đồng bộ lên server
+      return newCart;
     });
   };
 
   const updateCartNote = (productId: string, note: string) => {
-    setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, note } : item));
+    setCart(prevCart => {
+      const newCart = prevCart.map(item => item.id === productId ? { ...item, note } : item);
+      syncCartToDB(newCart);
+      return newCart;
+    });
   };
 
   const getCartItemQuantity = (productId: string) => cart.find(item => item.id === productId)?.quantity || 0;
@@ -132,7 +200,11 @@ export default function QROrderPage() {
       } else {
         setOrderSuccess(true);
       }
-      setCart([]);
+      
+      // Xóa giỏ hàng chung sau khi đặt
+      const emptyCart: CartItem[] = [];
+      setCart(emptyCart);
+      syncCartToDB(emptyCart);
       setIsCartOpen(false);
     } catch (err: any) {
       setError(err.message);
@@ -315,7 +387,12 @@ export default function QROrderPage() {
             <Coffee size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-wider leading-tight">SẪM COFFEE</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-wider leading-tight">SẪM COFFEE</h1>
+              <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                <Users size={12} /> Giỏ Nhóm
+              </span>
+            </div>
             <p className="text-xs font-medium text-blue-100">Bàn {tableNumber}</p>
           </div>
         </div>
