@@ -19,6 +19,10 @@ class OrderItemDto {
 
   @IsNumber()
   price_at_order: number;
+
+  @IsString()
+  @IsOptional()
+  note?: string;
 }
 
 export class CreateOrderDto {

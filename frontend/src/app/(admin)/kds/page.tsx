@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 
 interface OrderItem {
   quantity: number;
+  note?: string;
   products?: { name: string };
 }
 
@@ -42,9 +43,16 @@ const OrderTicket = ({ order, onAction, actionText, isPending, icon }: { order: 
       </div>
       <div className="p-4 flex-grow space-y-3">
         {order.order_detail.map((item, index) => (
-          <div key={index} className="flex justify-between items-center text-sm">
-            <span className="text-slate-700 font-medium">{item.products?.name || 'Sản phẩm không xác định'}</span>
-            <span className="font-bold text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">x{item.quantity}</span>
+          <div key={index} className="flex flex-col border-b border-gray-50 pb-2 last:border-0 last:pb-0">
+            <div className="flex justify-between items-start text-sm">
+              <span className="text-slate-700 font-medium">{item.products?.name || 'Sản phẩm không xác định'}</span>
+              <span className="font-bold text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5 mt-0.5">x{item.quantity}</span>
+            </div>
+            {item.note && (
+              <span className="text-xs font-semibold text-rose-600 italic bg-rose-50 px-2 py-1 rounded inline-block w-fit mt-1 border border-rose-100">
+                - {item.note}
+              </span>
+            )}
           </div>
         ))}
       </div>

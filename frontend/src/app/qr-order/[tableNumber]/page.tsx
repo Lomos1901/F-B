@@ -25,6 +25,7 @@ interface GroupedProducts {
 
 interface CartItem extends Product {
   quantity: number;
+  note?: string;
 }
 
 export default function QROrderPage() {
@@ -103,6 +104,10 @@ export default function QROrderPage() {
     });
   };
 
+  const updateCartNote = (productId: string, note: string) => {
+    setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, note } : item));
+  };
+
   const getCartItemQuantity = (productId: string) => cart.find(item => item.id === productId)?.quantity || 0;
   const getTotalPrice = () => cart.reduce((total, item) => total + item.price * item.quantity, 0);
   const getTotalItems = () => cart.reduce((total, item) => total + item.quantity, 0);
@@ -115,7 +120,7 @@ export default function QROrderPage() {
     setIsOrdering(true);
     setError('');
     try {
-      const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price }));
+      const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price, note: item.note }));
       const noteStr = `Khách báo: ${selectedPaymentCode === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}`;
       await orderService.createForCustomer(tableNumber, orderItems, noteStr);
       
@@ -179,6 +184,13 @@ export default function QROrderPage() {
                 <div className="flex-1">
                   <p className="font-bold text-slate-800 text-sm">{item.name}</p>
                   <p className="text-blue-600 font-semibold text-sm">{item.price.toLocaleString('vi-VN')} đ</p>
+                  <input 
+                    type="text" 
+                    placeholder="Ghi chú (ít đá, nhiều sữa...)"
+                    value={item.note || ''}
+                    onChange={(e) => updateCartNote(item.id, e.target.value)}
+                    className="mt-1.5 w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                  />
                 </div>
                 <div className="flex items-center gap-2 bg-blue-50/60 rounded-full p-1 border border-blue-100">
                   <button onClick={() => updateCart(item, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center rounded-full bg-white shadow-sm text-blue-600 hover:bg-slate-50">

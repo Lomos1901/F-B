@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 
 interface OrderItem {
   quantity: number;
+  note?: string;
   products?: { name: string; price: number };
 }
 
@@ -120,7 +121,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
       
       if (onPrintReceipt) {
         onPrintReceipt({
-          cart: order.order_detail.map(d => ({ product: d.products, quantity: d.quantity })),
+          cart: order.order_detail.map(d => ({ product: d.products, quantity: d.quantity, note: d.note })),
           total: order.total_price,
           orderId: order.id,
           table: order.table_number,
@@ -257,10 +258,13 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                     {selectedOrder.order_detail.map((item, index) => (
                       <div key={index} className="flex justify-between items-start text-sm">
                         <div className="flex-1 pr-3">
-                          <p className="font-medium text-slate-800">{item.products?.name}</p>
+                          <p className="font-medium text-slate-800">
+                            {item.products?.name}
+                            {item.note && <span className="block text-[11px] italic font-normal text-amber-600 mt-0.5">Ghi chú: {item.note}</span>}
+                          </p>
                           <p className="text-xs text-gray-500 mt-0.5">{(item.products?.price || 0).toLocaleString('vi-VN')}đ x {item.quantity}</p>
                         </div>
-                        <span className="font-bold text-slate-800">{((item.products?.price || 0) * item.quantity).toLocaleString('vi-VN')}đ</span>
+                        <span className="font-bold text-slate-800 mt-0.5">{((item.products?.price || 0) * item.quantity).toLocaleString('vi-VN')}đ</span>
                       </div>
                     ))}
                   </div>
@@ -299,7 +303,7 @@ export default function QrOrderDrawer({ isOpen, onClose, onOrdersCountChange, on
                       onClick={() => {
                         if (onPrintReceipt && selectedOrder) {
                           onPrintReceipt({
-                            cart: selectedOrder.order_detail.map(d => ({ product: d.products, quantity: d.quantity })),
+                            cart: selectedOrder.order_detail.map(d => ({ product: d.products, quantity: d.quantity, note: d.note })),
                             total: selectedOrder.total_price,
                             orderId: selectedOrder.id,
                             table: selectedOrder.table_number,

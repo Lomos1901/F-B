@@ -29,6 +29,7 @@ interface Category {
 interface CartItem {
   product: Product;
   quantity: number;
+  note?: string;
 }
 
 export default function KiotVietPOSPage() {
@@ -173,6 +174,10 @@ export default function KiotVietPOSPage() {
     setCart(prev => prev.map(item => item.product.id === productId ? { ...item, quantity: qty } : item));
   };
 
+  const updateCartNote = (productId: string, note: string) => {
+    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, note } : item));
+  };
+
   const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   };
@@ -199,7 +204,7 @@ export default function KiotVietPOSPage() {
     setIsProcessingOrder(true);
     setShowQrModal(false);
     try {
-      const itemsPayload = cart.map(item => ({ product_id: item.product.id, quantity: item.quantity, price_at_order: item.product.price }));
+      const itemsPayload = cart.map(item => ({ product_id: item.product.id, quantity: item.quantity, price_at_order: item.product.price, note: item.note }));
       const orderRes = await orderService.createForCustomer(selectedTableName, itemsPayload);
       const newOrderId = orderRes.orderId;
 
@@ -470,7 +475,16 @@ export default function KiotVietPOSPage() {
                         </button>
                       </td>
                       <td className="py-2 px-1 font-medium text-gray-800 text-[13px] leading-tight pr-2">
-                        {item.product.name}
+                        <div className="flex flex-col gap-1">
+                          <span>{item.product.name}</span>
+                          <input 
+                            type="text" 
+                            placeholder="+ Ghi chú (ít đá...)"
+                            value={item.note || ''}
+                            onChange={(e) => updateCartNote(item.product.id, e.target.value)}
+                            className="w-full text-[11px] px-1.5 py-1 bg-white border border-gray-200 rounded outline-none focus:border-blue-400 placeholder:text-gray-300 font-normal"
+                          />
+                        </div>
                       </td>
                       <td className="py-2 px-1">
                         <div className="flex items-center justify-center border border-gray-300 rounded overflow-hidden h-7 bg-white">
@@ -639,7 +653,10 @@ export default function KiotVietPOSPage() {
           <tbody>
             {printData.cart.map((item: any, idx: number) => (
               <tr key={idx} className="border-b border-gray-100">
-                <td className="py-1 pr-1 font-medium">{item.product.name}</td>
+                <td className="py-1 pr-1 font-medium">
+                  {item.product.name}
+                  {item.note && <div className="text-[10px] italic font-normal text-gray-600">Ghi chú: {item.note}</div>}
+                </td>
                 <td className="py-1 text-center">{item.quantity}</td>
                 <td className="py-1 text-right">{(item.product.price * item.quantity).toLocaleString('vi-VN')}</td>
               </tr>

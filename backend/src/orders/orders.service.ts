@@ -101,6 +101,7 @@ export class OrdersService {
       product_id: item.product_id,
       quantity: item.quantity,
       unit_price: item.price_at_order,
+      note: item.note,
     }));
 
     const { data: insertedDetails, error: detailError } = await this.client
@@ -188,7 +189,7 @@ export class OrdersService {
         id, table_number, total_price, created_at,
         order_status ( status_name ),
         payments ( id, amount, payment_methods (name) ),
-        order_detail ( quantity, products ( name, price ) )
+        order_detail ( quantity, note, products ( name, price ) )
       `)
       .in('status_id', [preparingStatusId, completedStatusId])
       .gte('created_at', startOfDay)
@@ -213,6 +214,7 @@ export class OrdersService {
         order_status ( status_name ),
         order_detail (
           quantity,
+          note,
           products ( name, price )
         )
       `,
@@ -234,7 +236,7 @@ export class OrdersService {
     const { data, error } = await this.client
       .from('orders')
       .select(
-        `id, table_number, total_price, created_at, order_status ( status_name ), order_detail (quantity, products ( name, price ))`,
+        `id, table_number, total_price, created_at, order_status ( status_name ), order_detail (quantity, note, products ( name, price ))`,
       )
       .eq('table_number', tableNumber)
       .in('order_status.status_name', ['PENDING', 'PREPARING', 'COMPLETED'])
