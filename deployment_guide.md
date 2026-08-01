@@ -1,4 +1,4 @@
-# Hướng Dẫn Triển Khai Hệ Thống Sẫm Coffee Lên Internet
+# Hướng Dẫn Triển Khai Hệ Thống Lumos Coffee Lên Internet
 
 Chào bạn, để đưa hệ thống POS này lên Internet giúp bạn có thể truy cập từ điện thoại bằng 4G hoặc bất cứ đâu trên thế giới, chúng ta sẽ cần làm 3 bước chính. Hệ thống được chia làm 3 phần:
 1. **Database (Dữ liệu):** Đang nằm trên Supabase (Đã xong, online sẵn).

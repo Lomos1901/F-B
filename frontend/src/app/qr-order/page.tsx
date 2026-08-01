@@ -32,7 +32,7 @@ export default function QROrderLandingPage() {
               <Coffee size={22} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">SẪM COFFEE</h1>
+              <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">LUMOS COFFEE</h1>
               <p className="text-xs text-slate-500 font-medium">Đặt món tại bàn thông minh</p>
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function QROrderLandingPage() {
               <span>Gọi món trực tuyến nhanh chóng</span>
             </div>
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3 leading-tight">
-              Chào mừng bạn đến với Sẫm Coffee
+              Chào mừng bạn đến với Lumos Coffee
             </h2>
             <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
               Vui lòng chọn hoặc nhập số bàn hiển thị trên thẻ QR tại bàn của bạn để bắt đầu chọn món.
@@ -162,7 +162,7 @@ export default function QROrderLandingPage() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
-        © {new Date().getFullYear()} SẪM COFFEE. All rights reserved.
+        © {new Date().getFullYear()} LUMOS COFFEE. All rights reserved.
       </footer>
     </div>
   );

@@ -28,7 +28,7 @@ export class ProductsService {
       .from('products')
       .select(
         `
-        id, name, price, image_url, is_active, category_id,
+        id, name, price, description, image_url, is_active, category_id,
         categories ( name ),
         recipes (
           quantity,
@@ -91,7 +91,19 @@ export class ProductsService {
     }
 
     if (ingredients && ingredients.length > 0) {
-      const recipePayload = ingredients.map((ing) => ({
+      // Tự động gộp các nguyên liệu trùng nhau
+      const mergedIngredients = Object.values(
+        ingredients.reduce((acc, curr) => {
+          if (acc[curr.ingredient_id]) {
+            acc[curr.ingredient_id].quantity_required += curr.quantity_required;
+          } else {
+            acc[curr.ingredient_id] = { ...curr };
+          }
+          return acc;
+        }, {} as Record<string, any>)
+      );
+
+      const recipePayload = mergedIngredients.map((ing) => ({
         product_id: newProduct.id,
         ingredient_id: ing.ingredient_id,
         quantity: ing.quantity_required,
@@ -142,7 +154,19 @@ export class ProductsService {
     }
 
     if (ingredients && ingredients.length > 0) {
-      const recipePayload = ingredients.map((ing) => ({
+      // Tự động gộp các nguyên liệu trùng nhau
+      const mergedIngredients = Object.values(
+        ingredients.reduce((acc, curr) => {
+          if (acc[curr.ingredient_id]) {
+            acc[curr.ingredient_id].quantity_required += curr.quantity_required;
+          } else {
+            acc[curr.ingredient_id] = { ...curr };
+          }
+          return acc;
+        }, {} as Record<string, any>)
+      );
+
+      const recipePayload = mergedIngredients.map((ing) => ({
         product_id: id,
         ingredient_id: ing.ingredient_id,
         quantity: ing.quantity_required,

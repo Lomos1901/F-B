@@ -36,7 +36,7 @@ export default function LoginPage() {
           <div className="p-3.5 bg-blue-50 rounded-2xl border border-blue-100 mb-4 shadow-sm">
             <Coffee className="text-blue-600" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Sẫm Coffee</h1>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Lumos Coffee</h1>
           <p className="text-slate-500 mt-1 text-sm">Đăng nhập hệ thống quản trị</p>
         </div>
 

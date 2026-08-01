@@ -21,6 +21,7 @@ interface Product {
   price: number;
   image_url?: string;
   is_active?: boolean;
+  description?: string;
   categories?: { name: string };
   category?: { name: string };
 }
@@ -34,6 +35,77 @@ interface CartItem extends Product {
   note?: string;
 }
 
+// --- COMPONENT PRODUCT MODAL ---
+const ProductModal = ({ product, onClose, onAdd }: { product: Product | null, onClose: () => void, onAdd: (p: Product) => void }) => {
+  if (!product) return null;
+  return (
+    <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 animate-[fadeIn_0.2s_ease-out]" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-[slideUp_0.3s_ease-out]" onClick={e => e.stopPropagation()}>
+        <div className="relative w-full aspect-square bg-slate-100">
+           <img src={product.image_url || '/placeholder.svg'} className="w-full h-full object-cover" alt={product.name} />
+           <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/60 transition-colors">
+              <X size={18} />
+           </button>
+        </div>
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-slate-800 leading-tight mb-1">{product.name}</h2>
+          <p className="text-xl font-bold text-blue-600 mb-4">{product.price.toLocaleString('vi-VN')} đ</p>
+          
+          {product.description ? (
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+              <h3 className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-2">Thành phần / Ghi chú</h3>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{product.description}</p>
+            </div>
+          ) : (
+            <div className="mb-6"></div>
+          )}
+
+          <button 
+            onClick={() => { onAdd(product); onClose(); }} 
+            className="w-full h-[52px] bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
+          >
+            <ShoppingBag size={20} />
+            Thêm vào giỏ hàng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENT CART NOTE INPUT (Giải quyết lỗi lag khi gõ) ---
+const CartItemNoteInput = ({ item, updateNote }: { item: CartItem, updateNote: (id: string, note: string) => void }) => {
+  const [localNote, setLocalNote] = useState(item.note || '');
+  
+  // Chỉ cập nhật từ ngoài vào nếu localNote đang rỗng (để không ghi đè chữ khách đang gõ dở)
+  useEffect(() => {
+    if (item.note !== localNote && document.activeElement !== document.getElementById(`note-${item.id}`)) {
+      setLocalNote(item.note || '');
+    }
+  }, [item.note]);
+
+  return (
+    <input 
+      id={`note-${item.id}`}
+      type="text" 
+      placeholder="Ghi chú (ít đá, nhiều sữa...)"
+      value={localNote}
+      onChange={(e) => setLocalNote(e.target.value)}
+      onBlur={() => {
+        if (localNote !== (item.note || '')) {
+          updateNote(item.id, localNote);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.currentTarget.blur();
+        }
+      }}
+      className="mt-1.5 w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+    />
+  );
+};
+
 export default function QROrderPage() {
   const params = useParams();
   const tableNumber = params.tableNumber as string;
@@ -46,6 +118,7 @@ export default function QROrderPage() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
 
   // Payment states
@@ -256,13 +329,7 @@ export default function QROrderPage() {
                 <div className="flex-1">
                   <p className="font-bold text-slate-800 text-sm">{item.name}</p>
                   <p className="text-blue-600 font-semibold text-sm">{item.price.toLocaleString('vi-VN')} đ</p>
-                  <input 
-                    type="text" 
-                    placeholder="Ghi chú (ít đá, nhiều sữa...)"
-                    value={item.note || ''}
-                    onChange={(e) => updateCartNote(item.id, e.target.value)}
-                    className="mt-1.5 w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
-                  />
+                  <CartItemNoteInput item={item} updateNote={updateCartNote} />
                 </div>
                 <div className="flex items-center gap-2 bg-blue-50/60 rounded-full p-1 border border-blue-100">
                   <button onClick={() => updateCart(item, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center rounded-full bg-white shadow-sm text-blue-600 hover:bg-slate-50">
@@ -388,7 +455,7 @@ export default function QROrderPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-wider leading-tight">SẪM COFFEE</h1>
+              <h1 className="text-xl font-bold tracking-wider leading-tight">LUMOS COFFEE</h1>
               <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">
                 <Users size={12} /> Giỏ Nhóm
               </span>
@@ -414,7 +481,7 @@ export default function QROrderPage() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1559925393-8be0a33e7a14?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center mix-blend-overlay opacity-30"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white">
           <h2 className="text-3xl sm:text-4xl font-bold mb-2 shadow-sm">Thưởng thức hương vị</h2>
-          <p className="text-sm sm:text-base font-medium text-blue-100 max-w-md shadow-sm">Khám phá menu đa dạng của Sẫm Coffee. Chạm để chọn món, chúng tôi sẽ phục vụ ngay tại bàn {tableNumber}.</p>
+          <p className="text-sm sm:text-base font-medium text-blue-100 max-w-md shadow-sm">Khám phá menu đa dạng của Lumos Coffee. Chạm để chọn món, chúng tôi sẽ phục vụ ngay tại bàn {tableNumber}.</p>
         </div>
       </section>
 
@@ -449,19 +516,23 @@ export default function QROrderPage() {
 
                   return (
                     <div key={product.id} className={`bg-white rounded-2xl p-2 sm:p-3 border border-slate-200 flex flex-col gap-2 transition-all duration-300 ${isOutOfStock ? 'opacity-60 grayscale-[0.3] cursor-not-allowed shadow-none' : 'shadow-sm hover:-translate-y-1 hover:shadow-md'}`}>
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="relative w-full aspect-square">
+                      {/* Clickable Area for Product Details */}
+                      <div 
+                        className="flex flex-col items-center gap-2 cursor-pointer group"
+                        onClick={() => !isOutOfStock && setSelectedProduct(product)}
+                      >
+                        <div className="relative w-full pt-[100%] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
                           <img 
                             src={product.image_url || '/placeholder.svg'} 
                             alt={product.name} 
-                            className="w-full h-full rounded-xl object-cover bg-slate-50 border border-slate-100"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                           />
                           {isOutOfStock && (
-                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-xl"></div>
+                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center"></div>
                           )}
                         </div>
                         <div className="flex flex-col w-full text-center">
-                          <h3 className="font-bold text-slate-800 text-[13px] sm:text-[14px] leading-tight line-clamp-2 h-9 mt-1">{product.name}</h3>
+                          <h3 className="font-bold text-slate-800 text-[13px] sm:text-[14px] leading-tight line-clamp-2 h-9 mt-1 group-hover:text-blue-600 transition-colors">{product.name}</h3>
                           <p className="text-[14px] sm:text-[15px] font-bold text-blue-600 mt-1">{product.price.toLocaleString('vi-VN')} đ</p>
                         </div>
                       </div>
@@ -534,6 +605,13 @@ export default function QROrderPage() {
           </div>
         </div>
       )}
+
+      {/* Product Detail Modal */}
+      <ProductModal 
+        product={selectedProduct} 
+        onClose={() => setSelectedProduct(null)} 
+        onAdd={(p) => updateCart(p, getCartItemQuantity(p.id) + 1)}
+      />
       
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes slideUp {

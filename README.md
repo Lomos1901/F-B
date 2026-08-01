@@ -1,4 +1,4 @@
-# Hệ thống Quản lý F&B Smart Inventory (Sẫm Coffee)
+# Hệ thống Quản lý F&B Smart Inventory (Lumos Coffee)
 
 Dự án quản lý vận hành và kiểm soát định mức nguyên liệu thông minh dành cho quán F&B, tích hợp QR Order và Trí tuệ nhân tạo (AI).
 

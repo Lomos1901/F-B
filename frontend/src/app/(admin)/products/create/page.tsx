@@ -21,6 +21,7 @@ export default function CreateProductPage() {
   const [categoryId, setCategoryId] = useState('');
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState<number | ''>('');
+  const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [recipeRows, setRecipeRows] = useState<RecipeInput[]>([{ ingredient_id: '', ui_quantity: 0 }]);
 
@@ -93,6 +94,7 @@ export default function CreateProductPage() {
       category_id: categoryId,
       name: productName,
       price: Number(productPrice),
+      description: description.trim(),
       image_url: imageUrl,
       ingredients: ingredientsPayload,
     };
@@ -166,7 +168,18 @@ export default function CreateProductPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả / Ghi chú cho khách</label>
+                <textarea
+                  placeholder="VD: Thành phần: Trà ô long cao cấp... Món bán chạy nhất quán..."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400 resize-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Hình ảnh</label>
                 <div className="flex items-center gap-4">
                   <input type="file" id="image-upload" onChange={handleFileChange} className="hidden" />

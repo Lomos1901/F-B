@@ -319,36 +319,43 @@ export class AnalyticsService {
           );
           continue;
         }
-        const consumptionRate = rateData?.[0]?.avg_daily_consumption;
-        if (consumptionRate && consumptionRate > 0) {
-          const stockInBaseUnit =
-            ingredient.stock_quantity * ingredient.conversion_factor;
-          let daysRemaining = stockInBaseUnit / consumptionRate;
-          if (daysRemaining < 0) {
-            daysRemaining = 0;
-          }
+        const consumptionRate = rateData?.[0]?.avg_daily_consumption || 0;
+        const stockInBaseUnit = ingredient.stock_quantity * ingredient.conversion_factor;
+        
+        let shouldAlert = false;
+        let daysRemaining = 0;
+        let message = '';
+        let action = 'Lên kế hoạch nhập hàng ngay.';
+
+        if (ingredient.stock_quantity <= 0.5) {
+          // Báo động khẩn cấp nếu số lượng thực tế dưới 0.5 (kg/lít/hộp)
+          shouldAlert = true;
+          daysRemaining = 0;
+          message = `Cảnh báo khẩn: Nguyên liệu '${ingredient.name}' sắp CẠN KIỆT (chỉ còn ${ingredient.stock_quantity}).`;
+        } else if (consumptionRate > 0) {
+          // Báo động dựa trên dự báo tốc độ tiêu thụ
+          daysRemaining = stockInBaseUnit / consumptionRate;
           if (daysRemaining < FORECAST_THRESHOLD_DAYS) {
-            let message: string;
-            if (stockInBaseUnit <= 0) {
-              message = `Cảnh báo khẩn: Nguyên liệu '${ingredient.name}' ĐÃ HẾT HÀNG.`;
-            } else {
-              message = `Dự báo: Nguyên liệu '${ingredient.name}' chỉ còn đủ dùng cho khoảng ${Math.floor(daysRemaining)} ngày nữa.`;
-            }
-            const payload = {
-              expected_value: FORECAST_THRESHOLD_DAYS,
-              actual_value: daysRemaining,
-              anomaly_score: 1 - daysRemaining / FORECAST_THRESHOLD_DAYS,
-            };
-            await this.createAnomalyRecord(
-              'ingredients',
-              ingredient.name,
-              'INVENTORY_FORECAST',
-              message,
-              'Lên kế hoạch nhập hàng ngay.',
-              force,
-              payload,
-            );
+            shouldAlert = true;
+            message = `Dự báo: Nguyên liệu '${ingredient.name}' chỉ còn đủ dùng cho khoảng ${Math.floor(daysRemaining)} ngày nữa.`;
           }
+        }
+
+        if (shouldAlert) {
+          const payload = {
+            expected_value: FORECAST_THRESHOLD_DAYS,
+            actual_value: daysRemaining,
+            anomaly_score: 1 - daysRemaining / FORECAST_THRESHOLD_DAYS,
+          };
+          await this.createAnomalyRecord(
+            'ingredients',
+            ingredient.name,
+            'INVENTORY_FORECAST',
+            message,
+            action,
+            force,
+            payload,
+          );
         }
       }
     } catch (error) {
@@ -540,7 +547,7 @@ export class AnalyticsService {
     // Thu thập toàn bộ dữ liệu thực tế
     const todaySales = await this.getTodayDiagnostics();
     const inventory = await this.getInventoryDiagnostics();
-    const recentAnomalies = await this.getAnomalies(10, false);
+    const recentAnomalies = await this.getAnomalies(20, true);
 
     const salesAnomalies = todaySales.filter(s => s.is_anomaly);
     const ghostProducts = todaySales.filter(s => s.today_quantity === 0 && s.mean_daily_sales > 3);
@@ -565,25 +572,31 @@ export class AnalyticsService {
       ${lowStockItems.map(i => `  + "${i.ingredient_name}": còn ${i.stock_quantity} ${i.unit}, dự báo hết sau ${typeof i.days_remaining === 'number' ? Math.floor(i.days_remaining) : i.days_remaining} ngày`).join('\n')}
 
       3. CẢNH BÁO GẦN ĐÂY (${recentAnomalies.length} cảnh báo mới nhất):
-      ${recentAnomalies.slice(0, 5).map(a => `  - [${a.alert_category}] ${a.message}`).join('\n')}
+      ${recentAnomalies.slice(0, 5).map(a => `  - ${a.message}`).join('\n')}
     `;
 
     const prompt = `
-      Bạn là một Giám đốc vận hành F&B chuyên nghiệp của quán "SẪM COFFEE".
-      Dưới đây là dữ liệu kinh doanh THỰC TẾ của quán ngày hôm nay:
-      ---
-      ${rawDataStr}
-      ---
-      Yêu cầu:
-      Dựa vào dữ liệu trên, hãy viết một Báo Cáo Phân Tích chi tiết bằng Tiếng Việt.
-      Báo cáo phải bao gồm:
-      1. **Tóm tắt tình hình**: Đánh giá tổng quan hoạt động kinh doanh hôm nay (tốt/xấu/bình thường).
-      2. **Hiện tượng bất thường**: Chỉ ra các anomaly đáng chú ý (nếu có).
-      3. **Rủi cấu tiềm ẩn**: Cảnh báo về nguyên liệu sắp hết, sản phẩm ế ẩm, v.v.
-      4. **Khuyến nghị hành động**: Đưa ra 2-3 hành động cụ thể, thực tế mà quản lý nên làm NGAY.
+Bạn là AI phân tích dữ liệu của LUMOS COFFEE. Nhiệm vụ của bạn là đọc dữ liệu bên dưới và điền vào đúng KHUÔN MẪU BÁO CÁO sau đây.
+TUYỆT ĐỐI KHÔNG giải thích luyên thuyên, KHÔNG viết lời chào, KHÔNG dùng EMOJI/ICON. TUYỆT ĐỐI KHÔNG in ra các mã lỗi kỹ thuật (như INVENTORY_FORECAST, SALES_SPIKE...). KHÔNG tự ý thêm bớt các phần. Chỉ điền thông tin vào chỗ trống. Viết rất ngắn gọn, súc tích (dưới 150 từ), đi thẳng vào trọng tâm số liệu.
 
-      Định dạng bằng Markdown, sử dụng heading, bullet points, và emoji cho dễ đọc.
-      Giữ báo cáo ngắn gọn, đi thẳng vào vấn đề, không dài quá 300 từ.
+--- DỮ LIỆU THỰC TẾ HÔM NAY ---
+${rawDataStr}
+
+--- KHUÔN MẪU BÁO CÁO (BẮT BUỘC TUÂN THỦ) ---
+**TỔNG QUAN KINH DOANH**
+- Đánh giá chung: [Tốt / Kém / Bình thường] - [1 Câu giải thích ngắn gọn dựa trên số liệu].
+- Top 1 bán chạy: [Tên sản phẩm] ([Số lượng] ly).
+
+**CÁC CẢNH BÁO HỆ THỐNG GHI NHẬN**
+[Liệt kê toàn bộ các cảnh báo hiện có trong dữ liệu thành từng gạch đầu dòng chi tiết, mỗi cảnh báo 1 dòng. Nếu không có thì ghi "Không có cảnh báo nào"].
+
+**CẢNH BÁO KHO VÀ HÀNG HÓA**
+- Cần nhập gấp: [Tên các nguyên liệu dự báo hết < 3 ngày, hoặc ghi "Kho ổn định"].
+- Món đang ế ẩm: [Tên món bán được 0 ly, hoặc ghi "Không có"].
+
+**HÀNH ĐỘNG ĐỀ XUẤT NGAY LẬP TỨC**
+1. [Hành động ưu tiên 1 - Tối đa 15 chữ]
+2. [Hành động ưu tiên 2 - Tối đa 15 chữ]
     `;
 
     let text = '';
@@ -591,7 +604,7 @@ export class AnalyticsService {
     const maxRetries = 3;
 
     while (attempt < maxRetries) {
-      try {
+          try {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         // Sử dụng gemini-flash-latest (model cũ đang chạy tốt) làm ưu tiên, fallback sang các model khác
         let defaultModel = 'gemini-flash-latest';

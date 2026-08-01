@@ -73,7 +73,7 @@ export default function Sidebar() {
           </div>
           {isExpanded && (
             <h2 className="text-[17px] font-extrabold text-slate-800 tracking-tight whitespace-nowrap">
-              SẪM COFFEE
+              LUMOS COFFEE
             </h2>
           )}
         </div>

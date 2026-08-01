@@ -214,7 +214,7 @@ export default function ReceiptsPage() {
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">SẪM COFFEE</h3>
+                <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">LUMOS COFFEE</h3>
                 <p className="text-sm font-semibold text-blue-600 mt-1">Bàn {selectedOrder.table_number}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{format(new Date(selectedOrder.created_at), 'HH:mm - dd/MM/yyyy')}</p>
               </div>

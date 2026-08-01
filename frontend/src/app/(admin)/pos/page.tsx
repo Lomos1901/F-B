@@ -275,7 +275,7 @@ export default function KiotVietPOSPage() {
       {/* 1. TOP NAVBAR */}
       <header className="h-auto md:h-14 py-2 md:py-0 bg-blue-600 text-white flex flex-col md:flex-row items-center justify-between px-2 md:px-4 shrink-0 shadow-sm z-10 gap-2 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto gap-4">
-          <h1 className="text-lg font-bold tracking-wider hidden sm:block">SẪM POS</h1>
+          <h1 className="text-lg font-bold tracking-wider hidden sm:block">LUMOS POS</h1>
           <div className="relative flex-1 md:flex-none">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
@@ -364,20 +364,20 @@ export default function KiotVietPOSPage() {
                       <button
                         key={prod.id}
                         onClick={() => addToCart(prod)}
-                        className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-blue-300 transition-all active:scale-95 flex flex-col h-[140px]"
+                        className="group bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-blue-300 transition-all active:scale-95 flex flex-col h-full"
                       >
-                        <div className="h-20 bg-gray-100 flex-shrink-0 w-full overflow-hidden">
+                        <div className="relative w-full pt-[100%] bg-slate-50 flex-shrink-0 overflow-hidden border-b border-slate-100">
                           {prod.image_url ? (
-                            <img src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
+                            <img src={prod.image_url} alt={prod.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 ease-out" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <div className="absolute inset-0 flex items-center justify-center text-slate-300">
                               <Coffee size={24} />
                             </div>
                           )}
                         </div>
-                        <div className="p-2 flex flex-col justify-between flex-1 text-left">
-                          <p className="text-blue-600 font-bold text-xs">{prod.price.toLocaleString('vi-VN')} đ</p>
-                          <h3 className="text-[11px] font-semibold text-gray-800 leading-tight line-clamp-2">{prod.name}</h3>
+                        <div className="p-2.5 flex flex-col justify-between flex-1 text-left bg-white">
+                          <h3 className="text-[12px] font-bold text-slate-800 leading-tight line-clamp-2 mb-1">{prod.name}</h3>
+                          <p className="text-blue-600 font-bold text-[13px]">{prod.price.toLocaleString('vi-VN')} đ</p>
                         </div>
                       </button>
                     ))}
@@ -629,7 +629,7 @@ export default function KiotVietPOSPage() {
       `}} />
       <div id="receipt-print-area" className="hidden print:block text-black font-sans" style={{ color: '#000' }}>
         <div className="text-center mb-4">
-          <h1 className="font-bold text-2xl uppercase mb-1">SẪM COFFEE</h1>
+          <h1 className="font-bold text-2xl uppercase mb-1">LUMOS COFFEE</h1>
           <p className="text-xs">Đ/c: 123 Đường Cà Phê, Quận 1, TP.HCM</p>
           <p className="text-xs">SĐT: 0123 456 789</p>
           <div className="border-t border-dashed border-black my-2 w-full"></div>

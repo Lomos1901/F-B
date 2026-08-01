@@ -36,6 +36,10 @@ export class CreateProductDto {
   @IsOptional()
   image_url?: string;
 
+  @IsString()
+  @IsOptional()
+  description?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RecipeItemDto)

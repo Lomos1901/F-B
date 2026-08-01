@@ -24,7 +24,7 @@ const ShiftReceipt = forwardRef<HTMLDivElement, ShiftReceiptProps>(({ shift }, r
     >
       {/* Header */}
       <div className="text-center mb-6 border-b-2 border-black pb-4 border-dashed">
-        <h1 className="text-2xl font-bold uppercase tracking-widest mb-1">SẪM COFFEE</h1>
+        <h1 className="text-2xl font-bold uppercase tracking-widest mb-1">LUMOS COFFEE</h1>
         <p className="text-xs">123 Đường Cà Phê, Quận 1, TP.HCM</p>
         <p className="text-xs">SĐT: 0909 123 456</p>
         <h2 className="text-xl font-bold uppercase mt-4">Phiếu Chốt Ca</h2>

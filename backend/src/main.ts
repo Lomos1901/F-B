@@ -24,7 +24,7 @@ async function bootstrap() {
   // Đổi thành cổng 3001 cho local, hoặc dùng PORT từ biến môi trường khi deploy lên server
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`🚀 Backend Sẫm Coffee đang chạy tại: http://localhost:${port}`);
+  console.log(`🚀 Backend Lumos Coffee đang chạy tại: http://localhost:${port}`);
 }
 bootstrap().catch((err) => {
   console.error('Error starting app:', err);

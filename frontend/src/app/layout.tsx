@@ -14,8 +14,8 @@ const inter = Inter({
 
 // Metadata không thể export từ client component, nên sẽ bỏ qua ở đây hoặc cần xử lý riêng
 // export const metadata: Metadata = {
-//   title: "Sẫm Coffee",
-//   description: "Hệ thống quản lý và gọi món Sẫm Coffee",
+//   title: "Lumos Coffee",
+//   description: "Hệ thống quản lý và gọi món Lumos Coffee",
 // };
 
 export default function RootLayout({
