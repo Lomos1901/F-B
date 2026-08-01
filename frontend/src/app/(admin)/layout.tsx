@@ -46,11 +46,13 @@ export default function AdminLayout({
     );
   }
 
+  const isFullScreenApp = pathname.startsWith('/pos') || pathname.startsWith('/kds');
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="p-4 sm:p-6">
+        <div className={isFullScreenApp ? "h-full" : "p-4 sm:p-6"}>
           {children}
         </div>
       </main>

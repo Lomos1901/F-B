@@ -110,14 +110,7 @@ export class IngredientsService {
     if (importStockDto.amount <= 0)
       throw new BadRequestException('Số lượng nhập phải lớn hơn 0');
 
-    const { data: current, error: fetchError } = await this.client
-      .from('ingredients')
-      .select('stock_quantity')
-      .eq('id', id)
-      .single();
-    if (fetchError || !current)
-      throw new NotFoundException('Không tìm thấy nguyên liệu');
-
+    // 1. Tạo phiếu nhập kho
     const { data: receiptData, error: receiptError } = await this.client
       .from('inventory_receipts')
       .insert({
@@ -134,6 +127,7 @@ export class IngredientsService {
       );
     }
 
+    // 2. Ghi chi tiết phiếu
     const { error: detailError } = await this.client
       .from('receipt_details')
       .insert({
@@ -153,16 +147,25 @@ export class IngredientsService {
       );
     }
 
-    const newStock = (current.stock_quantity || 0) + importStockDto.amount;
-    const { error: updateError } = await this.client
-      .from('ingredients')
-      .update({ stock_quantity: newStock })
-      .eq('id', id);
+    // 3. Cập nhật tồn kho ATOMIC qua RPC (tránh race condition read-then-write)
+    const { data: newStock, error: rpcError } = await this.client.rpc(
+      'atomic_increment_stock',
+      { p_id: id, p_amount: importStockDto.amount },
+    );
 
-    if (updateError) {
-      this.logger.error(
-        'Lỗi cập nhật tồn kho sau khi đã ghi phiếu:',
-        updateError,
+    if (rpcError) {
+      this.logger.error('Lỗi cập nhật tồn kho (RPC):', rpcError);
+      // Rollback phiếu nếu cập nhật kho thất bại
+      await this.client
+        .from('receipt_details')
+        .delete()
+        .eq('receipt_id', receiptData.id);
+      await this.client
+        .from('inventory_receipts')
+        .delete()
+        .eq('id', receiptData.id);
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống khi cập nhật tồn kho.',
       );
     }
 

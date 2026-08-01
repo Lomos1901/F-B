@@ -160,18 +160,25 @@ export default function KiotVietPOSPage() {
   };
 
   const updateQuantity = (productId: string, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.product.id === productId) {
-        const newQ = item.quantity + delta;
-        return newQ > 0 ? { ...item, quantity: newQ } : item;
-      }
-      return item;
-    }));
+    setCart(prev => prev
+      .map(item => {
+        if (item.product.id === productId) {
+          return { ...item, quantity: item.quantity + delta };
+        }
+        return item;
+      })
+      .filter(item => item.quantity > 0)
+    );
   };
 
   const setQuantityExact = (productId: string, qtyStr: string) => {
-    const qty = parseInt(qtyStr) || 1;
-    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, quantity: qty } : item));
+    const qty = parseInt(qtyStr, 10);
+    const validQty = isNaN(qty) ? 0 : qty;
+    
+    setCart(prev => prev
+      .map(item => item.product.id === productId ? { ...item, quantity: validQty } : item)
+      .filter(item => item.quantity > 0)
+    );
   };
 
   const updateCartNote = (productId: string, note: string) => {
@@ -277,12 +284,12 @@ export default function KiotVietPOSPage() {
         <div className="flex items-center justify-between w-full md:w-auto gap-4">
           <h1 className="text-lg font-bold tracking-wider hidden sm:block">LUMOS POS</h1>
           <div className="relative flex-1 md:flex-none">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               ref={searchInputRef}
-              type="text" placeholder="Tìm hàng hóa..." 
+              type="text" placeholder="Tìm hàng hóa (F3)..." 
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-[300px] h-9 bg-white/10 border border-white/20 rounded-md pl-9 pr-3 text-sm text-white placeholder-gray-300 outline-none focus:bg-white focus:text-gray-900 focus:placeholder-gray-500 transition-colors"
+              className="w-full md:w-[320px] h-9 bg-white rounded-full pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-300 shadow-inner transition-all"
             />
           </div>
         </div>
@@ -332,11 +339,13 @@ export default function KiotVietPOSPage() {
           {activeTab === 'MENU' ? (
             <>
               {/* Categories Strip */}
-              <div className="flex overflow-x-auto bg-white border-b border-gray-200 shrink-0 scrollbar-hide shadow-sm">
+              <div className="flex gap-2 overflow-x-auto px-3 py-2 bg-white border-b border-slate-200 shrink-0 scrollbar-hide shadow-sm">
                 <button
                   onClick={() => setActiveCategoryId('ALL')}
-                  className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                    activeCategoryId === 'ALL' ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-600 hover:bg-gray-50'
+                  className={`min-w-[110px] px-4 py-1.5 rounded-full text-[13px] font-bold transition-all duration-300 ease-in-out border text-center ${
+                    activeCategoryId === 'ALL' 
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   Tất cả
@@ -345,8 +354,10 @@ export default function KiotVietPOSPage() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategoryId(cat.id)}
-                    className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                      activeCategoryId === cat.id ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-600 hover:bg-gray-50'
+                    className={`min-w-[110px] px-4 py-1.5 rounded-full text-[13px] font-bold transition-all duration-300 ease-in-out border text-center whitespace-nowrap ${
+                      activeCategoryId === cat.id 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     {cat.name}
@@ -355,29 +366,29 @@ export default function KiotVietPOSPage() {
               </div>
 
               {/* Products Grid */}
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                 {loadingMenu ? (
                   <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 w-8 h-8"/></div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-max">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 auto-rows-max">
                     {filteredProducts.map(prod => (
                       <button
                         key={prod.id}
                         onClick={() => addToCart(prod)}
-                        className="group bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-blue-300 transition-all active:scale-95 flex flex-col h-full"
+                        className="group bg-white rounded-xl border border-slate-200 flex flex-col transition-all duration-300 shadow-sm hover:-translate-y-0.5 hover:shadow-md text-center h-full active:scale-95 overflow-hidden"
                       >
-                        <div className="relative w-full pt-[100%] bg-slate-50 flex-shrink-0 overflow-hidden border-b border-slate-100">
+                        <div className="relative w-full pt-[100%] bg-slate-50 border-b border-slate-100 shrink-0 mx-auto">
                           {prod.image_url ? (
-                            <img src={prod.image_url} alt={prod.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 ease-out" />
+                            <img src={prod.image_url} alt={prod.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center text-slate-300">
                               <Coffee size={24} />
                             </div>
                           )}
                         </div>
-                        <div className="p-2.5 flex flex-col justify-between flex-1 text-left bg-white">
-                          <h3 className="text-[12px] font-bold text-slate-800 leading-tight line-clamp-2 mb-1">{prod.name}</h3>
-                          <p className="text-blue-600 font-bold text-[13px]">{prod.price.toLocaleString('vi-VN')} đ</p>
+                        <div className="flex flex-col w-full justify-between flex-1 p-2">
+                          <h3 className="font-bold text-slate-800 text-[12px] leading-tight line-clamp-2 h-8 group-hover:text-blue-600 transition-colors">{prod.name}</h3>
+                          <p className="text-[13px] font-bold text-blue-600 mt-0.5">{prod.price.toLocaleString('vi-VN')} đ</p>
                         </div>
                       </button>
                     ))}
@@ -398,19 +409,21 @@ export default function KiotVietPOSPage() {
                           setSelectedTableName(table.name);
                           if (table.status === 'AVAILABLE') setActiveTab('MENU');
                         }}
-                         className={`relative flex flex-col p-3 rounded-xl border shadow-sm transition-all h-28 ${
+                         className={`relative flex flex-col p-3 rounded-xl border shadow-sm transition-all h-28 hover:shadow-md ${
                           selectedTableName === table.name ? 'ring-2 ring-offset-2 ring-blue-600' : ''
                         } ${
-                          table.status === 'AVAILABLE' ? 'bg-white border-slate-200 hover:border-blue-400' : 
+                          table.status === 'AVAILABLE' ? 'bg-slate-100 border-slate-300 hover:border-blue-400' : 
                           table.status === 'OCCUPIED' ? 'bg-red-50 border-red-200 text-red-900' : 
                           'bg-yellow-50 border-yellow-200 text-yellow-900 animate-pulse'
                         }`}
                       >
                         <div className="flex justify-between items-start w-full">
                           <span className="font-bold text-sm">{table.name}</span>
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-sm bg-black/5">
-                            {table.status === 'AVAILABLE' ? 'TRỐNG' : table.status === 'PENDING' ? 'CHỜ THU' : 'CÓ KHÁCH'}
-                          </span>
+                          {table.status !== 'AVAILABLE' && (
+                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-sm bg-black/5">
+                              {table.status === 'PENDING' ? 'CHỜ THU' : 'CÓ KHÁCH'}
+                            </span>
+                          )}
                         </div>
                         
                         <div className="mt-auto text-left w-full">
@@ -435,7 +448,7 @@ export default function KiotVietPOSPage() {
         </div>
 
         {/* RIGHT: CART / RECEIPT (KiotViet style) */}
-        <div className="w-full lg:w-[380px] bg-white flex flex-col border-t lg:border-t-0 lg:border-l border-gray-300 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:shadow-[-2px_0_10px_rgba(0,0,0,0.05)] z-10 shrink-0 min-h-[50vh] lg:min-h-0">
+        <div className="w-full lg:w-[380px] bg-white flex flex-col border-t lg:border-t-0 lg:border-l border-slate-300 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:shadow-[-2px_0_10px_rgba(0,0,0,0.05)] z-10 shrink-0 min-h-[50vh] lg:min-h-0">
           
           {/* Cart Header */}
           <div className="h-12 border-b border-gray-200 flex items-center justify-between px-3 bg-gray-50/50">
@@ -450,72 +463,72 @@ export default function KiotVietPOSPage() {
           </div>
 
           {/* Cart Items List */}
-          <div className="flex-1 overflow-y-auto bg-white">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 sticky top-0 z-10">
-                <tr>
-                  <th className="py-2 px-3 text-left font-medium w-10">STT</th>
-                  <th className="py-2 px-1 text-left font-medium">Tên món</th>
-                  <th className="py-2 px-1 text-center font-medium w-24">SL</th>
-                  <th className="py-2 px-3 text-right font-medium w-24">Thành tiền</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cart.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-10 text-gray-400 text-sm">Giỏ hàng trống</td>
-                  </tr>
-                ) : (
-                  cart.map((item, index) => (
-                    <tr key={item.product.id} className="border-b border-gray-100 hover:bg-gray-50 group">
-                      <td className="py-2 px-3 text-center text-gray-400 text-xs">
-                        {index + 1}
-                        <button onClick={() => removeFromCart(item.product.id)} className="hidden group-hover:block absolute -ml-4 mt-[-14px] text-red-500 p-1 bg-white rounded-full shadow-sm border border-red-100">
-                          <X size={12} />
-                        </button>
-                      </td>
-                      <td className="py-2 px-1 font-medium text-gray-800 text-[13px] leading-tight pr-2">
-                        <div className="flex flex-col gap-1">
-                          <span>{item.product.name}</span>
-                          <input 
-                            type="text" 
-                            placeholder="+ Ghi chú (ít đá...)"
-                            value={item.note || ''}
-                            onChange={(e) => updateCartNote(item.product.id, e.target.value)}
-                            className="w-full text-[11px] px-1.5 py-1 bg-white border border-gray-200 rounded outline-none focus:border-blue-400 placeholder:text-gray-300 font-normal"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-2 px-1">
-                        <div className="flex items-center justify-center border border-gray-300 rounded overflow-hidden h-7 bg-white">
-                          <button onClick={() => updateQuantity(item.product.id, -1)} className="w-7 h-full flex items-center justify-center hover:bg-gray-100 text-gray-600 active:bg-gray-200">
-                            <Minus size={12} />
+          <div className="flex-1 overflow-y-auto bg-white p-4">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                <Coffee size={48} className="mb-4 opacity-30" />
+                <p className="text-sm">Chưa có món nào trong giỏ</p>
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {cart.map((item, index) => (
+                  <li key={item.product.id} className="flex items-start gap-3 relative group">
+                    <button 
+                      onClick={() => removeFromCart(item.product.id)} 
+                      className="absolute -top-2 -left-2 text-red-500 p-1 bg-white rounded-full shadow-md border border-red-100 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-50"
+                    >
+                      <X size={12} />
+                    </button>
+                    
+                    {item.product.image_url ? (
+                       <img src={item.product.image_url} alt={item.product.name} className="w-14 h-14 rounded-xl object-cover border border-slate-100 shrink-0" />
+                    ) : (
+                       <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 shrink-0 flex items-center justify-center text-slate-300">
+                          <Coffee size={20} />
+                       </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="font-bold text-slate-800 text-[13px] leading-tight pr-2 line-clamp-2">{item.product.name}</p>
+                        <p className="text-blue-600 font-bold text-[13px] whitespace-nowrap">{(item.product.price * item.quantity).toLocaleString('vi-VN')} đ</p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-1">
+                        <input 
+                          type="text" 
+                          placeholder="Ghi chú (ít đá...)"
+                          value={item.note || ''}
+                          onChange={(e) => updateCartNote(item.product.id, e.target.value)}
+                          className="w-full mr-3 text-[11px] px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:bg-white placeholder:text-slate-400 transition-colors"
+                        />
+                        
+                        <div className="flex items-center gap-1.5 bg-blue-50/80 rounded-full p-1 border border-blue-100 shrink-0">
+                          <button onClick={() => updateQuantity(item.product.id, -1)} className="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm text-blue-600 hover:bg-slate-50 active:scale-95 transition-transform">
+                            <Minus size={12} strokeWidth={2.5} />
                           </button>
                           <input 
-                            type="text" 
-                            value={item.quantity} 
+                            type="text"
+                            value={item.quantity}
                             onChange={(e) => setQuantityExact(item.product.id, e.target.value)}
-                            className="w-8 h-full text-center text-[13px] font-semibold text-gray-800 border-x border-gray-300 outline-none focus:bg-blue-50"
+                            className="font-bold text-[13px] w-8 p-0 border-none ring-0 text-center text-slate-800 bg-transparent outline-none focus:ring-0"
                           />
-                          <button onClick={() => updateQuantity(item.product.id, 1)} className="w-7 h-full flex items-center justify-center hover:bg-gray-100 text-gray-600 active:bg-gray-200">
-                            <Plus size={12} />
+                          <button onClick={() => updateQuantity(item.product.id, 1)} className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-transform">
+                            <Plus size={12} strokeWidth={2.5} />
                           </button>
                         </div>
-                      </td>
-                      <td className="py-2 px-3 text-right font-bold text-blue-600 text-[13px]">
-                        {(item.product.price * item.quantity).toLocaleString('vi-VN')}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Payment Footer */}
           <div className="bg-gray-50 border-t border-gray-300 p-3 shrink-0">
             <div className="flex justify-between items-center mb-2 text-sm text-gray-600">
-              <span>Tổng tiền hàng <span className="text-xs font-semibold bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 ml-1">{cart.reduce((a,b)=>a+b.quantity,0)}</span></span>
+              <span>Tổng tiền hàng <span className="text-xs font-semibold bg-gray-200 px-2 py-0.5 rounded text-gray-600 ml-1 inline-block min-w-[24px] text-center">{cart.reduce((a,b)=>a+b.quantity,0)}</span></span>
               <span className="font-bold text-gray-800">{cartTotal.toLocaleString('vi-VN')} đ</span>
             </div>
             

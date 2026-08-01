@@ -170,7 +170,7 @@ export default function ProductsPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => setSelectedCategoryId(null)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
+            className={`min-w-[120px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
               selectedCategoryId === null
                 ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
@@ -188,7 +188,7 @@ export default function ProductsPage() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategoryId(cat.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
+              className={`min-w-[120px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
                 selectedCategoryId === cat.id
                   ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
@@ -248,9 +248,9 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <div className="inline-flex justify-center min-w-[90px] max-w-[160px] w-fit px-3 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 truncate" title={product.categories?.name || 'N/A'}>
                           {product.categories?.name || 'N/A'}
-                        </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <button

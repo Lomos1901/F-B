@@ -14,9 +14,12 @@ async function bootstrap() {
     }),
   );
 
-  // Bật CORS để bên frontend (Next.js) gọi API không bị chặn
+  // Bật CORS — chỉ cho phép các domain được khai báo trong biến môi trường
+  const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim());
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
