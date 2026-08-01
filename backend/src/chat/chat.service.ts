@@ -67,6 +67,30 @@ export class ChatService {
           const inventory = await this.analyticsService.getInventoryDiagnostics();
           return inventory;
         }
+        case 'get_highest_order_today': {
+          const supabase = this.supabaseService.getAdminClient();
+          const targetDate = new Date();
+          targetDate.setHours(0, 0, 0, 0);
+          const startOfDay = targetDate.toISOString();
+          
+          const endDate = new Date(targetDate);
+          endDate.setHours(23, 59, 59, 999);
+          const endOfDay = endDate.toISOString();
+
+          const { data, error } = await supabase
+            .from('orders')
+            .select('id, table_number, total_price, created_at, note')
+            .gte('created_at', startOfDay)
+            .lte('created_at', endOfDay)
+            .order('total_price', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (error) {
+            return { error: 'Không tìm thấy đơn hàng nào hôm nay' };
+          }
+          return data;
+        }
         default:
           return { error: 'Function not found' };
       }
@@ -122,9 +146,26 @@ export class ChatService {
             name: 'get_inventory_full_report',
             description: 'Lấy báo cáo đầy đủ tồn kho tất cả nguyên liệu',
             parameters: { type: 'OBJECT', properties: {} } as any
+          },
+          {
+            name: 'get_highest_order_today',
+            description: 'Tìm hóa đơn có giá trị lớn nhất trong ngày hôm nay',
+            parameters: { type: 'OBJECT', properties: {} } as any
           }
         ]
       }];
+
+      const supabase = this.supabaseService.getAdminClient();
+      const { data: menuData } = await supabase
+        .from('products')
+        .select('name, price, categories(name)')
+        .eq('is_active', true);
+        
+      let menuContext = '';
+      if (menuData && menuData.length > 0) {
+        menuContext = '\n--- MENU HIỆN TẠI CỦA QUÁN ---\n' + 
+          menuData.map((p: any) => `- ${p.name} (${p.categories?.name || 'Khác'}): ${p.price.toLocaleString('vi-VN')}đ`).join('\n');
+      }
 
       let attempt = 0;
       const maxRetries = 4;
@@ -141,7 +182,7 @@ export class ChatService {
           const model: GenerativeModel = this.genAI.getGenerativeModel({ 
             model: modelName,
             tools: tools,
-            systemInstruction: "Bạn là Trợ Lý AI của quán LUMOS COFFEE. Bạn luôn xưng 'Em' và gọi chủ quán là 'Sếp'.\nPhong cách: chuyên nghiệp, nhanh nhẹn, đi thẳng vào trọng tâm.\nQuy tắc:\n- Trả lời ngắn gọn, dùng gạch đầu dòng và in đậm số liệu quan trọng.\n- TUYỆT ĐỐI không bịa số liệu. Chỉ dùng data từ các hàm được cung cấp.\n- Nếu không có data, báo thẳng 'Em chưa có dữ liệu về vấn đề này, Sếp'.\n- Không trả lời các câu hỏi không liên quan đến vận hành quán.\n- Khi liệt kê, giới hạn tối đa 10 mục."
+            systemInstruction: "Bạn là Trợ Lý AI của quán LUMOS COFFEE. Bạn luôn xưng 'Em' và gọi chủ quán là 'Sếp'.\nPhong cách: chuyên nghiệp, nhanh nhẹn, đi thẳng vào trọng tâm.\nQuy tắc:\n- Trả lời ngắn gọn, dùng gạch đầu dòng và in đậm số liệu quan trọng.\n- TUYỆT ĐỐI không bịa số liệu. Chỉ dùng data từ các hàm được cung cấp hoặc Menu được tiêm vào.\n- Nếu không có data, báo thẳng 'Em chưa có dữ liệu về vấn đề này, Sếp'.\n- Không trả lời các câu hỏi không liên quan đến vận hành quán.\n- Khi liệt kê, giới hạn tối đa 10 mục." + menuContext
           });
 
           const chatSession: ChatSession = model.startChat({

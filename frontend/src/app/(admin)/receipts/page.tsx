@@ -227,6 +227,9 @@ export default function ReceiptsPage() {
                       <div className="flex-1 pr-4">
                         <span className="font-medium text-slate-800">{item.products?.name}</span>
                         <div className="text-slate-500 text-xs mt-0.5">{price.toLocaleString('vi-VN')}đ x {item.quantity}</div>
+                        {item.note && (
+                          <div className="text-[11px] italic text-slate-500 mt-0.5">Ghi chú: {item.note}</div>
+                        )}
                       </div>
                       <span className="font-semibold text-slate-800">{(price * item.quantity).toLocaleString('vi-VN')}đ</span>
                     </div>

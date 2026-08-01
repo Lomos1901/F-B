@@ -78,12 +78,12 @@ export default function ChatWidget() {
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
       {/* Chat Panel */}
       <div 
         className={`mb-4 w-[400px] max-w-[calc(100vw-48px)] max-h-[600px] h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
           isOpen 
-            ? 'opacity-100 scale-100 translate-y-0' 
+            ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' 
             : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
         }`}
       >
@@ -228,7 +228,7 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-300 hover:scale-105 ${
+        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-300 hover:scale-105 pointer-events-auto ${
           isOpen ? 'bg-slate-800 hover:bg-slate-700 rotate-90' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 shadow-xl'
         }`}
         aria-label="Mở/Đóng trợ lý AI"
