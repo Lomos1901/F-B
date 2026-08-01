@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { productService } from '@/src/services/productService';
 import { orderService } from '@/src/services/orderService';
@@ -201,8 +201,9 @@ export default function QROrderPage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'group_carts', filter: `table_number=eq.${tableNumber}` },
         (payload) => {
-          if (payload.new && payload.new.cart_data) {
-            setCart(payload.new.cart_data);
+          const newData = payload.new as any;
+          if (newData && newData.cart_data) {
+            setCart(newData.cart_data);
           }
         }
       )
@@ -221,6 +222,15 @@ export default function QROrderPage() {
     });
   };
 
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedSyncCart = (newCart: CartItem[]) => {
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    syncTimeoutRef.current = setTimeout(() => {
+      syncCartToDB(newCart);
+    }, 500);
+  };
+
   const updateCart = (product: Product, quantity: number) => {
     if (product.is_active === false) return; // Prevent adding inactive items
 
@@ -236,7 +246,7 @@ export default function QROrderPage() {
           newCart = [...prevCart, { ...product, quantity }];
         }
       }
-      syncCartToDB(newCart); // Đồng bộ lên server
+      debouncedSyncCart(newCart); // Đồng bộ lên server có debounce
       return newCart;
     });
   };
@@ -244,7 +254,7 @@ export default function QROrderPage() {
   const updateCartNote = (productId: string, note: string) => {
     setCart(prevCart => {
       const newCart = prevCart.map(item => item.id === productId ? { ...item, note } : item);
-      syncCartToDB(newCart);
+      debouncedSyncCart(newCart);
       return newCart;
     });
   };

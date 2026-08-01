@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Sidebar from '@/src/components/Sidebar';
 import { UserRole } from '@/src/enums/user-role.enum';
+import ChatWidget from '@/src/components/chat/ChatWidget';
 
 export default function AdminLayout({
   children,
@@ -53,6 +54,7 @@ export default function AdminLayout({
           {children}
         </div>
       </main>
+      <ChatWidget />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { AnalyticsModule } from './analytics/analytics.module'; // Import Analyt
 import { PaymentsModule } from './payments/payments.module';
 import { ShiftsModule } from './shifts/shifts.module';
 import { TablesModule } from './tables/tables.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TablesModule } from './tables/tables.module';
     PaymentsModule,
     ShiftsModule, // Thêm AnalyticsModule vào đây
     TablesModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

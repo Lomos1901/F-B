@@ -8,5 +8,6 @@ import { SupabaseModule } from '../supabase/supabase.module';
   imports: [SupabaseModule, ScheduleModule.forRoot()],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
+  exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

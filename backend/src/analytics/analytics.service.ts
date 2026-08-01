@@ -78,17 +78,25 @@ export class AnalyticsService {
     const todaySalesMap = new Map<string, number>();
     if (todayOrders.length > 0) {
       const orderIds = todayOrders.map((o) => o.id);
-      const { data: todayDetails, error: detailsError } = await this.client
-        .from('order_detail')
-        .select('product_id, quantity')
-        .in('order_id', orderIds);
 
-      if (detailsError)
-        throw new InternalServerErrorException(
-          'Không thể lấy chi tiết đơn hàng hôm nay.',
-        );
+      // FIX BUG 1: Chia batch để tránh lỗi 414 URI Too Long khi quán đông (>200 đơn/ngày)
+      const BATCH_SIZE = 50;
+      const allDetails: { product_id: string; quantity: number }[] = [];
+      for (let i = 0; i < orderIds.length; i += BATCH_SIZE) {
+        const batch = orderIds.slice(i, i + BATCH_SIZE);
+        const { data: batchDetails, error: detailsError } = await this.client
+          .from('order_detail')
+          .select('product_id, quantity')
+          .in('order_id', batch);
 
-      for (const detail of todayDetails) {
+        if (detailsError)
+          throw new InternalServerErrorException(
+            'Không thể lấy chi tiết đơn hàng hôm nay.',
+          );
+        allDetails.push(...(batchDetails || []));
+      }
+
+      for (const detail of allDetails) {
         todaySalesMap.set(
           detail.product_id,
           (todaySalesMap.get(detail.product_id) || 0) + detail.quantity,
@@ -142,30 +150,56 @@ export class AnalyticsService {
         'Không thể lấy danh sách nguyên liệu.',
       );
 
-    for (const ingredient of ingredients) {
-      if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0) {
-        continue;
-      }
-      const { data: rateData, error: rpcError } = await this.client.rpc(
-        'get_ingredient_consumption_rate',
-        { p_ingredient_id: ingredient.id, p_days: 14 },
-      );
+    // FIX BUG 2: Song song hóa RPC calls thay vì N+1 tuần tự
+    const validIngredients = ingredients.filter(
+      (ing) => ing.conversion_factor && ing.conversion_factor > 0,
+    );
 
-      if (rpcError) {
+    const rpcResults = await Promise.allSettled(
+      validIngredients.map((ing) =>
+        this.client
+          .rpc('get_ingredient_consumption_rate', {
+            p_ingredient_id: ing.id,
+            p_days: 14,
+          })
+          .then((res) => ({
+            id: ing.id,
+            rate: res.data?.[0]?.avg_daily_consumption ?? 0,
+            error: res.error,
+          })),
+      ),
+    );
+
+    const rateMap = new Map<string, number>();
+    rpcResults.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        if (result.value.error) {
+          this.logger.error(
+            `[Inventory Diagnostics] Lỗi RPC cho '${validIngredients[index].name}':`,
+            result.value.error,
+          );
+        } else {
+          rateMap.set(result.value.id, result.value.rate);
+        }
+      } else {
         this.logger.error(
-          `[Inventory Diagnostics] Lỗi RPC cho '${ingredient.name}':`,
-          rpcError,
+          `[Inventory Diagnostics] RPC thất bại cho '${validIngredients[index].name}':`,
+          result.reason,
         );
-        continue;
       }
+    });
 
-      const consumptionRate = rateData?.[0]?.avg_daily_consumption ?? 0;
+    for (const ingredient of validIngredients) {
+      const consumptionRate = rateMap.get(ingredient.id) ?? 0;
       let daysRemaining: number | string = 'N/A';
       if (consumptionRate > 0) {
         const stockInBaseUnit =
           ingredient.stock_quantity * ingredient.conversion_factor;
         daysRemaining = stockInBaseUnit / consumptionRate;
       }
+
+      // Cảnh báo khẩn cấp nếu stock thực tế dưới 0.5
+      const isEmergency = ingredient.stock_quantity <= 0.5;
 
       results.push({
         ingredient_name: ingredient.name,
@@ -176,9 +210,10 @@ export class AnalyticsService {
           typeof daysRemaining === 'number' ? daysRemaining : 'N/A',
         threshold: FORECAST_THRESHOLD_DAYS,
         is_alert:
-          typeof daysRemaining === 'number' &&
-          daysRemaining < FORECAST_THRESHOLD_DAYS &&
-          consumptionRate > 0,
+          isEmergency ||
+          (typeof daysRemaining === 'number' &&
+            daysRemaining < FORECAST_THRESHOLD_DAYS &&
+            consumptionRate > 0),
       });
     }
     return results;
@@ -246,12 +281,14 @@ export class AnalyticsService {
       for (const item of diagnostics) {
         if (item.is_anomaly) {
           const message = `Doanh số '${item.product_name}' tăng đột biến, đạt ${item.today_quantity} sản phẩm (so với trung bình ${item.mean_daily_sales}).`;
+          // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
+          const rawZScore =
+            (item.today_quantity - item.mean_daily_sales) /
+            (item.stddev_daily_sales || 1);
           const payload = {
             expected_value: item.mean_daily_sales,
             actual_value: item.today_quantity,
-            anomaly_score:
-              (item.today_quantity - item.mean_daily_sales) /
-              (item.stddev_daily_sales || 1),
+            anomaly_score: Math.min(1, Math.max(0, rawZScore / 6)),
           };
           await this.createAnomalyRecord(
             'products',
@@ -266,10 +303,11 @@ export class AnalyticsService {
         const currentHour = parseInt(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: 'numeric', hour12: false }));
         if (item.today_quantity === 0 && item.mean_daily_sales > 3 && currentHour >= 15) {
           const message = `Sản phẩm '${item.product_name}' không bán được ly nào hôm nay (so với trung bình ${item.mean_daily_sales} ly/ngày).`;
+          // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
           const payload = {
             expected_value: item.mean_daily_sales,
             actual_value: 0,
-            anomaly_score: item.mean_daily_sales / 3,
+            anomaly_score: Math.min(1, item.mean_daily_sales / 15),
           };
           await this.createAnomalyRecord(
             'products',
@@ -291,72 +329,40 @@ export class AnalyticsService {
     this.logger.log('[Sales] Hoàn tất phân tích doanh số.');
   }
 
+  /** FIX BUG 3: Tái sử dụng getInventoryDiagnostics() thay vì duplicate logic. */
   private async analyzeInventoryForecasts(force: boolean) {
     this.logger.log('[Inventory] Bắt đầu phân tích dự báo tồn kho...');
-    const FORECAST_THRESHOLD_DAYS = 3;
     try {
-      const { data: ingredients, error } = await this.client
-        .from('ingredients')
-        .select('id, name, stock_quantity, conversion_factor');
-      if (error) {
-        this.logger.error(
-          '[Inventory] Lỗi khi lấy danh sách nguyên liệu:',
-          error,
-        );
-        return;
-      }
-      for (const ingredient of ingredients) {
-        if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0)
-          continue;
-        const { data: rateData, error: rpcError } = await this.client.rpc(
-          'get_ingredient_consumption_rate',
-          { p_ingredient_id: ingredient.id, p_days: 14 },
-        );
-        if (rpcError) {
-          this.logger.error(
-            `[Inventory] Lỗi RPC cho '${ingredient.name}':`,
-            rpcError,
-          );
-          continue;
-        }
-        const consumptionRate = rateData?.[0]?.avg_daily_consumption || 0;
-        const stockInBaseUnit = ingredient.stock_quantity * ingredient.conversion_factor;
-        
-        let shouldAlert = false;
-        let daysRemaining = 0;
-        let message = '';
-        let action = 'Lên kế hoạch nhập hàng ngay.';
+      const diagnostics = await this.getInventoryDiagnostics();
 
-        if (ingredient.stock_quantity <= 0.5) {
-          // Báo động khẩn cấp nếu số lượng thực tế dưới 0.5 (kg/lít/hộp)
-          shouldAlert = true;
-          daysRemaining = 0;
-          message = `Cảnh báo khẩn: Nguyên liệu '${ingredient.name}' sắp CẠN KIỆT (chỉ còn ${ingredient.stock_quantity}).`;
-        } else if (consumptionRate > 0) {
-          // Báo động dựa trên dự báo tốc độ tiêu thụ
-          daysRemaining = stockInBaseUnit / consumptionRate;
-          if (daysRemaining < FORECAST_THRESHOLD_DAYS) {
-            shouldAlert = true;
-            message = `Dự báo: Nguyên liệu '${ingredient.name}' chỉ còn đủ dùng cho khoảng ${Math.floor(daysRemaining)} ngày nữa.`;
-          }
-        }
+      for (const item of diagnostics) {
+        if (!item.is_alert) continue;
 
-        if (shouldAlert) {
-          const payload = {
-            expected_value: FORECAST_THRESHOLD_DAYS,
-            actual_value: daysRemaining,
-            anomaly_score: 1 - daysRemaining / FORECAST_THRESHOLD_DAYS,
-          };
-          await this.createAnomalyRecord(
-            'ingredients',
-            ingredient.name,
-            'INVENTORY_FORECAST',
-            message,
-            action,
-            force,
-            payload,
-          );
-        }
+        const daysRemaining =
+          typeof item.days_remaining === 'number' ? item.days_remaining : 0;
+        const isEmergency = item.stock_quantity <= 0.5;
+
+        const message = isEmergency
+          ? `Cảnh báo khẩn: Nguyên liệu '${item.ingredient_name}' sắp CẠN KIỆT (chỉ còn ${item.stock_quantity} ${item.unit}).`
+          : `Dự báo: Nguyên liệu '${item.ingredient_name}' chỉ còn đủ dùng cho khoảng ${Math.floor(daysRemaining)} ngày nữa.`;
+
+        // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
+        const payload = {
+          expected_value: item.threshold,
+          actual_value: daysRemaining,
+          anomaly_score: isEmergency
+            ? 1
+            : Math.min(1, Math.max(0, 1 - daysRemaining / item.threshold)),
+        };
+        await this.createAnomalyRecord(
+          'ingredients',
+          item.ingredient_name,
+          'INVENTORY_FORECAST',
+          message,
+          'Lên kế hoạch nhập hàng ngay.',
+          force,
+          payload,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -383,30 +389,44 @@ export class AnalyticsService {
         return;
       }
 
-      for (const ingredient of ingredients) {
-        if (!ingredient.conversion_factor || ingredient.conversion_factor <= 0)
-          continue;
+      // FIX BUG 2: Song song hóa RPC calls cho tốc độ tiêu thụ
+      const validIngredients = ingredients.filter(
+        (ing) => ing.conversion_factor && ing.conversion_factor > 0,
+      );
 
-        // So sánh tốc độ tiêu thụ gần đây vs lịch sử
-        const { data: recentData } = await this.client.rpc(
-          'get_ingredient_consumption_rate',
-          { p_ingredient_id: ingredient.id, p_days: 7 },
-        );
-        const { data: historicalData } = await this.client.rpc(
-          'get_ingredient_consumption_rate',
-          { p_ingredient_id: ingredient.id, p_days: 30 },
-        );
+      const discrepancyResults = await Promise.allSettled(
+        validIngredients.map(async (ing) => {
+          const [recentRes, historicalRes] = await Promise.all([
+            this.client.rpc('get_ingredient_consumption_rate', {
+              p_ingredient_id: ing.id,
+              p_days: 7,
+            }),
+            this.client.rpc('get_ingredient_consumption_rate', {
+              p_ingredient_id: ing.id,
+              p_days: 30,
+            }),
+          ]);
+          return {
+            ingredient: ing,
+            recentRate: recentRes.data?.[0]?.avg_daily_consumption ?? 0,
+            historicalRate: historicalRes.data?.[0]?.avg_daily_consumption ?? 0,
+          };
+        }),
+      );
 
-        const recentRate = recentData?.[0]?.avg_daily_consumption ?? 0;
-        const historicalRate = historicalData?.[0]?.avg_daily_consumption ?? 0;
+      for (const result of discrepancyResults) {
+        if (result.status !== 'fulfilled') continue;
+        const { ingredient, recentRate, historicalRate } = result.value;
 
         // Phát hiện tiêu thụ tăng đột biến (>80% so với lịch sử)
         if (historicalRate > 0 && recentRate > historicalRate * 1.8) {
           const message = `Nguyên liệu '${ingredient.name}' đang tiêu thụ nhanh bất thường: ${recentRate.toFixed(2)} đơn vị/ngày (lịch sử: ${historicalRate.toFixed(2)} đơn vị/ngày). Có thể do lãng phí hoặc sai công thức.`;
+          // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
+          const ratio = (recentRate - historicalRate) / (historicalRate || 1);
           const payload = {
             expected_value: historicalRate,
             actual_value: recentRate,
-            anomaly_score: (recentRate - historicalRate) / (historicalRate || 1),
+            anomaly_score: Math.min(1, ratio / 3),
           };
           await this.createAnomalyRecord(
             'ingredients',
@@ -422,10 +442,12 @@ export class AnalyticsService {
         // Phát hiện tiêu thụ giảm bất thường (<30% so với lịch sử)
         if (historicalRate > 1 && recentRate < historicalRate * 0.3) {
           const message = `Nguyên liệu '${ingredient.name}' gần như không được sử dụng: ${recentRate.toFixed(2)} đơn vị/ngày (lịch sử: ${historicalRate.toFixed(2)} đơn vị/ngày). Có thể sản phẩm liên quan đang bị tạm ngừng bán.`;
+          // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
+          const ratio = (historicalRate - recentRate) / (historicalRate || 1);
           const payload = {
             expected_value: historicalRate,
             actual_value: recentRate,
-            anomaly_score: (historicalRate - recentRate) / (historicalRate || 1),
+            anomaly_score: Math.min(1, ratio),
           };
           await this.createAnomalyRecord(
             'ingredients',
@@ -454,17 +476,29 @@ export class AnalyticsService {
         .gte('created_at', sevenDaysAgo);
 
       if (!adjError && adjustments) {
+        // Tạo map stock_quantity để tính tỉ lệ hụt kho
+        const stockMap = new Map(
+          ingredients.map((ing) => [ing.id, ing.stock_quantity]),
+        );
+
         for (const receipt of adjustments) {
           for (const detail of (receipt as any).receipt_details || []) {
             const absQty = Math.abs(detail.quantity);
-            // Cảnh báo nếu điều chỉnh âm lớn (mất hàng)
-            if (detail.quantity < 0 && absQty > 2) {
-              const ingredientName = detail.ingredients?.name || 'Không rõ';
-              const message = `Phát hiện chênh lệch kho: '${ingredientName}' bị hụt ${absQty} đơn vị trong lần kiểm kho gần nhất. Có thể do hao hụt, hỏng hóc hoặc thất thoát.`;
+            const ingredientId = detail.ingredients?.id;
+            const ingredientName = detail.ingredients?.name || 'Không rõ';
+            const currentStock = stockMap.get(ingredientId) || 0;
+
+            // FIX BUG 4: Dùng ngưỡng tỉ lệ % thay vì số cứng > 2
+            // Cảnh báo nếu hụt > 10% so với tồn kho hiện tại (hoặc > 2 đơn vị nếu stock = 0)
+            const percentageLoss =
+              currentStock > 0 ? absQty / currentStock : absQty;
+            if (detail.quantity < 0 && (percentageLoss > 0.1 || absQty > 2)) {
+              const message = `Phát hiện chênh lệch kho: '${ingredientName}' bị hụt ${absQty} đơn vị (${(percentageLoss * 100).toFixed(1)}% tồn kho) trong lần kiểm kho gần nhất. Có thể do hao hụt, hỏng hóc hoặc thất thoát.`;
+              // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
               const payload = {
                 expected_value: 0,
                 actual_value: detail.quantity,
-                anomaly_score: absQty / 10,
+                anomaly_score: Math.min(1, percentageLoss),
               };
               await this.createAnomalyRecord(
                 'ingredients',
