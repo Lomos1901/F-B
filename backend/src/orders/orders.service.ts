@@ -74,10 +74,23 @@ export class OrdersService {
     }
     // -----------------------
 
+    // Fetch table_id from tables based on table_number
+    let tableId = null;
+    if (table_number) {
+      const { data: tableData } = await this.client.from('tables').select('id').eq('name', table_number).single();
+      if (tableData) {
+        tableId = tableData.id;
+      } else {
+        const { data: fallbackTable } = await this.client.from('tables').select('id').eq('name', 'Mang đi').single();
+        tableId = fallbackTable ? fallbackTable.id : null;
+      }
+    }
+
     const { data: orderData, error: orderError } = await this.client
       .from('orders')
       .insert({
         table_number,
+        table_id: tableId,
         total_price: totalPrice,
         status_id: pendingStatusId,
         created_by: createdByUserId,

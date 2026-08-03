@@ -1,0 +1,1171 @@
+{
+  "_type": "Project",
+  "_id": "AAAAAAF6bd5225a6b32",
+  "name": "SAM_POS",
+  "ownedElements": [
+    {
+      "_type": "UMLModel",
+      "_id": "AAAAAAF2e544d8e9fae",
+      "_parent": {
+        "$ref": "AAAAAAF6bd5225a6b32"
+      },
+      "name": "ConceptualModel",
+      "ownedElements": [
+        {
+          "_type": "UMLEnumeration",
+          "_id": "AAAAAAF57f633f05f92",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "OrderStatus",
+          "literals": [
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF07a61d34a3db",
+              "_parent": {
+                "$ref": "AAAAAAF57f633f05f92"
+              },
+              "name": "PENDING"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF45df86732f53",
+              "_parent": {
+                "$ref": "AAAAAAF57f633f05f92"
+              },
+              "name": "PREPARING"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAFeb6376285239",
+              "_parent": {
+                "$ref": "AAAAAAF57f633f05f92"
+              },
+              "name": "COMPLETED"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF202d4de90c0f",
+              "_parent": {
+                "$ref": "AAAAAAF57f633f05f92"
+              },
+              "name": "CANCELLED"
+            }
+          ]
+        },
+        {
+          "_type": "UMLEnumeration",
+          "_id": "AAAAAAF083493f1f02a",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "TaskStatus",
+          "literals": [
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF546d95a6f6a5",
+              "_parent": {
+                "$ref": "AAAAAAF083493f1f02a"
+              },
+              "name": "PENDING"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF05b15822c769",
+              "_parent": {
+                "$ref": "AAAAAAF083493f1f02a"
+              },
+              "name": "IN_PROGRESS"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF8f8897cdf536",
+              "_parent": {
+                "$ref": "AAAAAAF083493f1f02a"
+              },
+              "name": "DONE"
+            }
+          ]
+        },
+        {
+          "_type": "UMLEnumeration",
+          "_id": "AAAAAAF5c6a126f47e5",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "UserRole",
+          "literals": [
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF64eb49a76b27",
+              "_parent": {
+                "$ref": "AAAAAAF5c6a126f47e5"
+              },
+              "name": "OWNER"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF348d639dab31",
+              "_parent": {
+                "$ref": "AAAAAAF5c6a126f47e5"
+              },
+              "name": "MANAGER"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAF68ba00697dcf",
+              "_parent": {
+                "$ref": "AAAAAAF5c6a126f47e5"
+              },
+              "name": "CASHIER"
+            },
+            {
+              "_type": "UMLEnumerationLiteral",
+              "_id": "AAAAAAFd30ecd9d3c81",
+              "_parent": {
+                "$ref": "AAAAAAF5c6a126f47e5"
+              },
+              "name": "BARISTA"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF6c2058cba924",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "Category",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF3164a18f51d5",
+              "_parent": {
+                "$ref": "AAAAAAF6c2058cba924"
+              },
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFd1be4676fa78",
+              "_parent": {
+                "$ref": "AAAAAAF6c2058cba924"
+              },
+              "name": "description",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF34b1e79a0196",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "Product",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF7d1310958333",
+              "_parent": {
+                "$ref": "AAAAAAF34b1e79a0196"
+              },
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF7d7eb3b2f180",
+              "_parent": {
+                "$ref": "AAAAAAF34b1e79a0196"
+              },
+              "name": "price",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF6ab530a7bb39",
+              "_parent": {
+                "$ref": "AAAAAAF34b1e79a0196"
+              },
+              "name": "imageUrl",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFe5ebebf5ebae",
+              "_parent": {
+                "$ref": "AAAAAAF34b1e79a0196"
+              },
+              "name": "isActive",
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF9b07acbac492",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "IngredientCategory",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF789552a15021",
+              "_parent": {
+                "$ref": "AAAAAAF9b07acbac492"
+              },
+              "name": "name",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF5c1c3627a870",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "Ingredient",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF7ea351e8c63c",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF6afd4089dcd3",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "baseUnit",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFdbb3e24e13f1",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "stockQuantity",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF26f3ef0dc936",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "costPerUnit",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFb0ad688fa360",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "isActive",
+              "type": "Boolean"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF9c74ef2a3860",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "recipeUnit",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF9a93ed96eb3f",
+              "_parent": {
+                "$ref": "AAAAAAF5c1c3627a870"
+              },
+              "name": "conversionFactor",
+              "type": "Number"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF1b78d3ca2061",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "Recipe",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF55a2890cfca4",
+              "_parent": {
+                "$ref": "AAAAAAF1b78d3ca2061"
+              },
+              "name": "quantity",
+              "type": "Number"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF66b14a122800",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "Order",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF833a0b8b4e40",
+              "_parent": {
+                "$ref": "AAAAAAF66b14a122800"
+              },
+              "name": "tableNumber",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF30eab8eb3e84",
+              "_parent": {
+                "$ref": "AAAAAAF66b14a122800"
+              },
+              "name": "totalPrice",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF7b88d013dc8a",
+              "_parent": {
+                "$ref": "AAAAAAF66b14a122800"
+              },
+              "name": "note",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFf7438296d1a7",
+              "_parent": {
+                "$ref": "AAAAAAF66b14a122800"
+              },
+              "name": "status",
+              "type": "OrderStatus"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF697ebbd79f09",
+              "_parent": {
+                "$ref": "AAAAAAF66b14a122800"
+              },
+              "name": "createdAt",
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF058c3f70ccc1",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "OrderDetail",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFec52afcb2553",
+              "_parent": {
+                "$ref": "AAAAAAF058c3f70ccc1"
+              },
+              "name": "quantity",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF8091c49cfc0d",
+              "_parent": {
+                "$ref": "AAAAAAF058c3f70ccc1"
+              },
+              "name": "unitPrice",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF57ce5879754c",
+              "_parent": {
+                "$ref": "AAAAAAF058c3f70ccc1"
+              },
+              "name": "note",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF94648c46aa9c",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "User",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF98596398b56b",
+              "_parent": {
+                "$ref": "AAAAAAF94648c46aa9c"
+              },
+              "name": "fullName",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF558517987d19",
+              "_parent": {
+                "$ref": "AAAAAAF94648c46aa9c"
+              },
+              "name": "email",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF928a7b8b44e0",
+              "_parent": {
+                "$ref": "AAAAAAF94648c46aa9c"
+              },
+              "name": "role",
+              "type": "UserRole"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF95f3fbf3d168",
+              "_parent": {
+                "$ref": "AAAAAAF94648c46aa9c"
+              },
+              "name": "phoneNumber",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF8b4ece93578f",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "Shift",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFb2f7a9764c89",
+              "_parent": {
+                "$ref": "AAAAAAF8b4ece93578f"
+              },
+              "name": "startTime",
+              "type": "DateTime"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFce53ed492460",
+              "_parent": {
+                "$ref": "AAAAAAF8b4ece93578f"
+              },
+              "name": "endTime",
+              "type": "DateTime"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF1ec8216c184c",
+              "_parent": {
+                "$ref": "AAAAAAF8b4ece93578f"
+              },
+              "name": "status",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF94f7c49e86a7",
+              "_parent": {
+                "$ref": "AAAAAAF8b4ece93578f"
+              },
+              "name": "startingCash",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFca7687c4c5ba",
+              "_parent": {
+                "$ref": "AAAAAAF8b4ece93578f"
+              },
+              "name": "endingCash",
+              "type": "Number"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAFd5b3d0c1598f",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "PreparationTask",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFc6c0bb6c1a9f",
+              "_parent": {
+                "$ref": "AAAAAAFd5b3d0c1598f"
+              },
+              "name": "startTime",
+              "type": "DateTime"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFcf928e0f8f33",
+              "_parent": {
+                "$ref": "AAAAAAFd5b3d0c1598f"
+              },
+              "name": "endTime",
+              "type": "DateTime"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF8c6706165616",
+              "_parent": {
+                "$ref": "AAAAAAFd5b3d0c1598f"
+              },
+              "name": "status",
+              "type": "TaskStatus"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAFfb0030c817c0",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "InventoryReceipt",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF9a5adcf50b29",
+              "_parent": {
+                "$ref": "AAAAAAFfb0030c817c0"
+              },
+              "name": "receiptType",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF6cae2cadc6f5",
+              "_parent": {
+                "$ref": "AAAAAAFfb0030c817c0"
+              },
+              "name": "createdAt",
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF4e9bcf2731d1",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "ReceiptItem",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF8cbf3879133a",
+              "_parent": {
+                "$ref": "AAAAAAF4e9bcf2731d1"
+              },
+              "name": "quantity",
+              "type": "Number"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAFb7041418fcab",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "CafeTable",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF354dd99bcec1",
+              "_parent": {
+                "$ref": "AAAAAAFb7041418fcab"
+              },
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFdd8098cc2322",
+              "_parent": {
+                "$ref": "AAAAAAFb7041418fcab"
+              },
+              "name": "zone",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFebda34365e8b",
+              "_parent": {
+                "$ref": "AAAAAAFb7041418fcab"
+              },
+              "name": "isActive",
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF86a43434883e",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "BankInfo",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFc404485e9d45",
+              "_parent": {
+                "$ref": "AAAAAAF86a43434883e"
+              },
+              "name": "bankBin",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF6261956abec9",
+              "_parent": {
+                "$ref": "AAAAAAF86a43434883e"
+              },
+              "name": "accountNumber",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFf98b669ff5a3",
+              "_parent": {
+                "$ref": "AAAAAAF86a43434883e"
+              },
+              "name": "accountName",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAFb6f30e480b8e",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "GroupCart",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF33877dfdaada",
+              "_parent": {
+                "$ref": "AAAAAAFb6f30e480b8e"
+              },
+              "name": "tableNumber",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF6d97a22b3fe1",
+              "_parent": {
+                "$ref": "AAAAAAFb6f30e480b8e"
+              },
+              "name": "cartData",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "_type": "UMLClass",
+          "_id": "AAAAAAF04b2136ca995",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "AiAnomaly",
+          "attributes": [
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF5b4e4dd1e0e4",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "alertCategory",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFa8df9f94222f",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "entityType",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFdec7dfea255e",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "expectedValue",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFd7e58aeef6c0",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "actualValue",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFf1e6d15691c6",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "anomalyScore",
+              "type": "Number"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFe6bc6b500bb9",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "message",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAF551fe4c60b61",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "recommendedAction",
+              "type": "String"
+            },
+            {
+              "_type": "UMLAttribute",
+              "_id": "AAAAAAFa97f8949500a",
+              "_parent": {
+                "$ref": "AAAAAAF04b2136ca995"
+              },
+              "name": "isRead",
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAF3e646c5f9fde",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "contains",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF932ddf378705",
+            "_parent": {
+              "$ref": "AAAAAAF3e646c5f9fde"
+            },
+            "reference": {
+              "$ref": "AAAAAAF6c2058cba924"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFc8354d22d833",
+            "_parent": {
+              "$ref": "AAAAAAF3e646c5f9fde"
+            },
+            "reference": {
+              "$ref": "AAAAAAF34b1e79a0196"
+            },
+            "multiplicity": "0..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFe0ca1e49979d",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "classifies",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFcc0cc2bb1ecc",
+            "_parent": {
+              "$ref": "AAAAAAFe0ca1e49979d"
+            },
+            "reference": {
+              "$ref": "AAAAAAF9b07acbac492"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFadde0bf080b3",
+            "_parent": {
+              "$ref": "AAAAAAFe0ca1e49979d"
+            },
+            "reference": {
+              "$ref": "AAAAAAF5c1c3627a870"
+            },
+            "multiplicity": "1..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFad1a692f387f",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "has",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFf35c409efb1a",
+            "_parent": {
+              "$ref": "AAAAAAFad1a692f387f"
+            },
+            "reference": {
+              "$ref": "AAAAAAF34b1e79a0196"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFd5963cf36fde",
+            "_parent": {
+              "$ref": "AAAAAAFad1a692f387f"
+            },
+            "reference": {
+              "$ref": "AAAAAAF1b78d3ca2061"
+            },
+            "multiplicity": "0..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFfa4423fa4a05",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "needs",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFef0ae220b171",
+            "_parent": {
+              "$ref": "AAAAAAFfa4423fa4a05"
+            },
+            "reference": {
+              "$ref": "AAAAAAF1b78d3ca2061"
+            },
+            "multiplicity": "0..*"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF0364141b559d",
+            "_parent": {
+              "$ref": "AAAAAAFfa4423fa4a05"
+            },
+            "reference": {
+              "$ref": "AAAAAAF5c1c3627a870"
+            },
+            "multiplicity": "1"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFb08b75a41884",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "has",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFbd4a78bead9c",
+            "_parent": {
+              "$ref": "AAAAAAFb08b75a41884"
+            },
+            "reference": {
+              "$ref": "AAAAAAF66b14a122800"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF2d7ecab2f819",
+            "_parent": {
+              "$ref": "AAAAAAFb08b75a41884"
+            },
+            "reference": {
+              "$ref": "AAAAAAF058c3f70ccc1"
+            },
+            "multiplicity": "1..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAF5b6b6fbe3624",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "contains",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF2bba0e622c65",
+            "_parent": {
+              "$ref": "AAAAAAF5b6b6fbe3624"
+            },
+            "reference": {
+              "$ref": "AAAAAAF058c3f70ccc1"
+            },
+            "multiplicity": "0..*"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF345bacfa01e6",
+            "_parent": {
+              "$ref": "AAAAAAF5b6b6fbe3624"
+            },
+            "reference": {
+              "$ref": "AAAAAAF34b1e79a0196"
+            },
+            "multiplicity": "1"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFe4d8db1972ef",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "creates",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF0b360523a09e",
+            "_parent": {
+              "$ref": "AAAAAAFe4d8db1972ef"
+            },
+            "reference": {
+              "$ref": "AAAAAAF94648c46aa9c"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF9861d00a3a1a",
+            "_parent": {
+              "$ref": "AAAAAAFe4d8db1972ef"
+            },
+            "reference": {
+              "$ref": "AAAAAAF66b14a122800"
+            },
+            "multiplicity": "0..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFc6f6335504d2",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "generates",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF108f2deb1107",
+            "_parent": {
+              "$ref": "AAAAAAFc6f6335504d2"
+            },
+            "reference": {
+              "$ref": "AAAAAAF66b14a122800"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFbed30b654707",
+            "_parent": {
+              "$ref": "AAAAAAFc6f6335504d2"
+            },
+            "reference": {
+              "$ref": "AAAAAAFd5b3d0c1598f"
+            },
+            "multiplicity": "1..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAF3d5dc8c56c20",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "has",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF3e139c8c5052",
+            "_parent": {
+              "$ref": "AAAAAAF3d5dc8c56c20"
+            },
+            "reference": {
+              "$ref": "AAAAAAFfb0030c817c0"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFc2f14e1babdc",
+            "_parent": {
+              "$ref": "AAAAAAF3d5dc8c56c20"
+            },
+            "reference": {
+              "$ref": "AAAAAAF4e9bcf2731d1"
+            },
+            "multiplicity": "1..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAF5e5e1fa218cb",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "includes",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFe3e5224a58b9",
+            "_parent": {
+              "$ref": "AAAAAAF5e5e1fa218cb"
+            },
+            "reference": {
+              "$ref": "AAAAAAF4e9bcf2731d1"
+            },
+            "multiplicity": "0..*"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF9aca5b0fd5df",
+            "_parent": {
+              "$ref": "AAAAAAF5e5e1fa218cb"
+            },
+            "reference": {
+              "$ref": "AAAAAAF5c1c3627a870"
+            },
+            "multiplicity": "1"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAF3bdcd0a12394",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "creates",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFe6ca7185b7f7",
+            "_parent": {
+              "$ref": "AAAAAAF3bdcd0a12394"
+            },
+            "reference": {
+              "$ref": "AAAAAAF94648c46aa9c"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF0bdf0abcadec",
+            "_parent": {
+              "$ref": "AAAAAAF3bdcd0a12394"
+            },
+            "reference": {
+              "$ref": "AAAAAAFfb0030c817c0"
+            },
+            "multiplicity": "0..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAF1e2e4328877c",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "opens",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFb88b74755915",
+            "_parent": {
+              "$ref": "AAAAAAF1e2e4328877c"
+            },
+            "reference": {
+              "$ref": "AAAAAAF94648c46aa9c"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFe35ad7904148",
+            "_parent": {
+              "$ref": "AAAAAAF1e2e4328877c"
+            },
+            "reference": {
+              "$ref": "AAAAAAF8b4ece93578f"
+            },
+            "multiplicity": "0..*"
+          }
+        },
+        {
+          "_type": "UMLAssociation",
+          "_id": "AAAAAAFa93dcb0eaf79",
+          "_parent": {
+            "$ref": "AAAAAAF2e544d8e9fae"
+          },
+          "name": "contains",
+          "end1": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAFbb8f955d9d31",
+            "_parent": {
+              "$ref": "AAAAAAFa93dcb0eaf79"
+            },
+            "reference": {
+              "$ref": "AAAAAAF8b4ece93578f"
+            },
+            "multiplicity": "1"
+          },
+          "end2": {
+            "_type": "UMLAssociationEnd",
+            "_id": "AAAAAAF5ca266a39211",
+            "_parent": {
+              "$ref": "AAAAAAFa93dcb0eaf79"
+            },
+            "reference": {
+              "$ref": "AAAAAAF66b14a122800"
+            },
+            "multiplicity": "0..*"
+          }
+        }
+      ]
+    }
+  ]
+}

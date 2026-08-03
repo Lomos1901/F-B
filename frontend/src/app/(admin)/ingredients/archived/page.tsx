@@ -4,6 +4,7 @@ import { ingredientService } from "@/src/services/ingredientService";
 import Link from "next/link";
 import { Trash2, RotateCw, ArrowLeft, Archive } from "lucide-react";
 import { toast } from "react-toastify";
+import ConfirmModal from '@/src/components/ConfirmModal';
 
 // Định nghĩa kiểu dữ liệu cho một nguyên liệu
 interface Ingredient {
@@ -20,6 +21,7 @@ export default function ArchivedIngredientsPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalConfig, setModalConfig] = useState<{isOpen: boolean, type: 'restore' | 'delete', id: string}>({isOpen: false, type: 'restore', id: ''});
 
   useEffect(() => {
     fetchArchivedIngredients();
@@ -40,27 +42,30 @@ export default function ArchivedIngredientsPage() {
     }
   };
 
-  const handleRestore = async (id: string) => {
-    if (confirm("Bạn có chắc chắn muốn khôi phục nguyên liệu này?")) {
-      try {
-        await ingredientService.restore(id);
-        toast.success("Khôi phục nguyên liệu thành công!");
-        fetchArchivedIngredients();
-      } catch (err: any) {
-        toast.error(err.message || "Khôi phục thất bại.");
-      }
-    }
+  const handleRestore = (id: string) => {
+    setModalConfig({ isOpen: true, type: 'restore', id });
   };
 
-  const handleHardDelete = async (id: string) => {
-    if (confirm("Hành động này không thể hoàn tác! Bạn có chắc chắn muốn xóa vĩnh viễn nguyên liệu này?")) {
-      try {
+  const handleHardDelete = (id: string) => {
+    setModalConfig({ isOpen: true, type: 'delete', id });
+  };
+
+  const confirmAction = async () => {
+    const { type, id } = modalConfig;
+    if (!id) return;
+    try {
+      if (type === 'restore') {
+        await ingredientService.restore(id);
+        toast.success("Khôi phục nguyên liệu thành công!");
+      } else {
         await ingredientService.hardDelete(id);
         toast.success("Đã xóa vĩnh viễn nguyên liệu.");
-        fetchArchivedIngredients();
-      } catch (err: any) {
-        toast.error(err.message || "Xóa vĩnh viễn thất bại.");
       }
+      fetchArchivedIngredients();
+    } catch (err: any) {
+      toast.error(err.message || (type === 'restore' ? "Khôi phục thất bại." : "Xóa vĩnh viễn thất bại."));
+    } finally {
+      setModalConfig({ isOpen: false, type: 'restore', id: '' });
     }
   };
 
@@ -122,6 +127,15 @@ export default function ArchivedIngredientsPage() {
           <p className="text-center py-6 text-dark-text-secondary">Thùng rác trống.</p>
         )}
       </div>
+      <ConfirmModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.type === 'restore' ? 'Khôi phục nguyên liệu' : 'Xóa vĩnh viễn'}
+        message={modalConfig.type === 'restore' ? 'Bạn có chắc chắn muốn khôi phục nguyên liệu này?' : 'Hành động này không thể hoàn tác! Bạn có chắc chắn muốn xóa vĩnh viễn nguyên liệu này?'}
+        onConfirm={confirmAction}
+        onCancel={() => setModalConfig({ isOpen: false, type: 'restore', id: '' })}
+        type={modalConfig.type === 'restore' ? 'info' : 'danger'}
+        confirmText={modalConfig.type === 'restore' ? 'Khôi phục' : 'Xóa vĩnh viễn'}
+      />
     </main>
   );
 }

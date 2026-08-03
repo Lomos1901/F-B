@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { Users, Plus, Edit, Trash2, Briefcase, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '@/src/context/AuthContext';
 import { UserRole } from '@/src/enums/user-role.enum';
+import ConfirmModal from '@/src/components/ConfirmModal';
 
 interface User {
   id: string;
@@ -121,6 +122,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userToDelete, setUserToDelete] = useState<{id: string, name: string} | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -148,19 +150,24 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (userId: string, userName: string) => {
+  const handleDelete = (userId: string, userName: string) => {
     if (currentUser?.id === userId) {
       toast.error("Bạn không thể tự xóa chính mình.");
       return;
     }
-    if (confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn người dùng "${userName}"? Hành động này không thể hoàn tác.`)) {
-      try {
-        await userService.remove(userId);
-        toast.success(`Đã xóa người dùng ${userName}.`);
-        fetchUsers();
-      } catch (err: any) {
-        toast.error(err.message);
-      }
+    setUserToDelete({id: userId, name: userName});
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await userService.remove(userToDelete.id);
+      toast.success(`Đã xóa người dùng ${userToDelete.name}.`);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUserToDelete(null);
     }
   };
 
@@ -285,6 +292,14 @@ export default function UsersPage() {
       </div>
 
       {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSave={handleUpdate} />}
+      <ConfirmModal
+        isOpen={!!userToDelete}
+        title="Xóa nhân sự"
+        message={`Bạn có chắc chắn muốn xóa vĩnh viễn người dùng "${userToDelete?.name}"? Hành động này không thể hoàn tác.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setUserToDelete(null)}
+        type="danger"
+      />
     </main>
   );
 }

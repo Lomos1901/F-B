@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { productService } from '@/src/services/productService';
 import { categoryService } from '@/src/services/categoryService';
+import ConfirmModal from '@/src/components/ConfirmModal';
 import { Plus, Edit, Trash2, Eye, Coffee, Loader2, Power, PowerOff, LayoutGrid } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -76,6 +77,7 @@ const RecipeModal = ({ product, onClose }: { product: Product | null, onClose: (
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,15 +119,20 @@ export default function ProductsPage() {
     return map;
   }, [products]);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Lịch sử bán hàng liên quan có thể bị ảnh hưởng.')) {
-      try {
-        await productService.remove(id);
-        toast.success('Xóa sản phẩm thành công!');
-        setProducts(products.filter(p => p.id !== id));
-      } catch (err: any) {
-        toast.error(`Lỗi: ${err.message}`);
-      }
+  const handleDelete = (id: string) => {
+    setProductToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      await productService.remove(productToDelete);
+      toast.success('Xóa sản phẩm thành công!');
+      setProducts(products.filter(p => p.id !== productToDelete));
+    } catch (err: any) {
+      toast.error(`Lỗi: ${err.message}`);
+    } finally {
+      setProductToDelete(null);
     }
   };
 
@@ -291,7 +298,17 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
-      {selectedProduct && <RecipeModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />}
+      {selectedProduct && (
+        <RecipeModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      )}
+      <ConfirmModal
+        isOpen={!!productToDelete}
+        title="Xóa sản phẩm"
+        message="Bạn có chắc chắn muốn xóa sản phẩm này? Lịch sử bán hàng liên quan có thể bị ảnh hưởng và hành động này không thể hoàn tác."
+        onConfirm={confirmDelete}
+        onCancel={() => setProductToDelete(null)}
+        type="danger"
+      />
     </main>
   );
 }

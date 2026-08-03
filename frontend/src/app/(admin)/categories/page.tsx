@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { categoryService } from '@/src/services/categoryService';
 import { Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import ConfirmModal from '@/src/components/ConfirmModal';
 
 interface Category {
   id: string;
@@ -65,6 +66,7 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDesc, setNewCategoryDesc] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   const loadCategories = async () => {
     try {
@@ -107,15 +109,20 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa danh mục này?')) {
-      try {
-        await categoryService.remove(id);
-        toast.success('Xóa danh mục thành công!');
-        loadCategories();
-      } catch (err: any) {
-        toast.error(`Lỗi: ${err.message}`);
-      }
+  const handleDelete = (id: string) => {
+    setCategoryToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+    try {
+      await categoryService.remove(categoryToDelete);
+      toast.success('Xóa danh mục thành công!');
+      loadCategories();
+    } catch (err: any) {
+      toast.error(`Lỗi: ${err.message}`);
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -180,6 +187,14 @@ export default function CategoriesPage() {
           onSave={handleUpdate}
         />
       )}
+      <ConfirmModal
+        isOpen={!!categoryToDelete}
+        title="Xóa danh mục"
+        message="Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác."
+        onConfirm={confirmDelete}
+        onCancel={() => setCategoryToDelete(null)}
+        type="danger"
+      />
     </main>
   );
 }

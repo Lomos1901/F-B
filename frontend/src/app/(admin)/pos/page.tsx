@@ -11,6 +11,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { Loader2, Bell, Search, Minus, Plus, Trash2, X, Clock, User, ChevronDown, Coffee, LayoutGrid, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'react-toastify';
 import QrOrderDrawer from '@/src/components/pos/QrOrderDrawer';
+import ConfirmModal from '@/src/components/ConfirmModal';
 
 // --- Interfaces ---
 interface Product {
@@ -67,6 +68,7 @@ export default function KiotVietPOSPage() {
 
   // === 6. PRINT RECEIPT STATE ===
   const [printData, setPrintData] = useState<any>(null);
+  const [isConfirmClearCartOpen, setIsConfirmClearCartOpen] = useState(false);
 
   useEffect(() => {
     if (printData) {
@@ -190,7 +192,7 @@ export default function KiotVietPOSPage() {
   };
 
   const clearCart = () => {
-    if(window.confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')) setCart([]);
+    setIsConfirmClearCartOpen(true);
   };
 
   const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0), [cart]);
@@ -407,37 +409,15 @@ export default function KiotVietPOSPage() {
                         key={table.id}
                         onClick={() => {
                           setSelectedTableName(table.name);
-                          if (table.status === 'AVAILABLE') setActiveTab('MENU');
+                          setActiveTab('MENU');
                         }}
-                         className={`relative flex flex-col p-3 rounded-xl border shadow-sm transition-all h-28 hover:shadow-md ${
-                          selectedTableName === table.name ? 'ring-2 ring-offset-2 ring-blue-600' : ''
-                        } ${
-                          table.status === 'AVAILABLE' ? 'bg-slate-100 border-slate-300 hover:border-blue-400' : 
-                          table.status === 'OCCUPIED' ? 'bg-red-50 border-red-200 text-red-900' : 
-                          'bg-yellow-50 border-yellow-200 text-yellow-900 animate-pulse'
+                        className={`relative flex flex-col items-center justify-center p-3 rounded-xl border shadow-sm transition-all h-24 hover:shadow-md ${
+                          selectedTableName === table.name 
+                            ? 'bg-blue-50 border-blue-600 ring-1 ring-blue-600 text-blue-900' 
+                            : 'bg-white border-slate-300 hover:border-blue-400 text-gray-800'
                         }`}
                       >
-                        <div className="flex justify-between items-start w-full">
-                          <span className="font-bold text-sm">{table.name}</span>
-                          {table.status !== 'AVAILABLE' && (
-                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-sm bg-black/5">
-                              {table.status === 'PENDING' ? 'CHỜ THU' : 'CÓ KHÁCH'}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="mt-auto text-left w-full">
-                          {table.activeOrdersCount > 0 && (
-                            <>
-                              <div className="text-[10px] opacity-70 font-semibold mb-0.5">
-                                {table.activeOrdersCount} Đơn hàng
-                              </div>
-                              <div className="text-sm font-bold truncate">
-                                {table.totalAmount.toLocaleString('vi-VN')} đ
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        <span className="font-bold text-base">{table.name}</span>
                       </button>
                     ))}
                   </div>
@@ -691,6 +671,17 @@ export default function KiotVietPOSPage() {
       </div>
       </>
     )}
+      <ConfirmModal
+        isOpen={isConfirmClearCartOpen}
+        title="Xóa giỏ hàng"
+        message="Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng không? Hành động này không thể hoàn tác."
+        onConfirm={() => {
+          setCart([]);
+          setIsConfirmClearCartOpen(false);
+        }}
+        onCancel={() => setIsConfirmClearCartOpen(false)}
+        type="danger"
+      />
     </>
   );
 }

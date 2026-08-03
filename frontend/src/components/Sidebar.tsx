@@ -147,6 +147,7 @@ export default function Sidebar() {
                 <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
+            <NavLink href="/tables-config" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Sơ đồ Bàn</NavLink>
             <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
           </>
         )}

@@ -24,7 +24,7 @@ export default function AdminLayout({
         const isBarista = user.role === UserRole.BARISTA;
         const isCashier = user.role === UserRole.CASHIER;
 
-        const managementRoutes = ['/dashboard', '/users', '/receipts', '/products', '/categories', '/ingredients', '/ingredient-categories', '/inventory-receipts'];
+        const managementRoutes = ['/dashboard', '/users', '/receipts', '/products', '/categories', '/ingredients', '/ingredient-categories', '/inventory-receipts', '/tables-config', '/settings'];
 
         if (isBarista && !pathname.startsWith('/kds')) {
           router.replace('/kds');
