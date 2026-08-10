@@ -8,6 +8,8 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,23 +25,27 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Roles(UserRole.OWNER)
   findAll() {
     return this.usersService.findAll();
   }
 
   @Post()
-  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Roles(UserRole.OWNER)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @Patch(':id')
-  @Roles(UserRole.OWNER, UserRole.MANAGER)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
   ) {
+    const user = req.user;
+    if (user.role !== UserRole.OWNER && user.sub !== id) {
+      throw new ForbiddenException('Bạn chỉ được phép cập nhật tài khoản của chính mình.');
+    }
     return this.usersService.update(id, updateUserDto);
   }
 

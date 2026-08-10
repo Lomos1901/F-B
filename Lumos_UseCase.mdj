@@ -1,0 +1,774 @@
+{
+  "_type": "Project",
+  "_id": "id_9lv47i07o",
+  "name": "Lumos_FB_System",
+  "ownedElements": [
+    {
+      "_type": "UMLModel",
+      "_id": "id_c3ts92xt2",
+      "name": "UseCaseModel",
+      "ownedElements": [
+        {
+          "_type": "UMLUseCaseDiagram",
+          "_id": "id_k1frgvf6q",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Main_Use_Case_Diagram",
+          "ownedViews": []
+        },
+        {
+          "_type": "UMLUseCaseSubject",
+          "_id": "id_q4v8khjd9",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "He thong F&B Smart Inventory (Lumos)"
+        },
+        {
+          "_type": "UMLActor",
+          "_id": "id_ldjjssphu",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Khach hang",
+          "ownedElements": [
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_o9bus5tqb",
+              "_parent": {
+                "$ref": "id_ldjjssphu"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_xtukar1ru",
+                "_parent": {
+                  "$ref": "id_o9bus5tqb"
+                },
+                "reference": {
+                  "$ref": "id_ldjjssphu"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_z3tv3s3kr",
+                "_parent": {
+                  "$ref": "id_o9bus5tqb"
+                },
+                "reference": {
+                  "$ref": "id_8v1e72e5a"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_popzfwkej",
+              "_parent": {
+                "$ref": "id_ldjjssphu"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_bl5cs4dkz",
+                "_parent": {
+                  "$ref": "id_popzfwkej"
+                },
+                "reference": {
+                  "$ref": "id_ldjjssphu"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_y218chlfr",
+                "_parent": {
+                  "$ref": "id_popzfwkej"
+                },
+                "reference": {
+                  "$ref": "id_kby1sj0zj"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActor",
+          "_id": "id_1rwg8phj9",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Nhan vien (Staff)",
+          "ownedElements": [
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_l4a561nlc",
+              "_parent": {
+                "$ref": "id_1rwg8phj9"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_v3z81rhlb",
+                "_parent": {
+                  "$ref": "id_l4a561nlc"
+                },
+                "reference": {
+                  "$ref": "id_1rwg8phj9"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_q2rsti115",
+                "_parent": {
+                  "$ref": "id_l4a561nlc"
+                },
+                "reference": {
+                  "$ref": "id_s108kpx03"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_la4f94f97",
+              "_parent": {
+                "$ref": "id_1rwg8phj9"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_h49rw1d5x",
+                "_parent": {
+                  "$ref": "id_la4f94f97"
+                },
+                "reference": {
+                  "$ref": "id_1rwg8phj9"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_e7s9llz7p",
+                "_parent": {
+                  "$ref": "id_la4f94f97"
+                },
+                "reference": {
+                  "$ref": "id_c198i6rro"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_7tem6839j",
+              "_parent": {
+                "$ref": "id_1rwg8phj9"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_ao67rxlqx",
+                "_parent": {
+                  "$ref": "id_7tem6839j"
+                },
+                "reference": {
+                  "$ref": "id_1rwg8phj9"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_xwff8tzh8",
+                "_parent": {
+                  "$ref": "id_7tem6839j"
+                },
+                "reference": {
+                  "$ref": "id_tvi65fqkv"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActor",
+          "_id": "id_tau8qrggs",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Nhan vien thu ngan",
+          "ownedElements": [
+            {
+              "_type": "UMLGeneralization",
+              "_id": "id_k5e9u97q5",
+              "_parent": {
+                "$ref": "id_tau8qrggs"
+              },
+              "source": {
+                "$ref": "id_tau8qrggs"
+              },
+              "target": {
+                "$ref": "id_1rwg8phj9"
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_mr630uxy3",
+              "_parent": {
+                "$ref": "id_tau8qrggs"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_nqy5wapy1",
+                "_parent": {
+                  "$ref": "id_mr630uxy3"
+                },
+                "reference": {
+                  "$ref": "id_tau8qrggs"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_818vfqs9f",
+                "_parent": {
+                  "$ref": "id_mr630uxy3"
+                },
+                "reference": {
+                  "$ref": "id_e662i8zll"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_fqjhxfdgf",
+              "_parent": {
+                "$ref": "id_tau8qrggs"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_n4o74oodk",
+                "_parent": {
+                  "$ref": "id_fqjhxfdgf"
+                },
+                "reference": {
+                  "$ref": "id_tau8qrggs"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_dvmf1m4ld",
+                "_parent": {
+                  "$ref": "id_fqjhxfdgf"
+                },
+                "reference": {
+                  "$ref": "id_melknzr0u"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_d5rsnb6u1",
+              "_parent": {
+                "$ref": "id_tau8qrggs"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_bjmdesoz3",
+                "_parent": {
+                  "$ref": "id_d5rsnb6u1"
+                },
+                "reference": {
+                  "$ref": "id_tau8qrggs"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_m7f51sxxd",
+                "_parent": {
+                  "$ref": "id_d5rsnb6u1"
+                },
+                "reference": {
+                  "$ref": "id_9h6to5kzd"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActor",
+          "_id": "id_y092rc2eb",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Nhan vien pha che",
+          "ownedElements": [
+            {
+              "_type": "UMLGeneralization",
+              "_id": "id_0suuk5cnw",
+              "_parent": {
+                "$ref": "id_y092rc2eb"
+              },
+              "source": {
+                "$ref": "id_y092rc2eb"
+              },
+              "target": {
+                "$ref": "id_1rwg8phj9"
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_myergztxc",
+              "_parent": {
+                "$ref": "id_y092rc2eb"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_9cwjk4stp",
+                "_parent": {
+                  "$ref": "id_myergztxc"
+                },
+                "reference": {
+                  "$ref": "id_y092rc2eb"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_iwpswjoiv",
+                "_parent": {
+                  "$ref": "id_myergztxc"
+                },
+                "reference": {
+                  "$ref": "id_hflybqq6r"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActor",
+          "_id": "id_epa4it5ko",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Quan ly",
+          "ownedElements": [
+            {
+              "_type": "UMLGeneralization",
+              "_id": "id_f75o6c9lw",
+              "_parent": {
+                "$ref": "id_epa4it5ko"
+              },
+              "source": {
+                "$ref": "id_epa4it5ko"
+              },
+              "target": {
+                "$ref": "id_tau8qrggs"
+              }
+            },
+            {
+              "_type": "UMLGeneralization",
+              "_id": "id_rjratbdzm",
+              "_parent": {
+                "$ref": "id_epa4it5ko"
+              },
+              "source": {
+                "$ref": "id_epa4it5ko"
+              },
+              "target": {
+                "$ref": "id_y092rc2eb"
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_2gskcww02",
+              "_parent": {
+                "$ref": "id_epa4it5ko"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_bpe6x18j8",
+                "_parent": {
+                  "$ref": "id_2gskcww02"
+                },
+                "reference": {
+                  "$ref": "id_epa4it5ko"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_98ev3lbt1",
+                "_parent": {
+                  "$ref": "id_2gskcww02"
+                },
+                "reference": {
+                  "$ref": "id_wcmgc5bib"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_89v30yvib",
+              "_parent": {
+                "$ref": "id_epa4it5ko"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_soh9jjaa2",
+                "_parent": {
+                  "$ref": "id_89v30yvib"
+                },
+                "reference": {
+                  "$ref": "id_epa4it5ko"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_5bhfgplv4",
+                "_parent": {
+                  "$ref": "id_89v30yvib"
+                },
+                "reference": {
+                  "$ref": "id_9yzx4mgib"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_zn1akhpwn",
+              "_parent": {
+                "$ref": "id_epa4it5ko"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_silxgggbg",
+                "_parent": {
+                  "$ref": "id_zn1akhpwn"
+                },
+                "reference": {
+                  "$ref": "id_epa4it5ko"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_ymubanjvw",
+                "_parent": {
+                  "$ref": "id_zn1akhpwn"
+                },
+                "reference": {
+                  "$ref": "id_i9hehkll1"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_b7muw7iie",
+              "_parent": {
+                "$ref": "id_epa4it5ko"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_332xaza80",
+                "_parent": {
+                  "$ref": "id_b7muw7iie"
+                },
+                "reference": {
+                  "$ref": "id_epa4it5ko"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_bpl8nnooc",
+                "_parent": {
+                  "$ref": "id_b7muw7iie"
+                },
+                "reference": {
+                  "$ref": "id_7uwsiz1r9"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActor",
+          "_id": "id_fi274kjqm",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Chu quan (Admin)",
+          "ownedElements": [
+            {
+              "_type": "UMLGeneralization",
+              "_id": "id_r67xdmx1i",
+              "_parent": {
+                "$ref": "id_fi274kjqm"
+              },
+              "source": {
+                "$ref": "id_fi274kjqm"
+              },
+              "target": {
+                "$ref": "id_epa4it5ko"
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_289bdgkju",
+              "_parent": {
+                "$ref": "id_fi274kjqm"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_uyan3ix7b",
+                "_parent": {
+                  "$ref": "id_289bdgkju"
+                },
+                "reference": {
+                  "$ref": "id_fi274kjqm"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_mr5q2rws2",
+                "_parent": {
+                  "$ref": "id_289bdgkju"
+                },
+                "reference": {
+                  "$ref": "id_epjwfph1z"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_tng6noxiy",
+              "_parent": {
+                "$ref": "id_fi274kjqm"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_ear0fy1v4",
+                "_parent": {
+                  "$ref": "id_tng6noxiy"
+                },
+                "reference": {
+                  "$ref": "id_fi274kjqm"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_a0xss5ufw",
+                "_parent": {
+                  "$ref": "id_tng6noxiy"
+                },
+                "reference": {
+                  "$ref": "id_buc7lmttm"
+                }
+              }
+            },
+            {
+              "_type": "UMLAssociation",
+              "_id": "id_qqjlp8omv",
+              "_parent": {
+                "$ref": "id_fi274kjqm"
+              },
+              "end1": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_bqzdmaq31",
+                "_parent": {
+                  "$ref": "id_qqjlp8omv"
+                },
+                "reference": {
+                  "$ref": "id_fi274kjqm"
+                }
+              },
+              "end2": {
+                "_type": "UMLAssociationEnd",
+                "_id": "id_pfz1dgk62",
+                "_parent": {
+                  "$ref": "id_qqjlp8omv"
+                },
+                "reference": {
+                  "$ref": "id_yul684zxq"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_8v1e72e5a",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Quet QR & Xem Menu",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_kby1sj0zj",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Goi mon truc tuyen",
+          "ownedElements": [
+            {
+              "_type": "UMLInclude",
+              "_id": "id_nc62clsea",
+              "_parent": {
+                "$ref": "id_kby1sj0zj"
+              },
+              "source": {
+                "$ref": "id_kby1sj0zj"
+              },
+              "target": {
+                "$ref": "id_8v1e72e5a"
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_s108kpx03",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Dang nhap / Dang xuat",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_c198i6rro",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Doi mat khau",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_tvi65fqkv",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Nhan ca / Giao ca",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_e662i8zll",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Quan ly Ban",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_melknzr0u",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Tao/Sua Don hang",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_9h6to5kzd",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Thanh toan & In hoa don",
+          "ownedElements": [
+            {
+              "_type": "UMLInclude",
+              "_id": "id_ol6lg3n1r",
+              "_parent": {
+                "$ref": "id_9h6to5kzd"
+              },
+              "source": {
+                "$ref": "id_9h6to5kzd"
+              },
+              "target": {
+                "$ref": "id_melknzr0u"
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_hflybqq6r",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Xu ly phan pha che",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_wcmgc5bib",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Cap nhat Thuc don",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_9yzx4mgib",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Quan ly Danh muc Nguyen lieu",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_i9hehkll1",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Tao Phieu Nhap kho",
+          "ownedElements": [
+            {
+              "_type": "UMLInclude",
+              "_id": "id_xtzbydbss",
+              "_parent": {
+                "$ref": "id_i9hehkll1"
+              },
+              "source": {
+                "$ref": "id_i9hehkll1"
+              },
+              "target": {
+                "$ref": "id_9yzx4mgib"
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_7uwsiz1r9",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Cap nhat TK Ngan hang",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_epjwfph1z",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Quan ly nhan vien",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_buc7lmttm",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Xem Bao cao & Thong ke",
+          "ownedElements": []
+        },
+        {
+          "_type": "UMLUseCase",
+          "_id": "id_yul684zxq",
+          "_parent": {
+            "$ref": "id_c3ts92xt2"
+          },
+          "name": "Tuong tac AI Chatbox",
+          "ownedElements": []
+        }
+      ]
+    }
+  ]
+}

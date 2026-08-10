@@ -88,7 +88,7 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-xl font-bold text-slate-800">{user.full_name || user.email}</h2>
               <span className="inline-block px-2.5 py-0.5 mt-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full uppercase tracking-wider border border-blue-100">
-                {user.role}
+                {{ OWNER: 'Chủ quán', MANAGER: 'Quản lý', BARISTA: 'Pha chế', CASHIER: 'Thu ngân' }[user.role] || user.role}
               </span>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function ProfilePage() {
             </label>
             <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center">
               <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold rounded-full uppercase tracking-wider">
-                {user.role}
+                {{ OWNER: 'Chủ quán', MANAGER: 'Quản lý', BARISTA: 'Pha chế', CASHIER: 'Thu ngân' }[user.role] || user.role}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-2">Chỉ Chủ quán (Owner) mới có quyền thay đổi vai trò của nhân viên.</p>

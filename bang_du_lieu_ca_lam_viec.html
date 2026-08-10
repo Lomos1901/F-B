@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bảng Dữ Liệu - Quản lý Ca làm việc</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 13pt; padding: 40px; line-height: 1.5; }
+    h3 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px; }
+    th, td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; text-align: center; }
+    th { background-color: #d9e2f3; font-weight: bold; }
+    td:nth-child(2) { text-align: left; font-family: Consolas, monospace; }
+    .explain { margin-top: 20px; }
+    .explain p { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<h3>Bảng dữ liệu và phương thức<br>Chức năng: Quản lý Ca làm việc (Mở ca / Chốt ca)</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>STT</th>
+      <th>Tên bảng</th>
+      <th>Thêm</th>
+      <th>Sửa</th>
+      <th>Xóa</th>
+      <th>Truy vấn</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>shifts</td>
+      <td>x</td>
+      <td>x</td>
+      <td></td>
+      <td>x</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>orders</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>x</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>users</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>x</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="explain">
+  <p><strong>Giải thích luồng dữ liệu (Rất quan trọng để chốt sổ):</strong></p>
+  <p>1. <strong>Mở ca mới (Khởi tạo):</strong> Khi thu ngân nhập Tiền mặt đầu ca và bấm Bắt đầu, hệ thống <strong>Thêm</strong> 1 bản ghi mới vào bảng <code>shifts</code> với trạng thái 'Open', ghi nhận thời gian bắt đầu (start_time), số tiền đầu ca và ID của nhân viên (từ bảng <code>users</code>).</p>
+  <p>2. <strong>Tính toán số liệu (Ca đang mở):</strong> Trong lúc ca hoạt động, khi thu ngân bấm vào màn hình Chốt ca, hệ thống <strong>Truy vấn</strong> bảng <code>orders</code> để tính tổng doanh thu các đơn hàng phát sinh trong khoảng thời gian từ (start_time) đến thời điểm hiện tại. Hệ thống cộng (Tiền mặt đầu ca + Tổng Khách trả tiền mặt) để ra "Tiền trong két phải có".</p>
+  <p>3. <strong>Chốt ca (Cập nhật):</strong> Khi thu ngân nhập số đếm thực tế và Xác nhận, hệ thống <strong>Sửa</strong> bản ghi trong bảng <code>shifts</code>: cập nhật trạng thái thành 'Closed', ghi nhận thời gian kết thúc (end_time), số tiền thực đếm, độ chênh lệch và ghi chú. Sau bước này, tài khoản thu ngân sẽ bị khóa chức năng POS cho đến khi có nhân viên khác mở ca mới.</p>
+</div>
+
+</body>
+</html>

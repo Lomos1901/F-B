@@ -84,7 +84,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 p-6 sm:p-10">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-800 mb-8">Cài Đặt Quán</h1>
+        <h1 className="text-3xl font-bold text-slate-800 mb-8">Cài Đặt Ngân Hàng</h1>
         
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200 bg-slate-50/50">

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thành phần giao diện - Quản lý Thực đơn</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 13pt; padding: 40px; }
+    h3 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #000; padding: 6px 10px; vertical-align: top; }
+    th { background-color: #d9e2f3; text-align: center; font-weight: bold; }
+    td:first-child { text-align: center; width: 40px; }
+  </style>
+</head>
+<body>
+
+<h3>Bảng mô tả các thành phần giao diện<br>Chức năng: Quản lý Thực đơn (Món nước)</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>STT</th>
+      <th>Loại điều khiển</th>
+      <th>Tên điều khiển</th>
+      <th>Nội dung thực hiện</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Button</td><td>Nút "Thêm món mới"</td><td>Bấm để mở giao diện thêm một món nước mới vào thực đơn.</td></tr>
+    <tr><td>2</td><td>Tabs/Filter</td><td>Thanh lọc Danh mục</td><td>Bấm để lọc nhanh danh sách món theo từng danh mục (Tất cả, Cà phê, Trà...).</td></tr>
+    <tr><td>3</td><td>Badge/Button</td><td>Trạng thái (Đang bán)</td><td>Hiển thị trạng thái, có thể click để bật/tắt (Hết hàng/Đang bán).</td></tr>
+    <tr><td>4</td><td>Button (Icon)</td><td>Nút "Xem công thức"</td><td>Bấm để mở Modal xem chi tiết công thức định lượng của món.</td></tr>
+    <tr><td>5</td><td>Button (Icon)</td><td>Nút "Sửa"</td><td>Bấm để mở form cập nhật thông tin và công thức của món.</td></tr>
+    <tr><td>6</td><td>Button (Icon)</td><td>Nút "Xóa"</td><td>Bấm để mở Modal xác nhận xóa món khỏi thực đơn.</td></tr>
+    <tr><td>7</td><td>TextField</td><td>Ô "Tên món"</td><td>Nhập tên của sản phẩm (Bắt buộc).</td></tr>
+    <tr><td>8</td><td>TextField</td><td>Ô "Giá bán"</td><td>Nhập giá tiền của sản phẩm (Bắt buộc).</td></tr>
+    <tr><td>9</td><td>ComboBox</td><td>Dropdown "Danh mục"</td><td>Chọn danh mục phân loại cho món nước.</td></tr>
+    <tr><td>10</td><td>TextArea</td><td>Ô "Mô tả / Ghi chú"</td><td>Nhập đoạn mô tả thành phần hoặc thông tin thu hút khách hàng.</td></tr>
+    <tr><td>11</td><td>Button</td><td>Nút "Tải ảnh"</td><td>Bấm để chọn và tải lên hình ảnh đại diện cho món nước.</td></tr>
+    <tr><td>12</td><td>ComboBox</td><td>Dropdown "Nguyên liệu"</td><td>Chọn loại nguyên liệu cấu thành nên món nước.</td></tr>
+    <tr><td>13</td><td>TextField</td><td>Ô "Lượng"</td><td>Nhập số lượng (định lượng) của nguyên liệu cần dùng.</td></tr>
+    <tr><td>14</td><td>Label</td><td>Đơn vị tính</td><td>Tự động hiển thị đơn vị pha chế theo nguyên liệu đã chọn (VD: ml, g).</td></tr>
+    <tr><td>15</td><td>Button</td><td>Nút "Thêm dòng"</td><td>Bấm để thêm một hàng nguyên liệu mới vào công thức pha chế.</td></tr>
+    <tr><td>16</td><td>Button (Icon)</td><td>Nút Xóa dòng (Thùng rác)</td><td>Bấm để loại bỏ nguyên liệu khỏi công thức của món.</td></tr>
+    <tr><td>17</td><td>Button</td><td>Nút "Lưu sản phẩm"</td><td>Xác nhận lưu toàn bộ thông tin món và công thức vào hệ thống.</td></tr>
+    <tr><td>18</td><td>Label/Text</td><td>Tên món (Modal Công thức)</td><td>Hiển thị tên món đang được xem công thức.</td></tr>
+    <tr><td>19</td><td>List Item</td><td>Dòng chi tiết công thức</td><td>Hiển thị tên nguyên liệu và định lượng thực tế cần dùng.</td></tr>
+    <tr><td>20</td><td>Button</td><td>Nút "Đóng lại"</td><td>Đóng Modal xem công thức pha chế.</td></tr>
+    <tr><td>21</td><td>Button</td><td>Nút "Hủy" (Modal Xóa)</td><td>Hủy thao tác xóa, giữ nguyên sản phẩm.</td></tr>
+    <tr><td>22</td><td>Button</td><td>Nút "Xác nhận" (Xóa)</td><td>Đồng ý xóa (hoặc ẩn) sản phẩm khỏi hệ thống.</td></tr>
+  </tbody>
+</table>
+
+</body>
+</html>

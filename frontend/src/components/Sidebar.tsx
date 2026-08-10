@@ -98,7 +98,9 @@ export default function Sidebar() {
                 <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
-            <NavLink href="/dashboard" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Tổng quan</NavLink>
+            {user.role === UserRole.OWNER && (
+              <NavLink href="/dashboard" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Tổng quan</NavLink>
+            )}
             <NavLink href="/pos" icon={<ShoppingCart size={20} />} isExpanded={isExpanded}>Thu ngân (POS)</NavLink>
             <NavLink href="/kds" icon={<Coffee size={20} />} isExpanded={isExpanded}>Pha chế (KDS)</NavLink>
             <NavLink href="/receipts" icon={<ReceiptText size={20} />} isExpanded={isExpanded}>Hóa đơn</NavLink>
@@ -134,7 +136,9 @@ export default function Sidebar() {
                 <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
-            <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Quản lý Nhân sự</NavLink>
+            {user.role === UserRole.OWNER && (
+              <NavLink href="/users" icon={<Users size={20} />} isExpanded={isExpanded}>Quản lý Nhân sự</NavLink>
+            )}
             <NavLink href="/shifts" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Ca làm việc</NavLink>
             <NavLink href="/shift-history" icon={<Briefcase size={20} />} isExpanded={isExpanded}>Lịch sử Ca</NavLink>
             <NavLink href="/alerts" icon={<Bell size={20} />} isExpanded={isExpanded}>Cảnh báo</NavLink>
@@ -148,7 +152,9 @@ export default function Sidebar() {
               )}
             </div>
             <NavLink href="/tables-config" icon={<LayoutDashboard size={20} />} isExpanded={isExpanded}>Sơ đồ Bàn</NavLink>
-            <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt quán</NavLink>
+            {user.role === UserRole.OWNER && (
+              <NavLink href="/settings" icon={<Settings size={20} />} isExpanded={isExpanded}>Cài đặt ngân hàng</NavLink>
+            )}
           </>
         )}
         
@@ -199,7 +205,7 @@ export default function Sidebar() {
           {isExpanded && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-800 truncate">{user.full_name}</p>
-              <p className="text-xs font-medium text-blue-600 capitalize truncate">{user.role.toLowerCase()}</p>
+              <p className="text-xs font-medium text-blue-600 capitalize truncate">{{ OWNER: 'Chủ quán', MANAGER: 'Quản lý', BARISTA: 'Pha chế', CASHIER: 'Thu ngân' }[user.role] || user.role}</p>
             </div>
           )}
         </div>

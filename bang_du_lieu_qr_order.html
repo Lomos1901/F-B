@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bảng Dữ Liệu - Quét QR & Gọi món trực tuyến</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 13pt; padding: 40px; line-height: 1.5; }
+    h3 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px; }
+    th, td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; text-align: center; }
+    th { background-color: #d9e2f3; font-weight: bold; }
+    td:nth-child(2) { text-align: left; font-family: Consolas, monospace; }
+    .explain { margin-top: 20px; }
+    .explain p { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<h3>Bảng dữ liệu và phương thức<br>Chức năng: Quét QR & Gọi món trực tuyến</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>STT</th>
+      <th>Tên bảng</th>
+      <th>Thêm</th>
+      <th>Sửa</th>
+      <th>Xóa</th>
+      <th>Truy vấn</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>products</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>2</td><td>categories</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>3</td><td>payment_methods</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>4</td><td>store_bank_info</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>5</td><td>group_carts</td><td>x</td><td>x</td><td></td><td>x</td></tr>
+    <tr><td>6</td><td>orders</td><td>x</td><td></td><td></td><td>x</td></tr>
+    <tr><td>7</td><td>order_detail</td><td>x</td><td></td><td></td><td></td></tr>
+    <tr><td>8</td><td>order_status</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>9</td><td>task_status</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>10</td><td>preparation_tasks</td><td>x</td><td></td><td></td><td></td></tr>
+    <tr><td>11</td><td>tables</td><td></td><td></td><td></td><td>x</td></tr>
+    <tr><td>12</td><td>shifts</td><td></td><td></td><td></td><td>x</td></tr>
+  </tbody>
+</table>
+
+<div class="explain">
+  <p><strong>Giải thích luồng dữ liệu:</strong></p>
+  <p>1. <strong>Tải trang thực đơn:</strong> Truy vấn <code>products</code> (kèm <code>categories</code>), <code>payment_methods</code>, <code>store_bank_info</code>.</p>
+  <p>2. <strong>Giỏ hàng nhóm (Realtime):</strong> Truy vấn + Thêm/Sửa <code>group_carts</code> — đồng bộ giỏ hàng giữa nhiều khách cùng bàn qua Supabase Realtime.</p>
+  <p>3. <strong>Đặt món:</strong> Truy vấn <code>order_status</code>, <code>task_status</code>, <code>tables</code>, <code>shifts</code> &rarr; Thêm vào <code>orders</code>, <code>order_detail</code>, <code>preparation_tasks</code>; kiểm tra đơn trùng (truy vấn <code>orders</code>).</p>
+</div>
+
+</body>
+</html>

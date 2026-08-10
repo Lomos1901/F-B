@@ -79,7 +79,7 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const { password, ...dbUpdates } = updateUserDto;
+    const { password, fullName, ...restUpdates } = updateUserDto;
 
     // Update password in Supabase Auth if provided
     if (password) {
@@ -90,6 +90,11 @@ export class UsersService {
         this.logger.error(`Lỗi cập nhật mật khẩu cho user ${id}:`, authError);
         throw new InternalServerErrorException('Lỗi khi cập nhật mật khẩu.');
       }
+    }
+
+    const dbUpdates: any = { ...restUpdates };
+    if (fullName !== undefined) {
+      dbUpdates.full_name = fullName;
     }
 
     if (Object.keys(dbUpdates).length === 0) {

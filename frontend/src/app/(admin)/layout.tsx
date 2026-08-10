@@ -23,13 +23,17 @@ export default function AdminLayout({
       } else {
         const isBarista = user.role === UserRole.BARISTA;
         const isCashier = user.role === UserRole.CASHIER;
+        const isManager = user.role === UserRole.MANAGER;
 
-        const managementRoutes = ['/dashboard', '/users', '/receipts', '/products', '/categories', '/ingredients', '/ingredient-categories', '/inventory-receipts', '/tables-config', '/settings'];
+        const managementRoutes = ['/dashboard', '/users', '/products', '/categories', '/ingredients', '/ingredient-categories', '/inventory-receipts', '/tables-config', '/settings'];
+        const ownerOnlyRoutes = ['/dashboard', '/users', '/settings'];
 
-        if (isBarista && !pathname.startsWith('/kds')) {
+        if (isBarista && !pathname.startsWith('/kds') && !pathname.startsWith('/profile')) {
           router.replace('/kds');
         } else if (isCashier && managementRoutes.some(route => pathname.startsWith(route))) {
           router.replace('/pos');
+        } else if (isManager && ownerOnlyRoutes.some(route => pathname.startsWith(route))) {
+          router.replace('/products');
         }
       }
     }

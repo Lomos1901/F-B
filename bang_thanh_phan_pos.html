@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thành phần giao diện - POS</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; font-size: 13pt; padding: 40px; }
+    h3 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #000; padding: 6px 10px; vertical-align: top; }
+    th { background-color: #d9e2f3; text-align: center; font-weight: bold; }
+    td:first-child { text-align: center; width: 40px; }
+  </style>
+</head>
+<body>
+
+<h3>Bảng mô tả các thành phần giao diện<br>Chức năng: Quản lý Bán hàng tại quầy (POS)</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>STT</th>
+      <th>Loại điều khiển</th>
+      <th>Tên điều khiển</th>
+      <th>Nội dung thực hiện</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>TextField</td><td>Ô "Tìm hàng hóa (F3)"</td><td>Nhập từ khóa (tên món, mã món) để tìm kiếm nhanh sản phẩm.</td></tr>
+    <tr><td>2</td><td>Tabs/Filter</td><td>Lọc danh mục</td><td>Bấm để lọc nhanh menu theo từng nhóm (Cà phê, Trà, Sinh tố...).</td></tr>
+    <tr><td>3</td><td>Image / Card</td><td>Thẻ món - Hình ảnh</td><td>Hiển thị hình minh họa của món, bấm vào thẻ để thêm món vào giỏ hàng.</td></tr>
+    <tr><td>4</td><td>Label</td><td>Thẻ món - Tên</td><td>Hiển thị tên món nước.</td></tr>
+    <tr><td>5</td><td>Label</td><td>Thẻ món - Giá</td><td>Hiển thị giá bán mặc định của món.</td></tr>
+    <tr><td>6</td><td>Button</td><td>Tab "Thực Đơn"</td><td>Chuyển đổi màn hình chính về giao diện chọn món (Menu).</td></tr>
+    <tr><td>7</td><td>Button</td><td>Tab "Phòng/Bàn"</td><td>Chuyển đổi sang giao diện Sơ đồ bàn để chọn bàn cho khách.</td></tr>
+    <tr><td>8</td><td>Button</td><td>Nút "Đơn QR"</td><td>Bấm để xem/xử lý các đơn hàng khách hàng vừa tự đặt qua mã QR.</td></tr>
+    <tr><td>9</td><td>Label</td><td>Tên thu ngân</td><td>Hiển thị tài khoản nhân viên đang thực hiện ca làm việc này.</td></tr>
+    <tr><td>10</td><td>Tab</td><td>Tên đơn hàng</td><td>Hiển thị tên hóa đơn (Khách tại quầy hoặc Bàn số X).</td></tr>
+    <tr><td>11</td><td>Button</td><td>Nút "Hủy đơn"</td><td>Xóa toàn bộ các món đang có trong giỏ hàng hiện tại.</td></tr>
+    <tr><td>12</td><td>TextField</td><td>Ô "Ghi chú" (Từng món)</td><td>Nhập yêu cầu đặc biệt của khách cho món đó (VD: ít đá, không đường).</td></tr>
+    <tr><td>13</td><td>Label</td><td>Giá thành tiền</td><td>Hiển thị tổng tiền tạm tính của riêng dòng sản phẩm đó.</td></tr>
+    <tr><td>14</td><td>Button (+/-)</td><td>Bộ tăng/giảm số lượng</td><td>Bấm nút Cộng/Trừ để thay đổi số lượng món trong giỏ hàng.</td></tr>
+    <tr><td>15</td><td>Label</td><td>Khách cần trả</td><td>Hiển thị tổng số tiền cuối cùng khách phải thanh toán.</td></tr>
+    <tr><td>16</td><td>Button</td><td>Thanh toán "Tiền mặt"</td><td>Chọn phương thức nhận tiền mặt trực tiếp từ khách.</td></tr>
+    <tr><td>17</td><td>Button</td><td>Thanh toán "Chuyển khoản"</td><td>Chọn phương thức hiển thị mã QR Code (VietQR) cho khách quét.</td></tr>
+    <tr><td>18</td><td>Button</td><td>Nút "THANH TOÁN (F9)"</td><td>Chốt đơn, lưu dữ liệu vào hệ thống, in hóa đơn và đẩy task xuống bếp.</td></tr>
+  </tbody>
+</table>
+
+</body>
+</html>
