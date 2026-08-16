@@ -13,6 +13,7 @@ const getAuthHeaders = () => {
 export interface ChatMessage {
   role: 'user' | 'model';
   parts: Array<{ text: string }>;
+  timestamp: string;
 }
 
 export const chatService = {

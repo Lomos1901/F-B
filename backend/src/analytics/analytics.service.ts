@@ -642,8 +642,8 @@ ${rawDataStr}
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         // Sử dụng gemini-flash-latest (model cũ đang chạy tốt) làm ưu tiên, fallback sang các model khác
         let defaultModel = 'gemini-flash-latest';
-        if (attempt === 1) defaultModel = 'gemini-1.5-pro-latest';
-        if (attempt === 2) defaultModel = 'gemini-pro';
+        if (attempt === 1) defaultModel = 'gemini-3.5-flash';
+        if (attempt === 2) defaultModel = 'gemini-3.0-flash';
         
         const modelName = process.env.GEMINI_MODEL || defaultModel;
         const model = genAI.getGenerativeModel({ model: modelName });

@@ -1,8 +1,13 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { GoogleGenerativeAI, Tool, ChatSession, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { SupabaseService } from '../supabase/supabase.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { DashboardService } from '../dashboard/dashboard.service';
+
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
 
 @Injectable()
 export class ChatService {
@@ -11,12 +16,28 @@ export class ChatService {
   private readonly MAX_REQUESTS = 30;
   private readonly RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+  // Cache data snapshot — chỉ query DB 1 lần đầu, dùng lại cho cả phiên chat
+  private cache = new Map<string, CacheEntry<any>>();
+  private readonly SNAPSHOT_CACHE_TTL = 5 * 60 * 1000; // 5 phút — đủ cho 1 phiên chat
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly analyticsService: AnalyticsService,
     private readonly dashboardService: DashboardService,
   ) {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+  }
+
+  private getCached<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (entry && Date.now() < entry.expiry) return entry.data;
+    this.cache.delete(key);
+    return null;
+  }
+
+  private setCache<T>(key: string, data: T, ttl: number): T {
+    this.cache.set(key, { data, expiry: Date.now() + ttl });
+    return data;
   }
 
   private checkRateLimit(userId: string): void {
@@ -40,63 +61,79 @@ export class ChatService {
     userRecord.count++;
   }
 
-  private async executeFunctionCall(name: string, args: any): Promise<any> {
+  /**
+   * Pre-fetch TẤT CẢ dữ liệu cần thiết 1 lần duy nhất, đóng gói thành chuỗi text.
+   * Cache 5 phút — tin nhắn đầu tiên query DB, các tin nhắn sau dùng cache.
+   */
+  private async buildDataSnapshot(): Promise<string> {
+    const cached = this.getCached<string>('data_snapshot');
+    if (cached) return cached;
+
+    // Query song song tất cả data cần thiết — CHỈ 1 LẦN
+    const [diagnostics, inventory, alerts, dashboard, menuText] = await Promise.all([
+      this.analyticsService.getTodayDiagnostics().catch(() => []),
+      this.analyticsService.getInventoryDiagnostics().catch(() => []),
+      this.analyticsService.getAnomalies(10).catch(() => []),
+      this.dashboardService.getDashboardData(7).catch(() => null),
+      this.getMenuText(),
+    ]);
+
+    // Top sản phẩm bán chạy
+    const topSellers = [...diagnostics]
+      .sort((a: any, b: any) => (b.today_quantity || 0) - (a.today_quantity || 0))
+      .slice(0, 10);
+
+    // Nguyên liệu cảnh báo
+    const lowStock = inventory.filter((i: any) => i.is_alert);
+
+    // Tổng doanh thu hôm nay
+    const totalSold = (diagnostics as any[]).reduce((sum: number, p: any) => sum + (p.today_quantity || 0), 0);
+
+    // Đóng gói thành chuỗi text gọn gàng
+    const snapshot = `
+--- DỮ LIỆU HỆ THỐNG (Cập nhật lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}) ---
+
+📊 DOANH SỐ HÔM NAY (Tổng: ${totalSold} ly):
+${topSellers.length > 0
+  ? topSellers.map((p: any) => `- ${p.product_name}: ${p.today_quantity} ly (TB: ${p.mean_daily_sales}/ngày${p.is_anomaly ? ' ⚡TĂNG ĐỘT BIẾN' : ''})`).join('\n')
+  : '- Chưa có dữ liệu doanh số hôm nay'}
+
+📦 TÌNH TRẠNG KHO:
+${lowStock.length > 0
+  ? lowStock.map((i: any) => `- ⚠️ ${i.ingredient_name}: còn ${i.stock_quantity} ${i.unit}, dự báo hết sau ${typeof i.days_remaining === 'number' ? Math.floor(i.days_remaining) : i.days_remaining} ngày`).join('\n')
+  : '- Kho ổn định, không có nguyên liệu nào sắp hết'}
+
+⚠️ CẢNH BÁO GẦN ĐÂY:
+${alerts.length > 0
+  ? alerts.slice(0, 5).map((a: any) => `- ${a.message}`).join('\n')
+  : '- Không có cảnh báo mới'}
+
+💰 TỔNG QUAN 7 NGÀY:
+${dashboard ? JSON.stringify(dashboard) : 'Chưa có dữ liệu tổng quan'}
+
+🍽️ MENU HIỆN TẠI:
+${menuText}
+`.trim();
+
+    return this.setCache('data_snapshot', snapshot, this.SNAPSHOT_CACHE_TTL);
+  }
+
+  /** Lấy danh sách menu đóng gói thành text */
+  private async getMenuText(): Promise<string> {
     try {
-      switch (name) {
-        case 'get_top_selling_products': {
-          const diagnostics = await this.analyticsService.getTodayDiagnostics();
-          return diagnostics
-            .sort((a: any, b: any) => (b.today_quantity || 0) - (a.today_quantity || 0))
-            .slice(0, 10);
-        }
-        case 'get_low_inventory': {
-          const inventory = await this.analyticsService.getInventoryDiagnostics();
-          return inventory.filter((item: any) => item.is_alert === true);
-        }
-        case 'get_recent_alerts': {
-          const limit = args.limit || 10;
-          const anomalies = await this.analyticsService.getAnomalies(limit);
-          return anomalies;
-        }
-        case 'get_dashboard_summary': {
-          const days = args.days || 7;
-          const dashboardData = await this.dashboardService.getDashboardData(days);
-          return dashboardData;
-        }
-        case 'get_inventory_full_report': {
-          const inventory = await this.analyticsService.getInventoryDiagnostics();
-          return inventory;
-        }
-        case 'get_highest_order_today': {
-          const supabase = this.supabaseService.getAdminClient();
-          const targetDate = new Date();
-          targetDate.setHours(0, 0, 0, 0);
-          const startOfDay = targetDate.toISOString();
-          
-          const endDate = new Date(targetDate);
-          endDate.setHours(23, 59, 59, 999);
-          const endOfDay = endDate.toISOString();
+      const supabase = this.supabaseService.getAdminClient();
+      const { data: menuData } = await supabase
+        .from('products')
+        .select('name, price, categories(name)')
+        .eq('is_active', true);
 
-          const { data, error } = await supabase
-            .from('orders')
-            .select('id, table_number, total_price, created_at, note')
-            .gte('created_at', startOfDay)
-            .lte('created_at', endOfDay)
-            .order('total_price', { ascending: false })
-            .limit(1)
-            .single();
+      if (!menuData || menuData.length === 0) return '- Chưa có sản phẩm nào';
 
-          if (error) {
-            return { error: 'Không tìm thấy đơn hàng nào hôm nay' };
-          }
-          return data;
-        }
-        default:
-          return { error: 'Function not found' };
-      }
-    } catch (error) {
-      console.error(`Error executing function ${name}:`, error);
-      return { error: 'Failed to execute function' };
+      return menuData
+        .map((p: any) => `- ${p.name} (${p.categories?.name || 'Khác'}): ${p.price.toLocaleString('vi-VN')}đ`)
+        .join('\n');
+    } catch {
+      return '- Không thể tải menu';
     }
   }
 
@@ -104,105 +141,45 @@ export class ChatService {
     this.checkRateLimit(userId);
 
     try {
-      const tools: Tool[] = [{
-        functionDeclarations: [
-          {
-            name: 'get_top_selling_products',
-            description: 'Lấy danh sách sản phẩm bán chạy nhất hôm nay kèm số lượng đã bán và so sánh với trung bình',
-            parameters: { type: 'OBJECT', properties: {} } as any
-          },
-          {
-            name: 'get_low_inventory',
-            description: 'Lấy danh sách nguyên liệu sắp hết',
-            parameters: { type: 'OBJECT', properties: {} } as any
-          },
-          {
-            name: 'get_recent_alerts',
-            description: 'Lấy các cảnh báo bất thường gần đây',
-            parameters: { 
-              type: 'OBJECT', 
-              properties: {
-                limit: {
-                  type: 'NUMBER',
-                  description: 'Số lượng cảnh báo cần lấy (mặc định 10)'
-                }
-              }
-            } as any
-          },
-          {
-            name: 'get_dashboard_summary',
-            description: 'Lấy tổng quan doanh thu, số đơn hàng',
-            parameters: { 
-              type: 'OBJECT', 
-              properties: {
-                days: {
-                  type: 'NUMBER',
-                  description: 'Số ngày cần lấy dữ liệu (mặc định 7)'
-                }
-              }
-            } as any
-          },
-          {
-            name: 'get_inventory_full_report',
-            description: 'Lấy báo cáo đầy đủ tồn kho tất cả nguyên liệu',
-            parameters: { type: 'OBJECT', properties: {} } as any
-          },
-          {
-            name: 'get_highest_order_today',
-            description: 'Tìm hóa đơn có giá trị lớn nhất trong ngày hôm nay',
-            parameters: { type: 'OBJECT', properties: {} } as any
-          }
-        ]
-      }];
-
-      const supabase = this.supabaseService.getAdminClient();
-      const { data: menuData } = await supabase
-        .from('products')
-        .select('name, price, categories(name)')
-        .eq('is_active', true);
-        
-      let menuContext = '';
-      if (menuData && menuData.length > 0) {
-        menuContext = '\n--- MENU HIỆN TẠI CỦA QUÁN ---\n' + 
-          menuData.map((p: any) => `- ${p.name} (${p.categories?.name || 'Khác'}): ${p.price.toLocaleString('vi-VN')}đ`).join('\n');
-      }
+      // Lấy data snapshot — tin nhắn đầu query DB, các tin nhắn sau dùng cache
+      const dataSnapshot = await this.buildDataSnapshot();
 
       let attempt = 0;
-      const maxRetries = 4;
+      const maxRetries = 2;
       let lastError: any;
 
       while (attempt < maxRetries) {
         try {
           let defaultModel = 'gemini-flash-latest';
           if (attempt === 1) defaultModel = 'gemini-flash-lite-latest';
-          if (attempt === 2) defaultModel = 'gemini-3.5-flash-lite';
-          if (attempt === 3) defaultModel = 'gemini-2.5-flash-lite';
 
           const modelName = attempt === 0 ? (process.env.GEMINI_MODEL || defaultModel) : defaultModel;
-          const model: GenerativeModel = this.genAI.getGenerativeModel({ 
+          const model: GenerativeModel = this.genAI.getGenerativeModel({
             model: modelName,
-            tools: tools,
-            systemInstruction: "Bạn là Trợ Lý AI của quán LUMOS COFFEE. Bạn luôn xưng 'Em' và gọi chủ quán là 'Sếp'.\nPhong cách: chuyên nghiệp, nhanh nhẹn, đi thẳng vào trọng tâm.\nQuy tắc:\n- Trả lời ngắn gọn, dùng gạch đầu dòng và in đậm số liệu quan trọng.\n- TUYỆT ĐỐI không bịa số liệu. Chỉ dùng data từ các hàm được cung cấp hoặc Menu được tiêm vào.\n- Nếu không có data, báo thẳng 'Em chưa có dữ liệu về vấn đề này, Sếp'.\n- Không trả lời các câu hỏi không liên quan đến vận hành quán.\n- Khi liệt kê, giới hạn tối đa 10 mục." + menuContext
+            // KHÔNG CÓ tools — data đã có sẵn trong prompt, chỉ cần 1 lần gọi AI
+            systemInstruction: `Bạn là Trợ Lý AI của quán SAM COFFEE. Bạn luôn xưng 'Em' và gọi chủ quán là 'Sếp'.
+
+NGUYÊN TẮC TUYỆT ĐỐI - VI PHẠM = THẤT BẠI:
+1. Chỉ sử dụng dữ liệu trong phần "DỮ LIỆU HỆ THỐNG" bên dưới để trả lời. KHÔNG BAO GIỜ tự bịa số liệu.
+2. Nếu dữ liệu không có thông tin liên quan, nói thẳng: "Em tra hệ thống thì chưa có dữ liệu về vấn đề này, Sếp."
+3. Hệ thống KHÔNG CÓ: cảm biến nhiệt độ, camera, GPS, cảm biến độ ẩm, hay bất kỳ thiết bị IoT nào. KHÔNG ĐƯỢC nhắc đến những thứ này.
+4. Chỉ trả lời về: doanh số, thực đơn, nguyên liệu, tồn kho, cảnh báo, đơn hàng, ca làm việc.
+5. Trả lời ngắn gọn, dùng gạch đầu dòng, in đậm số liệu. Tối đa 10 mục khi liệt kê.
+
+Phong cách: chuyên nghiệp, nhanh nhẹn, đi thẳng vào số liệu thực.
+
+${dataSnapshot}`
           });
 
-          const chatSession: ChatSession = model.startChat({
-            history: conversationHistory,
+          // Lọc bỏ timestamp khỏi history — Gemini API chỉ chấp nhận role + parts
+          const cleanHistory = conversationHistory.map(({ role, parts }) => ({ role, parts }));
+
+          const chatSession = model.startChat({
+            history: cleanHistory,
           });
 
+          // CHỈ 1 LẦN gọi AI — không có function call roundtrip
           const result = await chatSession.sendMessage(userMessage);
-          const call = result.response.functionCalls()?.[0];
-
-          if (call) {
-            const functionResult = await this.executeFunctionCall(call.name, call.args);
-            
-            const followUpResult = await chatSession.sendMessage(
-              `Dữ liệu từ hệ thống:\n${JSON.stringify(functionResult)}`
-            );
-            
-            return {
-              reply: followUpResult.response.text()
-            };
-          }
 
           return {
             reply: result.response.text()

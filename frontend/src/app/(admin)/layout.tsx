@@ -60,7 +60,7 @@ export default function AdminLayout({
           {children}
         </div>
       </main>
-      <ChatWidget />
+      {user.role === UserRole.OWNER && <ChatWidget />}
     </div>
   );
 }

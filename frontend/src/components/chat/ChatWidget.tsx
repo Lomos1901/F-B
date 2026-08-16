@@ -49,7 +49,7 @@ export default function ChatWidget() {
     const userMessage = text.trim();
     const currentHistory = [...messages];
     
-    setMessages([...currentHistory, { role: 'user', parts: [{ text: userMessage }] }]);
+    setMessages([...currentHistory, { role: 'user', parts: [{ text: userMessage }], timestamp: new Date().toISOString() }]);
     setInputValue('');
     setIsLoading(true);
 
@@ -57,13 +57,13 @@ export default function ChatWidget() {
       const response = await chatService.sendMessage(userMessage, currentHistory);
       setMessages((prev) => [
         ...prev,
-        { role: 'model', parts: [{ text: response.reply }] },
+        { role: 'model', parts: [{ text: response.reply }], timestamp: new Date().toISOString() },
       ]);
     } catch (error: any) {
       toast.error(error.message || 'Lỗi kết nối với trợ lý AI');
       setMessages((prev) => [
         ...prev,
-        { role: 'model', parts: [{ text: `*Lỗi: ${error.message || 'Không thể kết nối. Vui lòng thử lại sau.'}*` }] },
+        { role: 'model', parts: [{ text: `*Lỗi: ${error.message || 'Không thể kết nối. Vui lòng thử lại sau.'}*` }], timestamp: new Date().toISOString() },
       ]);
     } finally {
       setIsLoading(false);
@@ -172,7 +172,7 @@ export default function ChatWidget() {
                       <p className="whitespace-pre-wrap">{msg.parts[0].text}</p>
                     )}
                     <div className={`text-[10px] mt-2 text-right ${msg.role === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
-                      {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>

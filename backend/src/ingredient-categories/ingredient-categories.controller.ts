@@ -17,8 +17,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
 
+import { IsString, IsNotEmpty } from 'class-validator';
+
 // DTO đơn giản để xác thực body
 class IngredientCategoryDto {
+  @IsString()
+  @IsNotEmpty()
   name: string;
 }
 
