@@ -300,8 +300,7 @@ export class AnalyticsService {
             payload,
           );
         }
-        const currentHour = parseInt(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: 'numeric', hour12: false }));
-        if (item.today_quantity === 0 && item.mean_daily_sales > 3 && currentHour >= 15) {
+        if (item.today_quantity === 0 && item.mean_daily_sales > 3) {
           const message = `Sản phẩm '${item.product_name}' không bán được ly nào hôm nay (so với trung bình ${item.mean_daily_sales} ly/ngày).`;
           // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
           const payload = {
@@ -342,9 +341,12 @@ export class AnalyticsService {
           typeof item.days_remaining === 'number' ? item.days_remaining : 0;
         const isEmergency = item.stock_quantity <= 0.5;
 
-        const message = isEmergency
-          ? `Cảnh báo khẩn: Nguyên liệu '${item.ingredient_name}' sắp CẠN KIỆT (chỉ còn ${item.stock_quantity} ${item.unit}).`
-          : `Dự báo: Nguyên liệu '${item.ingredient_name}' chỉ còn đủ dùng cho khoảng ${Math.floor(daysRemaining)} ngày nữa.`;
+        // Gộp thông tin: còn bao nhiêu + dự báo hết sau mấy ngày
+        const daysText = typeof item.days_remaining === 'number' && Number(item.consumption_rate) > 0
+          ? `, dự báo hết sau ${Math.floor(daysRemaining)} ngày nữa`
+          : '';
+        const urgency = isEmergency ? '🚨 Cảnh báo khẩn' : '⚠️ Dự báo';
+        const message = `${urgency}: Nguyên liệu '${item.ingredient_name}' chỉ còn ${item.stock_quantity} ${item.unit}${daysText}. Cần nhập hàng gấp!`;
 
         // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
         const payload = {

@@ -4,11 +4,56 @@
 -- HỖ TRỢ CẢ DỮ LIỆU TỪ SQL LẪN JAVASCRIPT (Tự động map ID)
 -- =============================================
 
+-- =============================================
+-- FIX LỖI: HÀM THỐNG KÊ DOANH SỐ SẢN PHẨM (RPC)
+-- Sửa lỗi hàm trả về trung bình 0 khiến cảnh báo bị sai
+-- =============================================
+CREATE OR REPLACE FUNCTION get_products_sales_stats(p_product_ids uuid[], p_days integer)
+RETURNS TABLE (
+  product_id uuid,
+  mean_daily_sales numeric,
+  stddev_daily_sales numeric
+) AS $func$
+BEGIN
+  RETURN QUERY
+  WITH daily_sales AS (
+    SELECT
+      od.product_id,
+      DATE(o.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') AS sale_date,
+      SUM(od.quantity) AS daily_quantity
+    FROM order_detail od
+    JOIN orders o ON o.id = od.order_id
+    JOIN order_status os ON os.id = o.status_id
+    WHERE od.product_id = ANY(p_product_ids)
+      AND os.status_name IN ('COMPLETED', 'PREPARING')
+      AND o.created_at >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Ho_Chi_Minh' - (p_days || ' days')::interval)
+      AND DATE(o.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') < CURRENT_DATE
+    GROUP BY od.product_id, DATE(o.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')
+  ),
+  product_stats AS (
+    SELECT
+      ds.product_id,
+      ROUND(AVG(ds.daily_quantity)::numeric, 2) AS mean_daily_sales,
+      ROUND(COALESCE(STDDEV_POP(ds.daily_quantity), 0)::numeric, 2) AS stddev_daily_sales
+    FROM daily_sales ds
+    GROUP BY ds.product_id
+  )
+  SELECT
+    p.id AS product_id,
+    COALESCE(ps.mean_daily_sales, 0) AS mean_daily_sales,
+    COALESCE(ps.stddev_daily_sales, 0) AS stddev_daily_sales
+  FROM unnest(p_product_ids) p(id)
+  LEFT JOIN product_stats ps ON ps.product_id = p.id;
+END;
+$func$ LANGUAGE plpgsql;
+
+
 DO $$
 DECLARE
   v_completed_id UUID;
   v_table_id     UUID;
   v_order_id     UUID;
+  v_receipt_id   UUID;
   v_day          INT;
   v_ts           TIMESTAMPTZ;
   v_base_ts      TIMESTAMPTZ;
@@ -141,15 +186,16 @@ BEGIN
   -- ============================================
   -- INVENTORY_DISCREPANCY: Tạo phiếu kiểm kho hụt
   -- ============================================
+  v_receipt_id := gen_random_uuid();
   INSERT INTO public.inventory_receipts (id, receipt_type, created_at)
-  VALUES ('d0000001-0000-4000-8000-000000000001', 'STOCKTAKE_ADJUSTMENT', NOW() - INTERVAL '1 day');
+  VALUES (v_receipt_id, 'STOCKTAKE_ADJUSTMENT', NOW() - INTERVAL '1 day');
 
   IF I_ROBUSTA IS NOT NULL THEN
-    INSERT INTO public.receipt_details (receipt_id, ingredient_id, quantity) VALUES ('d0000001-0000-4000-8000-000000000001', I_ROBUSTA, -2);
+    INSERT INTO public.receipt_details (receipt_id, ingredient_id, quantity) VALUES (v_receipt_id, I_ROBUSTA, -2);
   END IF;
 
   IF I_WHIPPING IS NOT NULL THEN
-    INSERT INTO public.receipt_details (receipt_id, ingredient_id, quantity) VALUES ('d0000001-0000-4000-8000-000000000001', I_WHIPPING, -1);
+    INSERT INTO public.receipt_details (receipt_id, ingredient_id, quantity) VALUES (v_receipt_id, I_WHIPPING, -1);
   END IF;
   RAISE NOTICE '✅ INVENTORY_DISCREPANCY: Đã tạo phiếu hụt kho cho Robusta và Whipping';
 

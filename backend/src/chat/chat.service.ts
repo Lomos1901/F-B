@@ -89,6 +89,11 @@ export class ChatService {
     // Tổng doanh thu hôm nay
     const totalSold = (diagnostics as any[]).reduce((sum: number, p: any) => sum + (p.today_quantity || 0), 0);
 
+    // Các sản phẩm ế ẩm (bán 0 ly nhưng trung bình > 3)
+    const ghostProducts = (diagnostics as any[]).filter(
+      (p: any) => p.today_quantity === 0 && p.mean_daily_sales > 3
+    );
+
     // Đóng gói thành chuỗi text gọn gàng
     const snapshot = `
 --- DỮ LIỆU HỆ THỐNG (Cập nhật lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}) ---
@@ -97,6 +102,11 @@ export class ChatService {
 ${topSellers.length > 0
   ? topSellers.map((p: any) => `- ${p.product_name}: ${p.today_quantity} ly (TB: ${p.mean_daily_sales}/ngày${p.is_anomaly ? ' ⚡TĂNG ĐỘT BIẾN' : ''})`).join('\n')
   : '- Chưa có dữ liệu doanh số hôm nay'}
+
+👻 MÓN Ế ẨM (Bán 0 ly hôm nay):
+${ghostProducts.length > 0
+  ? ghostProducts.map((p: any) => `- ${p.product_name} (TB bán: ${p.mean_daily_sales} ly/ngày)`).join('\n')
+  : '- Không có món nào ế ẩm'}
 
 📦 TÌNH TRẠNG KHO:
 ${lowStock.length > 0
