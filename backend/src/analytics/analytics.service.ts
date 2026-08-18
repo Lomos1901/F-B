@@ -537,26 +537,31 @@ export class AnalyticsService {
       .single();
     if (!entity) return;
 
-    if (!force) {
-      const { data: existing, error: checkError } = await this.client
-        .from('ai_anomalies')
-        .select('id')
-        .eq('entity_id', entity.id)
-        .eq('alert_category', category)
-        .gte(
-          'created_at',
-          new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        );
+    const { data: existing, error: checkError } = await this.client
+      .from('ai_anomalies')
+      .select('id')
+      .eq('entity_id', entity.id)
+      .eq('alert_category', category)
+      .gte(
+        'created_at',
+        new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      );
 
-      if (checkError) {
-        this.logger.error('Lỗi khi kiểm tra cảnh báo tồn tại:', checkError);
-        return;
-      }
+    if (checkError) {
+      this.logger.error('Lỗi khi kiểm tra cảnh báo tồn tại:', checkError);
+      return;
+    }
 
-      if (existing && existing.length > 0) {
-        this.logger.log(`Bỏ qua tạo cảnh báo trùng lặp cho '${entityName}'.`);
-        return;
-      }
+    if (existing && existing.length > 0) {
+      this.logger.log(`Cập nhật cảnh báo đã tồn tại cho '${entityName}' (Chống spam).`);
+      // Update the existing alert instead of creating a new one
+      await this.client.from('ai_anomalies').update({
+        message: message,
+        recommended_action: action,
+        is_read: false, // Đánh dấu là chưa đọc lại vì có cập nhật mới
+        ...extraPayload,
+      }).eq('id', existing[0].id);
+      return;
     }
 
     this.logger.warn(`Đang tạo cảnh báo mới: ${message}`);

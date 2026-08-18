@@ -39,10 +39,11 @@ export class InventoryReceiptsService {
       .order('created_at', { ascending: false });
 
     if (startDate) {
-      query = query.gte('created_at', startDate);
+      const startDateTime = startDate.includes('T') ? startDate : `${startDate}T00:00:00.000+07:00`;
+      query = query.gte('created_at', startDateTime);
     }
     if (endDate) {
-      const endDateTime = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
+      const endDateTime = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999+07:00`;
       query = query.lte('created_at', endDateTime);
     }
     if (type && type !== 'ALL') {

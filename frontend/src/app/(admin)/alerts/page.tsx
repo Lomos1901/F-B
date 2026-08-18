@@ -41,7 +41,7 @@ const getCategoryLabel = (category: string) => {
   switch (category) {
     case 'SALES_SPIKE': return 'Doanh thu đột biến';
     case 'GHOST_PRODUCT': return 'Sản phẩm ế ẩm';
-    case 'INVENTORY_FORECAST': return 'Cảnh báo tồn kho';
+    case 'INVENTORY_FORECAST': return 'Dự báo cạn kho';
     case 'INVENTORY_DISCREPANCY': return 'Chênh lệch tồn kho';
     case 'AI_INSIGHT': return 'Trợ lý AI Phân tích';
     default: return 'Cảnh báo hệ thống';
@@ -211,6 +211,15 @@ export default function AlertsCenterPage() {
                     </div>
                     
                     <p className="text-slate-700 font-medium text-sm mb-2">{anomaly.message}</p>
+
+                    {anomaly.alert_category === 'INVENTORY_FORECAST' && anomaly.actual_value !== undefined && anomaly.actual_value < 3 && (
+                      <div className="mb-3 inline-flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-700 px-2.5 py-1 rounded-md text-[11px] font-bold">
+                        <AlertTriangle size={14} className="text-red-600" />
+                        {anomaly.actual_value <= 0.5 
+                          ? 'KHẨN CẤP: Đã hết hoặc sắp hết trong ngày hôm nay!' 
+                          : `RỦI RO: Chỉ còn đủ dùng trong ${Math.floor(anomaly.actual_value)} ngày tới`}
+                      </div>
+                    )}
 
                     {anomaly.recommended_action && (
                       <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 mb-3 inline-block">

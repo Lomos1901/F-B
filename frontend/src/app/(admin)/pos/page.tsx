@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import Cookies from 'js-cookie';
 import { productService } from '@/src/services/productService';
 import { categoryService } from '@/src/services/categoryService';
 import { orderService } from '@/src/services/orderService';
@@ -126,12 +127,17 @@ export default function KiotVietPOSPage() {
               setPendingOrderId(null);
             }
 
-            // Fetch thông tin đơn hàng để in hóa đơn
-            const { data: orderData } = await supabase
+            // Fetch thông tin đơn hàng để in hóa đơn (Cần kẹp token để không bị lỗi 406 RLS)
+            const token = Cookies.get('access_token');
+            const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+              global: { headers: { Authorization: `Bearer ${token}` } }
+            });
+
+            const { data: orderData } = await authSupabase
               .from('orders')
               .select('id, table_number, total_price, order_detail(quantity, note, products(name, price))')
               .eq('id', payment.order_id)
-              .single();
+              .maybeSingle();
 
             if (orderData) {
               setPrintData({

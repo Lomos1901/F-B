@@ -56,7 +56,8 @@ export class ProductsService {
         *,
         recipes (
           ingredient_id,
-          quantity
+          quantity,
+          ingredients ( name, recipe_unit )
         )
       `,
       )

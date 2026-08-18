@@ -371,9 +371,10 @@ export default function IngredientsPage() {
                   filteredIngredients.map((ing) => {
                     const recipeStock = (ing.stock_quantity || 0) * (ing.conversion_factor || 1);
                     const isLowStock = ing.stock_quantity <= 0;
+                    const isWarning = ing.stock_quantity > 0 && ing.stock_quantity <= 2;
 
                     return (
-                      <tr key={ing.id} className={`hover:bg-slate-50 transition-colors ${isLowStock ? 'bg-red-50/30' : ''}`}>
+                      <tr key={ing.id} className={`hover:bg-slate-50 transition-colors ${isLowStock ? 'bg-red-50/30' : isWarning ? 'bg-amber-50/30' : ''}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-slate-800">{ing.name}</span>
@@ -382,18 +383,23 @@ export default function IngredientsPage() {
                                 <AlertTriangle size={12} /> Hết hàng
                               </span>
                             )}
+                            {isWarning && (
+                              <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full" title="Sắp hết hàng!">
+                                <AlertTriangle size={12} /> Sắp hết
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm font-semibold text-slate-500">
                           {ing.ingredient_categories?.name || '---'}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`font-mono font-bold px-2.5 py-1 rounded-lg text-sm ${isLowStock ? 'text-red-600 bg-red-100' : 'text-slate-800 bg-slate-100'}`}>
+                          <span className={`font-mono font-bold px-2.5 py-1 rounded-lg text-sm ${isLowStock ? 'text-red-600 bg-red-100' : isWarning ? 'text-amber-600 bg-amber-100' : 'text-slate-800 bg-slate-100'}`}>
                             {ing.stock_quantity.toLocaleString('vi-VN')} {ing.base_unit}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`font-mono font-bold text-sm ${isLowStock ? 'text-red-500' : 'text-slate-500'}`}>
+                          <span className={`font-mono font-bold text-sm ${isLowStock ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-slate-500'}`}>
                             {recipeStock.toLocaleString('vi-VN')} {ing.recipe_unit}
                           </span>
                         </td>

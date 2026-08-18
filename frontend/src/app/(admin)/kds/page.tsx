@@ -4,13 +4,20 @@ import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { orderService } from '@/src/services/orderService';
-import { Check, CookingPot, Loader2, Coffee, RefreshCcw } from 'lucide-react';
+import { Check, CookingPot, Loader2, Coffee, RefreshCcw, Info, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { createClient } from '@supabase/supabase-js';
+
+import Cookies from 'js-cookie';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// supabase được khởi tạo bên dưới cùng với token
 
 interface OrderItem {
   quantity: number;
   note?: string;
-  products?: { name: string };
+  products?: { id: string; name: string };
 }
 
 interface Order {
@@ -27,7 +34,58 @@ const EmptyState = () => (
   </div>
 );
 
-const OrderTicket = ({ order, onAction, actionText, isPending, icon }: { order: Order, onAction: () => void, actionText: string, isPending: boolean, icon: React.ReactNode }) => {
+const RecipeModal = ({ productId, productName, onClose }: { productId: string; productName: string; onClose: () => void }) => {
+  const [recipeItems, setRecipeItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const { productService } = await import('@/src/services/productService');
+        const productData = await productService.getById(productId);
+        setRecipeItems(productData.recipes || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecipe();
+  }, [productId]);
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 animate-[fadeIn_0.2s_ease-out]" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 animate-[slideUp_0.3s_ease-out]" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-slate-800 leading-tight">Công thức<br/><span className="text-blue-600">{productName}</span></h2>
+          <button onClick={onClose} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors shrink-0">
+            <X size={20} className="text-slate-600" />
+          </button>
+        </div>
+        
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-600" size={32} /></div>
+        ) : recipeItems.length === 0 ? (
+          <div className="text-center py-10 text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <CookingPot size={40} className="mx-auto mb-3 text-slate-300" />
+            <p className="font-medium">Chưa cập nhật công thức</p>
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            {recipeItems.map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-100 transition-colors">
+                <span className="font-medium text-slate-700">{item.ingredients?.name}</span>
+                <span className="font-bold text-blue-600 bg-blue-100/50 px-3 py-1 rounded-full">{item.quantity} {item.ingredients?.recipe_unit}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const OrderTicket = ({ order, onAction, actionText, isPending, icon, onViewRecipe }: { order: Order, onAction: () => void, actionText: string, isPending: boolean, icon: React.ReactNode, onViewRecipe: (id: string, name: string) => void }) => {
   const timeAgo = formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: vi });
 
   const borderColor = isPending ? 'border-l-amber-500' : 'border-l-blue-500';
@@ -44,8 +102,19 @@ const OrderTicket = ({ order, onAction, actionText, isPending, icon }: { order: 
       <div className="p-4 flex-grow space-y-3">
         {order.order_detail.map((item, index) => (
           <div key={index} className="flex flex-col border-b border-gray-50 pb-2 last:border-0 last:pb-0">
-            <div className="flex justify-between items-start text-sm">
-              <span className="text-slate-700 font-medium">{item.products?.name || 'Sản phẩm không xác định'}</span>
+            <div className="flex justify-between items-start text-sm group">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-700 font-medium">{item.products?.name || 'Sản phẩm không xác định'}</span>
+                {item.products?.id && (
+                  <button 
+                    onClick={() => onViewRecipe(item.products!.id, item.products!.name)}
+                    className="text-slate-300 hover:text-blue-500 transition-colors"
+                    title="Xem công thức"
+                  >
+                    <Info size={16} />
+                  </button>
+                )}
+              </div>
               <span className="font-bold text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5 mt-0.5">x{item.quantity}</span>
             </div>
             {item.note && (
@@ -74,6 +143,7 @@ export default function KDSPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [recipeModal, setRecipeModal] = useState<{isOpen: boolean, productId: string, productName: string}>({ isOpen: false, productId: '', productName: '' });
 
   const loadOrders = async () => {
     try {
@@ -165,18 +235,27 @@ export default function KDSPage() {
             </div>
           ) : (
             preparingOrders.map(order => (
-              <OrderTicket
-                key={order.id}
-                order={order}
+              <OrderTicket 
+                key={order.id} 
+                order={order} 
                 onAction={() => handleUpdateStatus(order.id, 'COMPLETED', order.table_number)}
-                actionText="Hoàn thành đơn này"
+                actionText="Đã pha xong"
                 isPending={false}
                 icon={<Check size={20} />}
+                onViewRecipe={(id, name) => setRecipeModal({ isOpen: true, productId: id, productName: name })}
               />
             ))
           )}
         </div>
       </main>
+
+      {recipeModal.isOpen && (
+        <RecipeModal 
+          productId={recipeModal.productId} 
+          productName={recipeModal.productName} 
+          onClose={() => setRecipeModal({ isOpen: false, productId: '', productName: '' })} 
+        />
+      )}
     </div>
   );
 }

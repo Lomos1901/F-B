@@ -228,7 +228,7 @@ export class OrdersService {
         order_detail (
           quantity,
           note,
-          products ( name, price )
+          products ( id, name, price )
         )
       `,
       )
