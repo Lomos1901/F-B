@@ -105,33 +105,48 @@ export default function KiotVietPOSPage() {
 
   // === Lắng nghe thanh toán tự động từ SePay ===
   useEffect(() => {
-    if (!pendingOrderId || !showQrModal) return;
-
     const channel = supabase
-      .channel(`payment-${pendingOrderId}`)
+      .channel('public:payments')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'payments',
-          filter: `order_id=eq.${pendingOrderId}`,
         },
-        (payload) => {
-          // Thanh toán đã được xác nhận bởi SePay webhook!
-          toast.success('💰 Đã nhận thanh toán chuyển khoản tự động!');
-          setShowQrModal(false);
-          
-          setPrintData({
-            cart: [...cart],
-            total: cartTotal,
-            orderId: pendingOrderId,
-            table: selectedTableName,
-            time: new Date().toLocaleString('vi-VN')
-          });
+        async (payload) => {
+          const payment = payload.new;
+          if (payment.note && payment.note.includes('SePay auto')) {
+            toast.success('💰 Khách hàng vừa thanh toán qua SePay thành công!');
+            
+            // Nếu giao dịch này là của mã QR đang mở trên màn hình POS, đóng Modal lại
+            if (payment.order_id === pendingOrderId) {
+              setShowQrModal(false);
+              setCart([]);
+              setPendingOrderId(null);
+            }
 
-          setCart([]);
-          setPendingOrderId(null);
+            // Fetch thông tin đơn hàng để in hóa đơn
+            const { data: orderData } = await supabase
+              .from('orders')
+              .select('id, table_number, total_price, order_detail(quantity, note, products(name, price))')
+              .eq('id', payment.order_id)
+              .single();
+
+            if (orderData) {
+              setPrintData({
+                cart: orderData.order_detail.map((d: any) => ({ 
+                  product: d.products, 
+                  quantity: d.quantity, 
+                  note: d.note 
+                })),
+                total: orderData.total_price,
+                orderId: orderData.id,
+                table: orderData.table_number,
+                time: new Date().toLocaleString('vi-VN')
+              });
+            }
+          }
         }
       )
       .subscribe();
@@ -139,7 +154,7 @@ export default function KiotVietPOSPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [pendingOrderId, showQrModal, cart, cartTotal, selectedTableName]);
+  }, [pendingOrderId]);
 
   // === 7. KEYBOARD SHORTCUTS ===
   useEffect(() => {

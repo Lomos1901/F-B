@@ -108,7 +108,8 @@ const CartItemNoteInput = ({ item, updateNote }: { item: CartItem, updateNote: (
 
 export default function QROrderPage() {
   const params = useParams();
-  const tableNumber = params.tableNumber as string;
+  const [finalOrderId, setFinalOrderId] = useState<string>('');
+  const tableNumber = decodeURIComponent(params.tableNumber as string);
   const router = useRouter();
 
   const [productsByCategory, setProductsByCategory] = useState<GroupedProducts>({});
@@ -273,9 +274,11 @@ export default function QROrderPage() {
     try {
       const orderItems = cart.map(item => ({ product_id: item.id, quantity: item.quantity, price_at_order: item.price, note: item.note }));
       const noteStr = `Khách báo: ${selectedPaymentCode === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}`;
-      await orderService.createForCustomer(tableNumber, orderItems, noteStr);
+      const orderRes = await orderService.createForCustomer(tableNumber, orderItems, noteStr);
       
       const total = getTotalPrice();
+      setFinalOrderId(orderRes.orderId);
+      setFinalOrderTotal(total);
       setFinalOrderTotal(total);
 
       if (selectedPaymentCode !== 'CASH' && bankInfo) {
@@ -404,10 +407,10 @@ export default function QROrderPage() {
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Chuyển khoản</h2>
           <p className="text-slate-500 mb-6 text-sm">Quét mã QR dưới đây để thanh toán. Bếp sẽ bắt đầu làm món sau khi thu ngân nhận được tiền.</p>
           
-          <div className="bg-slate-50 p-4 rounded-2xl mb-4 inline-block border border-slate-200">
+          <div className="bg-white p-4 rounded-xl mb-6 flex justify-center border-2 border-slate-100">
             <img 
-              src={`https://img.vietqr.io/image/${bankInfo.bank_bin}-${bankInfo.account_number}-compact2.jpg?amount=${finalOrderTotal}&addInfo=Thanh toan don ban ${tableNumber}&accountName=${encodeURIComponent(bankInfo.account_name)}`}
-              alt="VietQR"
+              src={`https://img.vietqr.io/image/${bankInfo.bank_bin}-${bankInfo.account_number}-compact2.jpg?amount=${finalOrderTotal}&addInfo=DH ${finalOrderId || ''}&accountName=${encodeURIComponent(bankInfo.account_name)}`}
+              alt="QR Ngân hàng"
               className="w-56 h-56 object-contain rounded-xl shadow-sm"
             />
           </div>
