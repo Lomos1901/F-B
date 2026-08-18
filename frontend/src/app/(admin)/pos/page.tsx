@@ -101,6 +101,8 @@ export default function KiotVietPOSPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0), [cart]);
+
   // === Lắng nghe thanh toán tự động từ SePay ===
   useEffect(() => {
     if (!pendingOrderId || !showQrModal) return;
@@ -239,7 +241,6 @@ export default function KiotVietPOSPage() {
     setIsConfirmClearCartOpen(true);
   };
 
-  const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0), [cart]);
   
   const handleCheckoutClick = async () => {
     if (cart.length === 0) return toast.warning("Giỏ hàng trống!");
