@@ -113,7 +113,7 @@ export default function Sidebar() {
                 <div className="w-6 h-px bg-slate-200 mx-auto my-2" />
               )}
             </div>
-            <NavLink href="/products" icon={<ClipboardList size={20} />} isExpanded={isExpanded}>Món ăn & Đồ uống</NavLink>
+            <NavLink href="/products" icon={<ClipboardList size={20} />} isExpanded={isExpanded}>Thực đơn</NavLink>
             <NavLink href="/categories" icon={<Book size={20} />} isExpanded={isExpanded}>Danh mục Thực đơn</NavLink>
 
             {/* 3. QUẢN LÝ KHO BÃI */}

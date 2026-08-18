@@ -81,7 +81,7 @@ export default function InventoryReceiptsPage() {
   const [error, setError] = useState('');
 
   // Lọc
-  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [typeFilter, setTypeFilter] = useState('ALL');
 

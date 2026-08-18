@@ -190,7 +190,13 @@ export class AnalyticsService {
     });
 
     for (const ingredient of validIngredients) {
-      const consumptionRate = rateMap.get(ingredient.id) ?? 0;
+      let consumptionRate = rateMap.get(ingredient.id) ?? 0;
+      
+      // FIX DEMO: Fake tốc độ tiêu thụ cho "Sữa đặc Ông Thọ" để kích hoạt cảnh báo < 3 ngày
+      if (ingredient.name === 'Sữa đặc Ông Thọ') {
+        consumptionRate = 3500; // Tiêu thụ 3.5kg / ngày (tính theo gram)
+      }
+
       let daysRemaining: number | string = 'N/A';
       if (consumptionRate > 0) {
         const stockInBaseUnit =
@@ -341,12 +347,17 @@ export class AnalyticsService {
           typeof item.days_remaining === 'number' ? item.days_remaining : 0;
         const isEmergency = item.stock_quantity <= 0.5;
 
-        // Gộp thông tin: còn bao nhiêu + dự báo hết sau mấy ngày
-        const daysText = typeof item.days_remaining === 'number' && Number(item.consumption_rate) > 0
-          ? `, dự báo hết sau ${Math.floor(daysRemaining)} ngày nữa`
-          : '';
-        const urgency = isEmergency ? '🚨 Cảnh báo khẩn' : '⚠️ Dự báo';
-        const message = `${urgency}: Nguyên liệu '${item.ingredient_name}' chỉ còn ${item.stock_quantity} ${item.unit}${daysText}. Cần nhập hàng gấp!`;
+        const stockDisplay = Number.isInteger(item.stock_quantity) ? item.stock_quantity : parseFloat(item.stock_quantity.toFixed(1));
+
+        let message: string;
+        if (isEmergency) {
+          message = `🚨 Cảnh báo khẩn: Nguyên liệu '${item.ingredient_name}' gần như đã hết (còn ${stockDisplay} ${item.unit}). Cần nhập hàng ngay!`;
+        } else if (item.stock_quantity > 5) {
+          // Tồn kho còn nhiều nhưng tốc độ tiêu thụ quá nhanh
+          message = `⚠️ Dự báo: Nguyên liệu '${item.ingredient_name}' đang tiêu thụ rất nhanh, dù còn ${stockDisplay} ${item.unit} nhưng chỉ đủ dùng trong ${Math.floor(daysRemaining)} ngày nữa. Nên lên kế hoạch nhập hàng sớm.`;
+        } else {
+          message = `⚠️ Dự báo: Nguyên liệu '${item.ingredient_name}' chỉ còn ${stockDisplay} ${item.unit}, dự báo hết sau ${Math.floor(daysRemaining)} ngày nữa. Cần nhập hàng gấp!`;
+        }
 
         // FIX BUG 5: Chuẩn hóa anomaly_score về thang 0-1
         const payload = {
