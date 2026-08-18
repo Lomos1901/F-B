@@ -12,6 +12,11 @@ import { Loader2, Bell, Search, Minus, Plus, Trash2, X, Clock, User, ChevronDown
 import { toast } from 'react-toastify';
 import QrOrderDrawer from '@/src/components/pos/QrOrderDrawer';
 import ConfirmModal from '@/src/components/ConfirmModal';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // --- Interfaces ---
 interface Product {
@@ -56,6 +61,7 @@ export default function KiotVietPOSPage() {
   const [availableMethods, setAvailableMethods] = useState<{id: string, name: string, code: string}[]>([]);
   const [bankInfo, setBankInfo] = useState<{bank_bin: string, account_number: string, account_name: string} | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   
   // === 4. DRAWER & NOTIFICATION STATE ===
   const [isQrDrawerOpen, setIsQrDrawerOpen] = useState(false);
@@ -94,6 +100,44 @@ export default function KiotVietPOSPage() {
     const interval = setInterval(fetchTables, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  // === Lắng nghe thanh toán tự động từ SePay ===
+  useEffect(() => {
+    if (!pendingOrderId || !showQrModal) return;
+
+    const channel = supabase
+      .channel(`payment-${pendingOrderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'payments',
+          filter: `order_id=eq.${pendingOrderId}`,
+        },
+        (payload) => {
+          // Thanh toán đã được xác nhận bởi SePay webhook!
+          toast.success('💰 Đã nhận thanh toán chuyển khoản tự động!');
+          setShowQrModal(false);
+          
+          setPrintData({
+            cart: [...cart],
+            total: cartTotal,
+            orderId: pendingOrderId,
+            table: selectedTableName,
+            time: new Date().toLocaleString('vi-VN')
+          });
+
+          setCart([]);
+          setPendingOrderId(null);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [pendingOrderId, showQrModal, cart, cartTotal, selectedTableName]);
 
   // === 7. KEYBOARD SHORTCUTS ===
   useEffect(() => {
@@ -197,12 +241,19 @@ export default function KiotVietPOSPage() {
 
   const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0), [cart]);
   
-  const handleCheckoutClick = () => {
+  const handleCheckoutClick = async () => {
     if (cart.length === 0) return toast.warning("Giỏ hàng trống!");
     
     // Nếu chọn chuyển khoản và có thông tin ngân hàng thì bật QR Modal
     if (paymentMethodCode !== 'CASH' && bankInfo) {
-      setShowQrModal(true);
+      try {
+        const itemsPayload = cart.map(item => ({ product_id: item.product.id, quantity: item.quantity, price_at_order: item.product.price, note: item.note }));
+        const orderRes = await orderService.createForCustomer(selectedTableName, itemsPayload);
+        setPendingOrderId(orderRes.orderId);
+        setShowQrModal(true);
+      } catch (err: any) {
+        toast.error("Lỗi tạo đơn: " + err.message);
+      }
     } else {
       // Thanh toán tiền mặt hoặc không có thông tin bank thì chạy luôn
       executeCheckout();
@@ -213,9 +264,15 @@ export default function KiotVietPOSPage() {
     setIsProcessingOrder(true);
     setShowQrModal(false);
     try {
-      const itemsPayload = cart.map(item => ({ product_id: item.product.id, quantity: item.quantity, price_at_order: item.product.price, note: item.note }));
-      const orderRes = await orderService.createForCustomer(selectedTableName, itemsPayload);
-      const newOrderId = orderRes.orderId;
+      let newOrderId: string;
+      
+      if (pendingOrderId) {
+        newOrderId = pendingOrderId;
+      } else {
+        const itemsPayload = cart.map(item => ({ product_id: item.product.id, quantity: item.quantity, price_at_order: item.product.price, note: item.note }));
+        const orderRes = await orderService.createForCustomer(selectedTableName, itemsPayload);
+        newOrderId = orderRes.orderId;
+      }
 
       if (paymentMethodCode) {
         await paymentService.createPayment(newOrderId, cartTotal, paymentMethodCode);
@@ -235,6 +292,7 @@ export default function KiotVietPOSPage() {
       });
 
       setCart([]);
+      setPendingOrderId(null);
     } catch (err: any) {
       toast.error("Lỗi thanh toán: " + err.message);
     } finally {
@@ -566,7 +624,7 @@ export default function KiotVietPOSPage() {
             
             <div className="bg-gray-50 p-4 rounded-lg mb-4 flex justify-center">
               <img 
-                src={`https://img.vietqr.io/image/${bankInfo.bank_bin}-${bankInfo.account_number}-compact2.jpg?amount=${cartTotal}&addInfo=Thanh toan don tai quay&accountName=${encodeURIComponent(bankInfo.account_name)}`}
+                src={`https://img.vietqr.io/image/${bankInfo.bank_bin}-${bankInfo.account_number}-compact2.jpg?amount=${cartTotal}&addInfo=DH ${pendingOrderId || ''}&accountName=${encodeURIComponent(bankInfo.account_name)}`}
                 alt="VietQR"
                 className="w-48 h-48 object-contain rounded-md shadow-sm border border-gray-200"
               />
@@ -580,7 +638,7 @@ export default function KiotVietPOSPage() {
 
             <div className="flex gap-3">
               <button 
-                onClick={() => setShowQrModal(false)} 
+                onClick={() => { setShowQrModal(false); setPendingOrderId(null); }} 
                 className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-colors"
               >
                 Hủy

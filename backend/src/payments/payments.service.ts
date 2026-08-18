@@ -138,4 +138,50 @@ export class PaymentsService {
     }
     return data;
   }
+
+  async handleSepayWebhook(orderId: string, amount: number, sepayTransactionId: string) {
+    // Kiểm tra xem giao dịch này đã được xử lý chưa
+    const { data: existingPayment } = await this.client
+      .from('payments')
+      .select('id')
+      .ilike('note', `%SePay auto #${sepayTransactionId}%`)
+      .limit(1)
+      .single();
+
+    if (existingPayment) {
+      this.logger.log(`Bỏ qua giao dịch SePay #${sepayTransactionId} đã được xử lý.`);
+      return;
+    }
+
+    // Tra cứu đơn hàng
+    const { data: orderData, error: checkOrderError } = await this.client
+      .from('orders')
+      .select('id, order_status(status_name)')
+      .eq('id', orderId)
+      .single();
+
+    if (checkOrderError || !orderData) {
+      this.logger.warn(`Không tìm thấy đơn hàng ${orderId} từ SePay webhook.`);
+      return;
+    }
+
+    const statusName = (orderData as any).order_status?.status_name || (orderData as any).order_status?.[0]?.status_name;
+    if (statusName !== 'PENDING') {
+      this.logger.warn(`Đơn hàng ${orderId} không ở trạng thái PENDING. Trạng thái hiện tại: ${statusName}`);
+      return;
+    }
+
+    // Tạo thanh toán tự động
+    try {
+      await this.createPayment({
+        order_id: orderId,
+        amount,
+        payment_method_code: 'BANK_TRANSFER',
+        note: `SePay auto #${sepayTransactionId}`
+      });
+      this.logger.log(`Đã xử lý thanh toán tự động cho đơn hàng ${orderId} (SePay #${sepayTransactionId})`);
+    } catch (error) {
+      this.logger.error(`Lỗi khi tạo thanh toán tự động cho đơn hàng ${orderId} (SePay #${sepayTransactionId}):`, error);
+    }
+  }
 }

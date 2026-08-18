@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Headers, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,5 +30,22 @@ export class PaymentsController {
   async createPayment(@Body() createPaymentDto: CreatePaymentDto, @Request() req) {
     const cashierId = req.user?.sub; // ID của thu ngân (từ JWT)
     return this.paymentsService.createPayment(createPaymentDto, cashierId);
+  }
+
+  @Public()
+  @Post('sepay-webhook')
+  async sepayWebhook(
+    @Body(new ValidationPipe({ transform: false, whitelist: false, forbidNonWhitelisted: false })) body: any
+  ) {
+    // TODO: Sau khi test xong, nên bật lại xác thực API Key để bảo mật
+    if (body.transferType === 'in') {
+      const match = body.content?.match(/DH\s*([a-zA-Z0-9-]+)/i);
+      if (match) {
+        const orderId = match[1];
+        await this.paymentsService.handleSepayWebhook(orderId, body.transferAmount, body.id.toString());
+      }
+    }
+
+    return { success: true };
   }
 }
