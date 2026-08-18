@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { tableService, TableInfo } from '@/src/services/tableService';
-import { Plus, Edit, Trash2, Search, LayoutDashboard, Loader2, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, LayoutDashboard, Loader2, MapPin, QrCode, Printer } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { QRCodeSVG } from 'qrcode.react';
 import ConfirmModal from '@/src/components/ConfirmModal';
 
 export default function TablesConfigPage() {
@@ -26,6 +27,17 @@ export default function TablesConfigPage() {
   
   const [isRenameZoneModalOpen, setIsRenameZoneModalOpen] = useState(false);
   const [renameZoneData, setRenameZoneData] = useState({ oldName: '', newName: '' });
+
+  // QR states
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrTable, setQrTable] = useState<TableInfo | null>(null);
+  const [originUrl, setOriginUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOriginUrl(window.location.origin);
+    }
+  }, []);
 
   const fetchTables = async () => {
     try {
@@ -158,8 +170,8 @@ export default function TablesConfigPage() {
   const zones = Array.from(new Set(filteredTables.map(t => t.zone))).sort();
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 sm:p-10">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 p-6 sm:p-10 print:p-0 print:bg-white">
+      <div className="max-w-6xl mx-auto space-y-6 print:hidden">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -255,6 +267,16 @@ export default function TablesConfigPage() {
 
                         {/* Actions overlay */}
                         <div className="absolute inset-0 bg-slate-900/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[1px]">
+                          <button 
+                            onClick={() => {
+                              setQrTable(table);
+                              setIsQrModalOpen(true);
+                            }}
+                            className="p-2 bg-white text-purple-600 hover:bg-purple-50 rounded-full shadow-sm transition-colors"
+                            title="Mã QR"
+                          >
+                            <QrCode size={16} />
+                          </button>
                           <button 
                             onClick={() => handleOpenModal(table)}
                             className="p-2 bg-white text-blue-600 hover:bg-blue-50 rounded-full shadow-sm transition-colors"
@@ -453,6 +475,56 @@ export default function TablesConfigPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Mã QR */}
+      {isQrModalOpen && qrTable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 print:bg-white print:p-0 print:backdrop-blur-none">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 print:shadow-none print:w-full print:max-w-none">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 print:hidden">
+              <h3 className="font-bold text-lg text-slate-800">Mã QR - {qrTable.name}</h3>
+              <button onClick={() => setIsQrModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            
+            <div className="p-8 flex flex-col items-center justify-center print:p-0 print:h-screen print:justify-center">
+              <div className="text-center mb-6 print:mb-10">
+                <h2 className="text-4xl font-extrabold text-slate-800 mb-3">SAMCAFFEE</h2>
+                <p className="text-3xl font-bold text-slate-600">{qrTable.name}</p>
+                <p className="text-xl text-slate-500 mt-2">{qrTable.zone}</p>
+              </div>
+              
+              <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 print:border-4 print:border-black print:shadow-none mb-8">
+                <QRCodeSVG 
+                  value={`${originUrl}/qr-order?tableId=${qrTable.id}&tableName=${encodeURIComponent(qrTable.name)}`}
+                  size={300}
+                  level="H"
+                  includeMargin={false}
+                />
+              </div>
+
+              <p className="text-lg text-slate-500 font-medium text-center px-4 print:text-black print:text-2xl">
+                Quét mã QR để xem Menu & Đặt món
+              </p>
+            </div>
+
+            <div className="flex gap-3 p-4 border-t border-slate-100 bg-slate-50 print:hidden">
+              <button 
+                type="button" 
+                onClick={() => setIsQrModalOpen(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                Đóng
+              </button>
+              <button 
+                type="button" 
+                onClick={() => window.print()}
+                className="flex-1 py-2.5 px-4 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Printer size={18} /> In mã QR
+              </button>
+            </div>
           </div>
         </div>
       )}
