@@ -41,7 +41,13 @@ export class PaymentsController {
     if (body.transferType === 'in') {
       const match = body.content?.match(/DH\s*([a-zA-Z0-9-]+)/i);
       if (match) {
-        const orderId = match[1];
+        let orderId = match[1];
+        
+        // Fix lỗi ngân hàng tự động xóa dấu gạch ngang (-) của UUID
+        if (orderId.length === 32 && !orderId.includes('-')) {
+          orderId = `${orderId.substring(0, 8)}-${orderId.substring(8, 12)}-${orderId.substring(12, 16)}-${orderId.substring(16, 20)}-${orderId.substring(20)}`;
+        }
+
         await this.paymentsService.handleSepayWebhook(orderId, body.transferAmount, body.id.toString());
       }
     }
