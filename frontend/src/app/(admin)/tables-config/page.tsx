@@ -497,7 +497,7 @@ export default function TablesConfigPage() {
               
               <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 print:border-4 print:border-black print:shadow-none mb-8">
                 <QRCodeSVG 
-                  value={`${originUrl}/qr-order?tableId=${qrTable.id}&tableName=${encodeURIComponent(qrTable.name)}`}
+                  value={`${originUrl}/qr-order/${encodeURIComponent(qrTable.name)}`}
                   size={300}
                   level="H"
                   includeMargin={false}
